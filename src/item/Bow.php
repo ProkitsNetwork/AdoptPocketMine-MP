@@ -46,7 +46,7 @@ class Bow extends Tool implements Releasable{
 
 	public function onReleaseUsing(Player $player, array &$returnedItems) : ItemUseResult{
 		$arrow = VanillaItems::ARROW();
-		$inventory = match(true){
+		$inventory = match (true) {
 			$player->getOffHandInventory()->contains($arrow) => $player->getOffHandInventory(),
 			$player->getInventory()->contains($arrow) => $player->getInventory(),
 			default => null
@@ -98,7 +98,11 @@ class Bow extends Tool implements Releasable{
 			return ItemUseResult::FAIL;
 		}
 
-		$entity->setMotion($entity->getMotion()->multiply($ev->getForce()));
+		if($entity instanceof Projectile){
+			$entity->shootFromRotation($entity, $location->yaw, $location->pitch, 0, $ev->getForce(), 1.0);
+		}else{
+			$entity->setMotion($entity->getMotion()->multiply($ev->getForce()));
+		}
 
 		if($entity instanceof Projectile){
 			$projectileEv = new ProjectileLaunchEvent($entity);

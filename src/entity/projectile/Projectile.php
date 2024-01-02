@@ -36,6 +36,7 @@ use pocketmine\event\entity\ProjectileHitBlockEvent;
 use pocketmine\event\entity\ProjectileHitEntityEvent;
 use pocketmine\event\entity\ProjectileHitEvent;
 use pocketmine\math\RayTraceResult;
+use pocketmine\math\Vector2;
 use pocketmine\math\Vector3;
 use pocketmine\math\VoxelRayTrace;
 use pocketmine\nbt\NBT;
@@ -43,6 +44,7 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\ListTag;
 use pocketmine\timings\Timings;
+use pocketmine\utils\Random;
 use function assert;
 use function atan2;
 use function ceil;
@@ -60,12 +62,48 @@ abstract class Projectile extends Entity{
 
 	protected float $damage = 0.0;
 	protected ?Vector3 $blockHit = null;
+	protected Random $random;
 
 	public function __construct(Location $location, ?Entity $shootingEntity, ?CompoundTag $nbt = null){
 		parent::__construct($location, $nbt);
+		$this->random = new Random(random_int(PHP_INT_MIN, PHP_INT_MAX));
 		if($shootingEntity !== null){
 			$this->setOwningEntity($shootingEntity);
 		}
+	}
+
+	private function shoot(Vector3 $directionVector, $jitter, $force) : void{
+		$motion = $directionVector->add(
+			$this->random->triangle(0.0, 0.0172275 * $jitter),
+			$this->random->triangle(0.0, 0.0172275 * $jitter),
+			$this->random->triangle(0.0, 0.0172275 * $jitter)
+		)->multiply($force);
+		$d3 = (new Vector2($motion->x, $motion->z))->length();
+		$this->setMotion($motion);
+		$this->setRotation(
+			rad2deg(atan2($motion->x, $motion->z)),
+			rad2deg(atan2($motion->y, $d3))
+		);
+	}
+
+	public function shootFromRotation(Entity $shooter, float $yaw, float $pitch, float $pitchOffset, float $force, float $jitter) : void{
+		$pitchRad = deg2rad($pitch + $pitchOffset);
+		$yawRad = deg2rad($yaw);
+		$y = -sin($pitchRad);
+		$xz = cos($pitchRad);
+		$x = -$xz * sin($yawRad);
+		$z = $xz * cos($yawRad);
+
+		$directionVector = (new Vector3($x, $y, $z))->normalize();
+
+		$this->shoot($directionVector, $jitter, $force);
+		$motion = $this->getMotion();
+		$shooterMotion = $shooter->getMotion();
+
+		$motion->x += $shooterMotion->x;
+		$motion->y += $shooter->isOnGround() ? 0.0 : $shooterMotion->y;
+		$motion->z += $shooterMotion->z;
+		$this->setMotion($motion);
 	}
 
 	public function attack(EntityDamageEvent $source) : void{

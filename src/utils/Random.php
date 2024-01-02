@@ -123,4 +123,8 @@ class Random{
 	public function nextBoundedInt(int $bound) : int{
 		return $this->nextInt() % $bound;
 	}
+
+	public function triangle(float $min, float $max) : float{
+		return $min + $max * ($this->nextFloat() - $this->nextFloat());
+	}
 }

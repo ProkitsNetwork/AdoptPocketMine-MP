@@ -34,13 +34,15 @@ abstract class ProjectileItem extends Item{
 
 	abstract public function getThrowForce() : float;
 
+	public function getJitter() : float{ return 1.0; }
+
 	abstract protected function createEntity(Location $location, Player $thrower) : Throwable;
 
 	public function onClickAir(Player $player, Vector3 $directionVector, array &$returnedItems) : ItemUseResult{
 		$location = $player->getLocation();
 
 		$projectile = $this->createEntity(Location::fromObject($player->getEyePos(), $player->getWorld(), $location->yaw, $location->pitch), $player);
-		$projectile->setMotion($directionVector->multiply($this->getThrowForce()));
+		$projectile->shootFromRotation($player, $location->yaw, $location->pitch, -20.0, $this->getThrowForce(), $this->getJitter());
 
 		$projectileEv = new ProjectileLaunchEvent($projectile);
 		$projectileEv->call();
