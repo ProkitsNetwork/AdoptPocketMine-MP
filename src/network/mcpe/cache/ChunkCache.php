@@ -89,7 +89,8 @@ class ChunkCache implements ChunkListener{
 	private function __construct(
 		private World $world,
 		private Compressor $compressor
-	){}
+	){
+	}
 
 	/**
 	 * Requests asynchronous preparation of the chunk at the given coordinates.
@@ -180,7 +181,10 @@ class ChunkCache implements ChunkListener{
 			foreach($this->caches[$chunkHash] as $protocolId => $cache){
 				if(!$cache->hasResult()){
 					//some requesters are waiting for this chunk, so their request needs to be fulfilled
-					$this->restartPendingRequest($chunkX, $chunkZ, $protocolId);
+					$cache->cancel();
+					unset($this->caches[$chunkHash][$protocolId]);
+
+					$this->request($chunkX, $chunkZ, TypeConverter::getInstance($protocolId))->onResolve(...$cache->getResolveCallbacks());
 				}else{
 					//dump the cache, it'll be regenerated the next time it's requested
 					$this->destroy($chunkX, $chunkZ, $protocolId);
