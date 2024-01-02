@@ -42,6 +42,7 @@ use pocketmine\entity\projectile\Arrow;
 use pocketmine\entity\projectile\Egg;
 use pocketmine\entity\projectile\EnderPearl;
 use pocketmine\entity\projectile\ExperienceBottle;
+use pocketmine\entity\projectile\FishingHook;
 use pocketmine\entity\projectile\Snowball;
 use pocketmine\entity\projectile\SplashPotion;
 use pocketmine\item\Item;
@@ -114,6 +115,10 @@ final class EntityFactory{
 		$this->register(FallingBlock::class, function(World $world, CompoundTag $nbt) : FallingBlock{
 			return new FallingBlock(Helper::parseLocation($nbt, $world), FallingBlock::parseBlockNBT(RuntimeBlockStateRegistry::getInstance(), $nbt), $nbt);
 		}, ['FallingSand', 'minecraft:falling_block']);
+
+		$this->register(FishingHook::class, function(World $world, CompoundTag $nbt) : FishingHook{
+			return new FishingHook(EntityDataHelper::parseLocation($nbt, $world), null, $nbt);
+		}, ['FishingHook', 'minecraft:fishing_hook']);
 
 		$this->register(ItemEntity::class, function(World $world, CompoundTag $nbt) : ItemEntity{
 			$itemTag = $nbt->getCompoundTag(ItemEntity::TAG_ITEM);

@@ -37,6 +37,9 @@ class EnderPearl extends Throwable{
 		if($owner !== null){
 			//TODO: check end gateways (when they are added)
 			//TODO: spawn endermites at origin
+			if($this->getWorld() !== $owner->getWorld()){
+				return;
+			}
 
 			$this->getWorld()->addParticle($origin = $owner->getPosition(), new EndermanTeleportParticle());
 			$this->getWorld()->addSound($origin, new EndermanTeleportSound());

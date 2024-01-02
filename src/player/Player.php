@@ -42,6 +42,7 @@ use pocketmine\entity\Living;
 use pocketmine\entity\Location;
 use pocketmine\entity\object\ItemEntity;
 use pocketmine\entity\projectile\Arrow;
+use pocketmine\entity\projectile\FishingHook;
 use pocketmine\entity\Skin;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
@@ -137,6 +138,7 @@ use pocketmine\world\sound\Sound;
 use pocketmine\world\World;
 use pocketmine\YmlServerProperties;
 use Ramsey\Uuid\UuidInterface;
+use WeakReference;
 use function abs;
 use function array_filter;
 use function array_shift;
@@ -296,6 +298,9 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 
 	protected ?SurvivalBlockBreakHandler $blockBreakHandler = null;
 
+	/** @var WeakReference<FishingHook>|null */
+	protected ?WeakReference $fishing = null;
+
 	public function __construct(Server $server, NetworkSession $session, PlayerInfo $playerInfo, bool $authenticated, Location $spawnLocation, ?CompoundTag $namedtag){
 		$username = TextFormat::clean($playerInfo->getUsername());
 		$this->logger = new \PrefixedLogger($server->getLogger(), "Player: $username");
@@ -334,6 +339,18 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 		$this->usedChunks[World::chunkHash($xSpawnChunk, $zSpawnChunk)] = UsedChunkStatus::NEEDED;
 
 		parent::__construct($spawnLocation, $this->playerInfo->getSkin(), $namedtag);
+	}
+
+	public function setFishingHook(?FishingHook $hook) : void{
+		if($hook !== null){
+			$this->fishing = WeakReference::create($hook);
+		}else{
+			$this->fishing = null;
+		}
+	}
+
+	public function getFishing() : ?FishingHook{
+		return $this->fishing?->get();
 	}
 
 	protected function initHumanData(CompoundTag $nbt) : void{
