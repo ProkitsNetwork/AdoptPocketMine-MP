@@ -41,4 +41,12 @@ class Snowball extends ProjectileItem{
 	public function getThrowForce() : float{
 		return 1.5;
 	}
+
+	public function getJitter() : float{
+		return 1.0;
+	}
+
+	public function getPitchOffset() : float{
+		return 0.0;
+	}
 }

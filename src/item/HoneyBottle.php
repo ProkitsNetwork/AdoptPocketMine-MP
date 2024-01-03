@@ -26,29 +26,9 @@ namespace pocketmine\item;
 use pocketmine\entity\effect\VanillaEffects;
 use pocketmine\entity\Living;
 
-final class HoneyBottle extends Food{
+final class HoneyBottle extends Item{
 
 	public function getMaxStackSize() : int{
 		return 16;
-	}
-
-	public function requiresHunger() : bool{
-		return false;
-	}
-
-	public function getFoodRestore() : int{
-		return 6;
-	}
-
-	public function getSaturationRestore() : float{
-		return 1.2;
-	}
-
-	public function getResidue() : Item{
-		return VanillaItems::GLASS_BOTTLE();
-	}
-
-	public function onConsume(Living $consumer) : void{
-		$consumer->getEffects()->remove(VanillaEffects::POISON());
 	}
 }
