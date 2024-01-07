@@ -132,7 +132,6 @@ use function count;
 use function date;
 use function fclose;
 use function file_exists;
-use function file_put_contents;
 use function filemtime;
 use function fopen;
 use function get_class;
@@ -169,7 +168,6 @@ use function touch;
 use function trim;
 use function yaml_parse;
 use const DIRECTORY_SEPARATOR;
-use const PHP_EOL;
 use const PHP_INT_MAX;
 
 /**
@@ -831,7 +829,7 @@ class Server{
 				if(VersionInfo::IS_DEVELOPMENT_BUILD){
 					$content = str_replace("preferred-channel: stable", "preferred-channel: beta", $content);
 				}
-				@file_put_contents($pocketmineYmlPath, $content);
+				@Filesystem::safeFilePutContents($pocketmineYmlPath, $content);
 			}
 
 			$this->configGroup = new ServerConfigGroup(

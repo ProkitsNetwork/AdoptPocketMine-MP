@@ -37,7 +37,6 @@ use pocketmine\world\World;
 use pocketmine\world\WorldCreationOptions;
 use Symfony\Component\Filesystem\Path;
 use function ceil;
-use function file_put_contents;
 use function microtime;
 use function zlib_decode;
 use function zlib_encode;
@@ -86,7 +85,7 @@ class JavaWorldData extends BaseNbtWorldData{
 
 		$nbt = new BigEndianNbtSerializer();
 		$buffer = zlib_encode($nbt->write(new TreeRoot(CompoundTag::create()->setTag(self::TAG_ROOT_DATA, $worldData))), ZLIB_ENCODING_GZIP);
-		file_put_contents(Path::join($path, "level.dat"), $buffer);
+		Filesystem::safeFilePutContents(Path::join($path, "level.dat"), $buffer);
 	}
 
 	protected function load() : CompoundTag{

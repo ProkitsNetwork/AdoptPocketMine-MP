@@ -48,10 +48,16 @@ use pocketmine\utils\Random;
 use function assert;
 use function atan2;
 use function ceil;
+use function cos;
 use function count;
+use function deg2rad;
+use function rad2deg;
+use function random_int;
+use function sin;
 use function sqrt;
 use const M_PI;
 use const PHP_INT_MAX;
+use const PHP_INT_MIN;
 
 abstract class Projectile extends Entity{
 	private const TAG_STUCK_ON_BLOCK_POS = "StuckToBlockPos";

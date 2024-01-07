@@ -25,6 +25,7 @@ namespace pocketmine\network\mcpe\cache;
 
 use pocketmine\inventory\CreativeInventory;
 use pocketmine\network\mcpe\convert\TypeConverter;
+use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CreativeContentPacket;
 use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\inventory\CreativeContentEntry;
@@ -70,7 +71,7 @@ final class CreativeInventoryCache{
 
 		$packet = CreativeContentPacket::create($entries);
 		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
-		$packet->encode($out);
+		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$creativeContentCacheRebuild->stopTiming();
 		return $out->getBuffer();
 	}

@@ -31,6 +31,7 @@ use pocketmine\crafting\ShapelessRecipeType;
 use pocketmine\data\bedrock\item\ItemTypeSerializeException;
 use pocketmine\data\bedrock\ItemTagDowngrader;
 use pocketmine\network\mcpe\convert\TypeConverter;
+use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CraftingDataPacket;
 use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\recipe\CraftingRecipeBlockName;
@@ -207,7 +208,7 @@ final class CraftingDataCache{
 
 		$packet = CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
 		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
-		$packet->encode($out);
+		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$craftingDataCacheRebuild->stopTiming();
 		return $out->getBuffer();
 	}

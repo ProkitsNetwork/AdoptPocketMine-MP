@@ -83,6 +83,10 @@ abstract class Timings{
 	public static TimingsHandler $syncPlayerDataLoad;
 	public static TimingsHandler $syncPlayerDataSave;
 
+	public static TimingsHandler $io;
+	public static TimingsHandler $fileGetContents;
+	public static TimingsHandler $filePutContents;
+
 	/** @var TimingsHandler[] */
 	public static array $entityTypeTimingMap = [];
 	/** @var TimingsHandler[] */
@@ -192,6 +196,9 @@ abstract class Timings{
 		self::$craftingDataCacheRebuild = new TimingsHandler("Build CraftingDataPacket Cache");
 		self::$creativeContentCacheRebuild = new TimingsHandler("Build CreativeContentPacket Cache");
 
+		self::$io = new TimingsHandler("IO");
+		self::$fileGetContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
+		self::$filePutContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
 	}
 
 	public static function getScheduledTaskTimings(TaskHandler $task, int $period) : TimingsHandler{

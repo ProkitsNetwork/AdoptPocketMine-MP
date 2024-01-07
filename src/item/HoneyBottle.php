@@ -23,9 +23,6 @@ declare(strict_types=1);
 
 namespace pocketmine\item;
 
-use pocketmine\entity\effect\VanillaEffects;
-use pocketmine\entity\Living;
-
 final class HoneyBottle extends Item{
 
 	public function getMaxStackSize() : int{

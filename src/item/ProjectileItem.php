@@ -38,7 +38,6 @@ abstract class ProjectileItem extends Item{
 
 	abstract public function getPitchOffset() : float;
 
-
 	abstract protected function createEntity(Location $location, Player $thrower) : Throwable;
 
 	public function onClickAir(Player $player, Vector3 $directionVector, array &$returnedItems) : ItemUseResult{

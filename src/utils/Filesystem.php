@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\utils;
 
 use pocketmine\errorhandler\ErrorToExceptionHandler;
+use pocketmine\timings\Timings;
 use Symfony\Component\Filesystem\Path;
 use function copy;
 use function dirname;
@@ -236,6 +237,38 @@ final class Filesystem{
 	 * @throws \RuntimeException if the operation failed for any reason
 	 */
 	public static function safeFilePutContents(string $fileName, string $contents, int $flags = 0, $context = null) : void{
+		if(isset(Timings::$filePutContents)){
+			Timings::$filePutContents->time(static fn() => self::safeFilePutContentsInner($fileName, $context, $contents, $flags));
+			return;
+		}
+		self::safeFilePutContentsInner($fileName, $context, $contents, $flags);
+	}
+
+	/**
+	 * Wrapper around file_get_contents() which throws an exception instead of generating E_* errors.
+	 *
+	 * @phpstan-param resource|null $context
+	 * @phpstan-param 0|positive-int      $offset
+	 * @phpstan-param 0|positive-int|null $length
+	 *
+	 * @throws \RuntimeException
+	 */
+	public static function fileGetContents(string $fileName, bool $useIncludePath = false, $context = null, int $offset = 0, ?int $length = null) : string{
+		if(isset(Timings::$fileGetContents)){
+			return Timings::$fileGetContents->time(static fn() => self::fileGetContentsInner($fileName, $useIncludePath, $context, $offset, $length));
+		}
+		return self::fileGetContentsInner($fileName, $useIncludePath, $context, $offset, $length);
+	}
+
+	private static function fileGetContentsInner(string $fileName, bool $useIncludePath, $context, int $offset, ?int $length) : string{
+		try{
+			return ErrorToExceptionHandler::trapAndRemoveFalse(fn() => file_get_contents($fileName, $useIncludePath, $context, $offset, $length));
+		}catch(\ErrorException $e){
+			throw new \RuntimeException("Failed to read file $fileName: " . $e->getMessage(), 0, $e);
+		}
+	}
+
+	private static function safeFilePutContentsInner(string $fileName, $context, string $contents, int $flags) : void{
 		$directory = dirname($fileName);
 		if(!is_dir($directory)){
 			throw new \RuntimeException("Target directory path does not exist or is not a directory");
@@ -290,23 +323,6 @@ final class Filesystem{
 				throw new \RuntimeException("Failed to move temporary file contents into target file: " . $copyException->getMessage(), 0, $copyException);
 			}
 			@unlink($temporaryFileName);
-		}
-	}
-
-	/**
-	 * Wrapper around file_get_contents() which throws an exception instead of generating E_* errors.
-	 *
-	 * @phpstan-param resource|null       $context
-	 * @phpstan-param 0|positive-int      $offset
-	 * @phpstan-param 0|positive-int|null $length
-	 *
-	 * @throws \RuntimeException
-	 */
-	public static function fileGetContents(string $fileName, bool $useIncludePath = false, $context = null, int $offset = 0, ?int $length = null) : string{
-		try{
-			return ErrorToExceptionHandler::trapAndRemoveFalse(fn() => file_get_contents($fileName, $useIncludePath, $context, $offset, $length));
-		}catch(\ErrorException $e){
-			throw new \RuntimeException("Failed to read file $fileName: " . $e->getMessage(), 0, $e);
 		}
 	}
 }
