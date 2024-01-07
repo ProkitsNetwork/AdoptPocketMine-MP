@@ -62,6 +62,7 @@ final class CreativeInventoryCache{
 	 */
 	private function buildCreativeInventoryCache(CreativeInventory $inventory) : string{
 		Timings::$creativeContentCacheRebuild->startTiming();
+		Timings::$creativeContentCacheShade->startTiming();
 		$entries = [];
 		$typeConverter = TypeConverter::getInstance($this->protocolId);
 		//creative inventory may have holes if items were unregistered - ensure network IDs used are always consistent
@@ -71,6 +72,7 @@ final class CreativeInventoryCache{
 
 		$packet = CreativeContentPacket::create($entries);
 		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		Timings::$creativeContentCacheShade->stopTiming();
 		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$creativeContentCacheRebuild->stopTiming();
 		return $out->getBuffer();

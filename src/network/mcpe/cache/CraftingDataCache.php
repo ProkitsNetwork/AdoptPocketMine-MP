@@ -80,6 +80,7 @@ final class CraftingDataCache{
 	private function buildCraftingDataCache(CraftingManager $manager) : string{
 		Timings::$craftingDataCacheRebuild->startTiming();
 
+		Timings::$craftingDataCacheShade->startTiming();
 		$nullUUID = Uuid::fromString(Uuid::NIL);
 		$converter = TypeConverter::getInstance($this->protocolId);
 		$itemTagDowngrader = ItemTagDowngrader::getInstance($this->protocolId);
@@ -208,6 +209,7 @@ final class CraftingDataCache{
 
 		$packet = CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
 		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		Timings::$craftingDataCacheShade->stopTiming();
 		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$craftingDataCacheRebuild->stopTiming();
 		return $out->getBuffer();

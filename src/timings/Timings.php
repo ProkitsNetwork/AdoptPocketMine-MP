@@ -77,6 +77,9 @@ abstract class Timings{
 	public static TimingsHandler $schedulerAsync;
 
 	public static TimingsHandler $playerCommand;
+	public static TimingsHandler $craftingDataCacheShade;
+	public static TimingsHandler $creativeContentCacheShade;
+
 	public static TimingsHandler $craftingDataCacheRebuild;
 	public static TimingsHandler $creativeContentCacheRebuild;
 
@@ -193,6 +196,8 @@ abstract class Timings{
 		self::$asyncTaskErrorParent = new TimingsHandler("Async Tasks - Error Handlers", self::$schedulerAsync);
 
 		self::$playerCommand = new TimingsHandler("Player Command");
+		self::$craftingDataCacheShade = new TimingsHandler("Shade CraftingDataPacket Cache");
+		self::$creativeContentCacheShade = new TimingsHandler("Shade CreativeContentPacket Cache");
 		self::$craftingDataCacheRebuild = new TimingsHandler("Build CraftingDataPacket Cache");
 		self::$creativeContentCacheRebuild = new TimingsHandler("Build CreativeContentPacket Cache");
 
