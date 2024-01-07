@@ -78,6 +78,7 @@ abstract class Timings{
 
 	public static TimingsHandler $playerCommand;
 	public static TimingsHandler $craftingDataCacheRebuild;
+	public static TimingsHandler $creativeContentCacheRebuild;
 
 	public static TimingsHandler $syncPlayerDataLoad;
 	public static TimingsHandler $syncPlayerDataSave;
@@ -189,6 +190,7 @@ abstract class Timings{
 
 		self::$playerCommand = new TimingsHandler("Player Command");
 		self::$craftingDataCacheRebuild = new TimingsHandler("Build CraftingDataPacket Cache");
+		self::$creativeContentCacheRebuild = new TimingsHandler("Build CreativeContentPacket Cache");
 
 	}
 

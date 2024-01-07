@@ -32,6 +32,7 @@ use pocketmine\data\bedrock\item\ItemTypeSerializeException;
 use pocketmine\data\bedrock\ItemTagDowngrader;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\CraftingDataPacket;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\recipe\CraftingRecipeBlockName;
 use pocketmine\network\mcpe\protocol\types\recipe\FurnaceRecipe as ProtocolFurnaceRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\FurnaceRecipeBlockName;
@@ -40,6 +41,7 @@ use pocketmine\network\mcpe\protocol\types\recipe\PotionContainerChangeRecipe as
 use pocketmine\network\mcpe\protocol\types\recipe\PotionTypeRecipe as ProtocolPotionTypeRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapedRecipe as ProtocolShapedRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapelessRecipe as ProtocolShapelessRecipe;
+use pocketmine\Server;
 use pocketmine\timings\Timings;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Binary;
@@ -52,12 +54,12 @@ final class CraftingDataCache{
 	use ProtocolSingletonTrait;
 
 	/**
-	 * @var CraftingDataPacket[]
-	 * @phpstan-var array<int, CraftingDataPacket>
+	 * @var string[]
+	 * @phpstan-var array<int, string>
 	 */
 	private array $caches = [];
 
-	public function getCache(CraftingManager $manager) : CraftingDataPacket{
+	public function getCache(CraftingManager $manager) : string{
 		$id = spl_object_id($manager);
 		if(!isset($this->caches[$id])){
 			$manager->getDestructorCallbacks()->add(function() use ($id) : void{
@@ -74,7 +76,7 @@ final class CraftingDataCache{
 	/**
 	 * Rebuilds the cached CraftingDataPacket.
 	 */
-	private function buildCraftingDataCache(CraftingManager $manager) : CraftingDataPacket{
+	private function buildCraftingDataCache(CraftingManager $manager) : string{
 		Timings::$craftingDataCacheRebuild->startTiming();
 
 		$nullUUID = Uuid::fromString(Uuid::NIL);
@@ -85,7 +87,7 @@ final class CraftingDataCache{
 		foreach($manager->getCraftingRecipeIndex() as $index => $recipe){
 			try{
 				if($recipe instanceof ShapelessRecipe){
-					$typeTag = match($recipe->getType()){
+					$typeTag = match ($recipe->getType()) {
 						ShapelessRecipeType::CRAFTING => CraftingRecipeBlockName::CRAFTING_TABLE,
 						ShapelessRecipeType::STONECUTTER => CraftingRecipeBlockName::STONECUTTER,
 						ShapelessRecipeType::CARTOGRAPHY => CraftingRecipeBlockName::CARTOGRAPHY_TABLE,
@@ -125,17 +127,17 @@ final class CraftingDataCache{
 							$index
 						);
 					}
-				}else {
+				}else{
 					//TODO: probably special recipe types
 				}
-			}catch(\InvalidArgumentException|ItemTypeSerializeException) {
+			}catch(\InvalidArgumentException|ItemTypeSerializeException){
 				continue;
 			}
 		}
 
 		foreach(FurnaceType::cases() as $furnaceType){
 			try{
-				$typeTag = match($furnaceType){
+				$typeTag = match ($furnaceType) {
 					FurnaceType::FURNACE => FurnaceRecipeBlockName::FURNACE,
 					FurnaceType::BLAST_FURNACE => FurnaceRecipeBlockName::BLAST_FURNACE,
 					FurnaceType::SMOKER => FurnaceRecipeBlockName::SMOKER,
@@ -203,7 +205,10 @@ final class CraftingDataCache{
 			}
 		}
 
+		$packet = CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
+		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		$packet->encode($out);
 		Timings::$craftingDataCacheRebuild->stopTiming();
-		return CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
+		return $out->getBuffer();
 	}
 }

@@ -26,7 +26,10 @@ namespace pocketmine\network\mcpe\cache;
 use pocketmine\inventory\CreativeInventory;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\CreativeContentPacket;
+use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\inventory\CreativeContentEntry;
+use pocketmine\Server;
+use pocketmine\timings\Timings;
 use pocketmine\utils\ProtocolSingletonTrait;
 use function spl_object_id;
 
@@ -34,12 +37,12 @@ final class CreativeInventoryCache{
 	use ProtocolSingletonTrait;
 
 	/**
-	 * @var CreativeContentPacket[]
-	 * @phpstan-var array<int, CreativeContentPacket>
+	 * @var string[]
+	 * @phpstan-var array<int, string>
 	 */
 	private array $caches = [];
 
-	public function getCache(CreativeInventory $inventory) : CreativeContentPacket{
+	public function getCache(CreativeInventory $inventory) : string{
 		$id = spl_object_id($inventory);
 		if(!isset($this->caches[$id])){
 			$inventory->getDestructorCallbacks()->add(function() use ($id) : void{
@@ -56,7 +59,8 @@ final class CreativeInventoryCache{
 	/**
 	 * Rebuild the cache for the given inventory.
 	 */
-	private function buildCreativeInventoryCache(CreativeInventory $inventory) : CreativeContentPacket{
+	private function buildCreativeInventoryCache(CreativeInventory $inventory) : string{
+		Timings::$creativeContentCacheRebuild->startTiming();
 		$entries = [];
 		$typeConverter = TypeConverter::getInstance($this->protocolId);
 		//creative inventory may have holes if items were unregistered - ensure network IDs used are always consistent
@@ -64,6 +68,10 @@ final class CreativeInventoryCache{
 			$entries[] = new CreativeContentEntry($k, $typeConverter->coreItemStackToNet($item));
 		}
 
-		return CreativeContentPacket::create($entries);
+		$packet = CreativeContentPacket::create($entries);
+		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		$packet->encode($out);
+		Timings::$creativeContentCacheRebuild->stopTiming();
+		return $out->getBuffer();
 	}
 }
