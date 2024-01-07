@@ -90,6 +90,9 @@ abstract class Timings{
 	public static TimingsHandler $fileGetContents;
 	public static TimingsHandler $filePutContents;
 
+	public static TimingsHandler $baseEntityBaseTick;
+	public static TimingsHandler $entityCheckBlockIntersections;
+
 	/** @var TimingsHandler[] */
 	public static array $entityTypeTimingMap = [];
 	/** @var TimingsHandler[] */
@@ -204,6 +207,9 @@ abstract class Timings{
 		self::$io = new TimingsHandler("IO");
 		self::$fileGetContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
 		self::$filePutContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
+
+		self::$baseEntityBaseTick = new TimingsHandler("Entity::class entityBaseTick");
+		self::$entityCheckBlockIntersections = new TimingsHandler("Entity::class checkBlockIntersections",self::$baseEntityBaseTick);
 	}
 
 	public static function getScheduledTaskTimings(TaskHandler $task, int $period) : TimingsHandler{

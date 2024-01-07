@@ -628,6 +628,7 @@ abstract class Entity{
 	protected function entityBaseTick(int $tickDiff = 1) : bool{
 		//TODO: check vehicles
 
+		Timings::$baseEntityBaseTick->startTiming();
 		if($this->justCreated){
 			$this->justCreated = false;
 			if(!$this->isAlive()){
@@ -644,7 +645,9 @@ abstract class Entity{
 		$hasUpdate = false;
 
 		if($this->checkBlockIntersectionsNextTick){
+			Timings::$entityCheckBlockIntersections->startTiming();
 			$this->checkBlockIntersections();
+			Timings::$entityCheckBlockIntersections->stopTiming();
 		}
 		$this->checkBlockIntersectionsNextTick = true;
 
@@ -667,6 +670,7 @@ abstract class Entity{
 
 		$this->ticksLived += $tickDiff;
 
+		Timings::$baseEntityBaseTick->stopTiming();
 		return $hasUpdate;
 	}
 
