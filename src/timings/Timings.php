@@ -205,8 +205,8 @@ abstract class Timings{
 		self::$creativeContentCacheRebuild = new TimingsHandler("Build CreativeContentPacket Cache");
 
 		self::$io = new TimingsHandler("IO");
-		self::$fileGetContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
-		self::$filePutContents = new TimingsHandler("Build CreativeContentPacket Cache", self::$io);
+		self::$fileGetContents = new TimingsHandler("Read File", self::$io);
+		self::$filePutContents = new TimingsHandler("Write File", self::$io);
 
 		self::$baseEntityBaseTick = new TimingsHandler("Entity::class entityBaseTick");
 		self::$entityCheckBlockIntersections = new TimingsHandler("Entity::class checkBlockIntersections",self::$baseEntityBaseTick);
