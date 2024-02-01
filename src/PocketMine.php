@@ -105,6 +105,7 @@ namespace pocketmine {
 			"pcre" => "PCRE",
 			"phar" => "Phar",
 			"pmmpthread" => "pmmpthread",
+			"libdeflate" => "libdeflate",
 			"reflection" => "Reflection",
 			"sockets" => "Sockets",
 			"spl" => "SPL",
