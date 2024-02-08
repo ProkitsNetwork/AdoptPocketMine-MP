@@ -69,6 +69,6 @@ class FishingRod extends Durable{
 			$this->applyDamage(1);
 		}
 		$player->broadcastAnimation(new ArmSwingAnimation($player));
-		return ItemUseResult::SUCCESS();
+		return ItemUseResult::SUCCESS;
 	}
 }
