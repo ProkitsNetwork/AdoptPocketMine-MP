@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\compression;
 
+use pocketmine\network\mcpe\protocol\types\CompressionAlgorithm;
 use pocketmine\utils\SingletonTrait;
 use function libdeflate_deflate_compress;
 use function strlen;
@@ -68,5 +69,9 @@ final class ZlibCompressor implements Compressor{
 		$level = $compressible ? $this->level : 0;
 
 		return libdeflate_deflate_compress($payload, $level);
+	}
+
+	public function getNetworkId() : int{
+		return CompressionAlgorithm::ZLIB;
 	}
 }
