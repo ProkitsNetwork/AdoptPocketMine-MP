@@ -54,11 +54,17 @@ class TimeCommand extends VanillaCommand{
 			throw new InvalidCommandSyntaxException();
 		}
 
+		if($sender instanceof Player){
+			$worlds = [$sender->getWorld()];
+		}else{
+			$worlds = $sender->getServer()->getWorldManager()->getWorlds();
+		}
+
 		if($args[0] === "start"){
 			if(!$this->testPermission($sender, DefaultPermissionNames::COMMAND_TIME_START)){
 				return true;
 			}
-			foreach($sender->getServer()->getWorldManager()->getWorlds() as $world){
+			foreach($worlds as $world){
 				$world->startTime();
 			}
 			Command::broadcastCommandMessage($sender, "Restarted the time");
@@ -67,7 +73,7 @@ class TimeCommand extends VanillaCommand{
 			if(!$this->testPermission($sender, DefaultPermissionNames::COMMAND_TIME_STOP)){
 				return true;
 			}
-			foreach($sender->getServer()->getWorldManager()->getWorlds() as $world){
+			foreach($worlds as $world){
 				$world->stopTime();
 			}
 			Command::broadcastCommandMessage($sender, "Stopped the time");
@@ -118,7 +124,7 @@ class TimeCommand extends VanillaCommand{
 					break;
 			}
 
-			foreach($sender->getServer()->getWorldManager()->getWorlds() as $world){
+			foreach($worlds as $world){
 				$world->setTime($value);
 			}
 			Command::broadcastCommandMessage($sender, KnownTranslationFactory::commands_time_set((string) $value));
@@ -128,7 +134,7 @@ class TimeCommand extends VanillaCommand{
 			}
 
 			$value = $this->getInteger($sender, $args[1], 0);
-			foreach($sender->getServer()->getWorldManager()->getWorlds() as $world){
+			foreach($worlds as $world){
 				$world->setTime($world->getTime() + $value);
 			}
 			Command::broadcastCommandMessage($sender, KnownTranslationFactory::commands_time_added((string) $value));
