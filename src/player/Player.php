@@ -647,6 +647,10 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 		$this->displayName = $ev->getNewName();
 	}
 
+	public function canBeRenamed() : bool{
+		return false;
+	}
+
 	/**
 	 * Returns the player's locale, e.g. en_US.
 	 */
@@ -2000,6 +2004,10 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 		}
 		$this->setFlying($fly);
 		return true;
+	}
+
+	public function toggleCrawl(bool $crawl) : bool{
+		return false;
 	}
 
 	public function toggleGlide(bool $glide) : bool{
