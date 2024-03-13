@@ -208,7 +208,7 @@ final class CraftingDataCache{
 		}
 
 		$packet = CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
-		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		$out = PacketSerializer::encoder($this->protocolId);
 		Timings::$craftingDataCacheShade->stopTiming();
 		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$craftingDataCacheRebuild->stopTiming();

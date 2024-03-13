@@ -71,7 +71,7 @@ final class CreativeInventoryCache{
 		}
 
 		$packet = CreativeContentPacket::create($entries);
-		$out = PacketSerializer::encoder(Server::getInstance()->getPacketSerializerContext(TypeConverter::getInstance($this->protocolId)));
+		$out = PacketSerializer::encoder($this->protocolId);
 		Timings::$creativeContentCacheShade->stopTiming();
 		NetworkSession::encodePacketTimed($out, $packet);
 		Timings::$creativeContentCacheRebuild->stopTiming();
