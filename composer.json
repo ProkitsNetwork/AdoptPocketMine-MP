@@ -33,9 +33,9 @@
       "composer-runtime-api": "^2.0",
       "adhocore/json-comment": "~1.2.0",
       "pocketmine/netresearch-jsonmapper": "~v4.4.999",
-      "pocketmine/bedrock-block-upgrade-schema": "~4.0.0+bedrock-1.20.70",
+      "pocketmine/bedrock-block-upgrade-schema": "~4.1.0+bedrock-1.20.80",
       "nethergamesmc/bedrock-data": "dev-master",
-      "pocketmine/bedrock-item-upgrade-schema": "~1.8.0+bedrock-1.20.70",
+      "pocketmine/bedrock-item-upgrade-schema": "~1.9.0+bedrock-1.20.80",
       "nethergamesmc/bedrock-protocol": "dev-master",
       "pocketmine/binaryutils": "^0.2.1",
       "pocketmine/callback-validator": "^1.0.2",
@@ -83,11 +83,14 @@
          "@composer install --no-dev --classmap-authoritative --ignore-platform-reqs",
          "@php -dphar.readonly=0 build/server-phar.php"
       ],
-      "update-registry-annotations": [
+      "update-codegen": [
+         "@php build/generate-bedrockdata-path-consts.php",
+         "@php build/generate-biome-ids.php",
+         "@php build/generate-block-serializer-consts.php vendor/pocketmine/bedrock-data/canonical_block_states.nbt",
+         "@php build/generate-item-type-names.php vendor/pocketmine/bedrock-data/required_item_list.json",
+         "@php build/generate-known-translation-apis.php",
+         "@php build/generate-pocketmine-yml-property-consts.php",
          "@php build/generate-registry-annotations.php src"
-      ],
-      "update-translation-apis": [
-         "@php build/generate-known-translation-apis.php"
       ]
    },
    "repositories": [
