@@ -45,12 +45,4 @@ class EnderPearl extends ProjectileItem{
 	public function getCooldownTicks() : int{
 		return 20;
 	}
-
-	public function getJitter() : float{
-		return 1.0;
-	}
-
-	public function getPitchOffset() : float{
-		return 0.0;
-	}
 }
