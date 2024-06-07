@@ -52,6 +52,7 @@ use pocketmine\event\world\ChunkLoadEvent;
 use pocketmine\event\world\ChunkPopulateEvent;
 use pocketmine\event\world\ChunkUnloadEvent;
 use pocketmine\event\world\RequestChunkLoadEvent;
+use pocketmine\event\world\RequestChunkPopulationEvent;
 use pocketmine\event\world\SpawnChangeEvent;
 use pocketmine\event\world\WorldDifficultyChangeEvent;
 use pocketmine\event\world\WorldDisplayNameChangeEvent;
@@ -3323,6 +3324,15 @@ class World implements ChunkManager{
 		$temporaryChunkLoader = new class implements ChunkLoader{};
 		$this->registerChunkLoader($temporaryChunkLoader, $chunkX, $chunkZ);
 		$chunk = $this->loadChunk($chunkX, $chunkZ);
+		if($chunk === null && RequestChunkPopulationEvent::hasHandlers()){
+			$event = new RequestChunkPopulationEvent($this, $chunkX, $chunkZ);
+			$event->call();
+			$hijackedPopulated = $event->getPopulated();
+			if($hijackedPopulated !== null){
+				$this->setChunk($chunkX, $chunkZ, $hijackedPopulated);
+				$chunk = $hijackedPopulated;
+			}
+		}
 		$this->unregisterChunkLoader($temporaryChunkLoader, $chunkX, $chunkZ);
 		if($chunk !== null && $chunk->isPopulated()){
 			//chunk is already populated; return a pre-resolved promise that will directly fire callbacks assigned
