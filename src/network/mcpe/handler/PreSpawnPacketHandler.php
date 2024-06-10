@@ -81,6 +81,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 			$levelSettings->rainLevel = 0; //TODO: implement these properly
 			$levelSettings->lightningLevel = 0;
 			$levelSettings->commandsEnabled = true;
+			$levelSettings->disablePersona = true;
 			$levelSettings->gameRules = [
 				"naturalregeneration" => new BoolGameRule(false, false) //Hack for client side regeneration
 			];
@@ -104,7 +105,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				0,
 				"",
 				true,
-				"NetherGames v5.0",
+				"ProkitsNetwork/AdoptPocketMine-MP v5.0",
 				Uuid::fromString(Uuid::NIL),
 				false,
 				false,
