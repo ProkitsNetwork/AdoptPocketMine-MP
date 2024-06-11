@@ -152,7 +152,7 @@ class MemoryManager{
 		$this->lowMemClearWorldCache = $config->getPropertyBool(Yml::MEMORY_WORLD_CACHES_LOW_MEMORY_TRIGGER, true);
 
 		$this->dumpWorkers = $config->getPropertyBool(Yml::MEMORY_MEMORY_DUMP_DUMP_ASYNC_WORKER, true);
-		gc_enable();
+		gc_disable();
 	}
 
 	public function isLowMemory() : bool{
@@ -465,7 +465,6 @@ class MemoryManager{
 		$logger->info("Finished!");
 
 		ini_set('memory_limit', $hardLimit);
-		gc_enable();
 	}
 
 	/**
