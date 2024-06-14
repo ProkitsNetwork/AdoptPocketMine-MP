@@ -117,7 +117,7 @@ final class EntityFactory{
 		}, ['FallingSand', 'minecraft:falling_block']);
 
 		$this->register(FishingHook::class, function(World $world, CompoundTag $nbt) : FishingHook{
-			return new FishingHook(EntityDataHelper::parseLocation($nbt, $world), null, $nbt);
+			return new FishingHook(Helper::parseLocation($nbt, $world), null, $nbt);
 		}, ['FishingHook', 'minecraft:fishing_hook']);
 
 		$this->register(ItemEntity::class, function(World $world, CompoundTag $nbt) : ItemEntity{
