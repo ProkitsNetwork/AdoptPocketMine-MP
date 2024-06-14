@@ -260,6 +260,11 @@ final class Filesystem{
 		return self::fileGetContentsInner($fileName, $useIncludePath, $context, $offset, $length);
 	}
 
+	/**
+	 * @phpstan-param resource|null $context
+	 * @phpstan-param 0|positive-int      $offset
+	 * @phpstan-param 0|positive-int|null $length
+	 */
 	private static function fileGetContentsInner(string $fileName, bool $useIncludePath, $context, int $offset, ?int $length) : string{
 		try{
 			return ErrorToExceptionHandler::trapAndRemoveFalse(fn() => file_get_contents($fileName, $useIncludePath, $context, $offset, $length));
@@ -268,6 +273,9 @@ final class Filesystem{
 		}
 	}
 
+	/**
+	 * @phpstan-param resource|null $context
+	 */
 	private static function safeFilePutContentsInner(string $fileName, $context, string $contents, int $flags) : void{
 		$directory = dirname($fileName);
 		if(!is_dir($directory)){

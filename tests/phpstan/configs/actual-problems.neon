@@ -1210,3 +1210,7 @@ parameters:
 			count: 1
 			path: ../../../src/promise/Promise.php
 
+		-
+			message: "#^Method pocketmine\\\\network\\\\mcpe\\\\cache\\\\ChunkCache\\:\\:restartPendingRequest\\(\\) is unused\\.$#"
+			count: 1
+			path: ../../../src/network/mcpe/cache/ChunkCache.php

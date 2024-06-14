@@ -138,7 +138,7 @@ class ChunkCache implements ChunkListener{
 
 	private function destroy(int $chunkX, int $chunkZ, int $protocolId = null) : bool{
 		$chunkHash = World::chunkHash($chunkX, $chunkZ);
-
+///
 		if($protocolId === null){
 			$existing = false;
 

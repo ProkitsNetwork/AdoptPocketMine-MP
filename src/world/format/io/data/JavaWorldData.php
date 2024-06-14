@@ -85,7 +85,7 @@ class JavaWorldData extends BaseNbtWorldData{
 
 		$nbt = new BigEndianNbtSerializer();
 		$buffer = zlib_encode($nbt->write(new TreeRoot(CompoundTag::create()->setTag(self::TAG_ROOT_DATA, $worldData))), ZLIB_ENCODING_GZIP);
-		Filesystem::safeFilePutContents(Path::join($path, "level.dat"), $buffer);
+		Filesystem::safeFilePutContents(Path::join($path, "level.dat"), Utils::assumeNotFalse($buffer));
 	}
 
 	protected function load() : CompoundTag{
