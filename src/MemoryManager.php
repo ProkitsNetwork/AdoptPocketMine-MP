@@ -41,7 +41,6 @@ use function fopen;
 use function fwrite;
 use function gc_collect_cycles;
 use function gc_disable;
-use function gc_enable;
 use function gc_mem_caches;
 use function get_class;
 use function get_declared_classes;
