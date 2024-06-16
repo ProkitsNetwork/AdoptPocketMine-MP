@@ -1831,7 +1831,6 @@ class Server{
 	private function tick() : void{
 		$tickTime = microtime(true);
 		if(($tickTime - $this->nextTick) < -0.025){ //Allow half a tick of diff
-var_dump("WW");
 			return;
 		}
 
