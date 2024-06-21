@@ -34,6 +34,8 @@ use pocketmine\block\utils\FroglightType;
 use pocketmine\block\utils\MobHeadType;
 use pocketmine\block\utils\SlabType;
 use pocketmine\block\VanillaBlocks as Blocks;
+use pocketmine\data\FilesystemCache;
+use pocketmine\data\FilesystemCacheKey;
 use pocketmine\item\VanillaItems as Items;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\utils\StringToTParser;
@@ -48,14 +50,25 @@ use function strtolower;
 final class StringToItemParser extends StringToTParser{
 	use SingletonTrait;
 
+	private static bool $useCache = false;
+
 	private static function make() : self{
 		$result = new self();
+		$cache = FilesystemCache::getInstance();
+		$data = $cache->get(FilesystemCacheKey::STRING_TO_ITEM_PARSER);
+		if($data !== null){
+			self::$useCache = true;
+			$result->reverseMap = $data;
+		}
 
 		self::registerDynamicBlocks($result);
 		self::registerBlocks($result);
 		self::registerDynamicItems($result);
 		self::registerItems($result);
 
+		if(!self::$useCache){
+			$cache->put(FilesystemCacheKey::STRING_TO_ITEM_PARSER, $result->reverseMap);
+		}
 		return $result;
 	}
 
@@ -1521,8 +1534,10 @@ final class StringToItemParser extends StringToTParser{
 
 	public function register(string $alias, \Closure $callback) : void{
 		parent::register($alias, $callback);
-		$item = $callback($alias);
-		$this->reverseMap[$item->getStateId()][$alias] = true;
+		if(!self::$useCache){
+			$item = $callback($alias);
+			$this->reverseMap[$item->getStateId()][$alias] = true;
+		}
 	}
 
 	/** @phpstan-param \Closure(string $input) : Block $callback */

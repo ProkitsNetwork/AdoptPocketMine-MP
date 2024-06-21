@@ -30,6 +30,8 @@ use pocketmine\crafting\ShapelessRecipe;
 use pocketmine\crafting\ShapelessRecipeType;
 use pocketmine\data\bedrock\item\ItemTypeSerializeException;
 use pocketmine\data\bedrock\ItemTagDowngrader;
+use pocketmine\data\FilesystemCache;
+use pocketmine\data\FilesystemCacheKey;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CraftingDataPacket;
@@ -43,6 +45,7 @@ use pocketmine\network\mcpe\protocol\types\recipe\PotionTypeRecipe as ProtocolPo
 use pocketmine\network\mcpe\protocol\types\recipe\RecipeUnlockingRequirement;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapedRecipe as ProtocolShapedRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\ShapelessRecipe as ProtocolShapelessRecipe;
+use pocketmine\Server;
 use pocketmine\timings\Timings;
 use pocketmine\utils\AssumptionFailedError;
 use pocketmine\utils\Binary;
@@ -62,16 +65,38 @@ final class CraftingDataCache{
 
 	public function getCache(CraftingManager $manager) : string{
 		$id = spl_object_id($manager);
+		$isDefault = $manager === Server::getInstance()->getCraftingManager();
 		if(!isset($this->caches[$id])){
-			$manager->getDestructorCallbacks()->add(function() use ($id) : void{
+			$manager->getDestructorCallbacks()->add(function() use ($isDefault, $id) : void{
 				unset($this->caches[$id]);
+				if($isDefault){
+					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCraftingDataKey($this->protocolId));
+				}
 			});
-			$manager->getRecipeRegisteredCallbacks()->add(function() use ($id) : void{
+			$manager->getRecipeRegisteredCallbacks()->add(function() use ($isDefault, $id) : void{
 				unset($this->caches[$id]);
+				if($isDefault){
+					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCraftingDataKey($this->protocolId));
+				}
 			});
-			$this->caches[$id] = $this->buildCraftingDataCache($manager);
+			$this->caches[$id] = $this->getCraftingDataPayload($manager, $isDefault);
 		}
 		return $this->caches[$id];
+	}
+
+	private function getCraftingDataPayload(CraftingManager $manager, bool $isDefault) : string{
+		if(!$isDefault){
+			return $this->buildCraftingDataCache($manager);
+		}
+		$key = FilesystemCacheKey::getCraftingDataKey($this->protocolId);
+		$cache = FilesystemCache::getInstance();
+		$cached = $cache->get($key);
+		if($cached !== null){
+			return $cached;
+		}
+		$buffer = $this->buildCraftingDataCache($manager);
+		$cache->put($key, $buffer);
+		return $buffer;
 	}
 
 	/**

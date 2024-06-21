@@ -285,6 +285,7 @@ JIT_WARNING
 
 		$cwd = Utils::assumeNotFalse(realpath(Utils::assumeNotFalse(getcwd())));
 		$dataPath = getopt_string(BootstrapOptions::DATA) ?? $cwd;
+		define('DATA_PATH', $dataPath);
 		$pluginPath = getopt_string(BootstrapOptions::PLUGINS) ?? $cwd . DIRECTORY_SEPARATOR . "plugins";
 		Filesystem::addCleanedPath($pluginPath, Filesystem::CLEAN_PATH_PLUGINS_PREFIX);
 

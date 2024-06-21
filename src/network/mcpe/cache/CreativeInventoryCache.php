@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\cache;
 
+use pocketmine\data\FilesystemCache;
+use pocketmine\data\FilesystemCacheKey;
 use pocketmine\inventory\CreativeInventory;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\NetworkSession;
@@ -43,17 +45,39 @@ final class CreativeInventoryCache{
 	private array $caches = [];
 
 	public function getCache(CreativeInventory $inventory) : string{
+		$isDefault = $inventory === CreativeInventory::getInstance();
 		$id = spl_object_id($inventory);
 		if(!isset($this->caches[$id])){
-			$inventory->getDestructorCallbacks()->add(function() use ($id) : void{
+			$inventory->getDestructorCallbacks()->add(function() use ($isDefault, $id) : void{
 				unset($this->caches[$id]);
+				if($isDefault){
+					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCreativeInventory($this->protocolId));
+				}
 			});
-			$inventory->getContentChangedCallbacks()->add(function() use ($id) : void{
+			$inventory->getContentChangedCallbacks()->add(function() use ($isDefault, $id) : void{
 				unset($this->caches[$id]);
+				if($isDefault){
+					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCreativeInventory($this->protocolId));
+				}
 			});
-			$this->caches[$id] = $this->buildCreativeInventoryCache($inventory);
+			$this->caches[$id] = $this->getCraftingDataPayload($inventory,$isDefault);
 		}
 		return $this->caches[$id];
+	}
+
+	private function getCraftingDataPayload(CreativeInventory $inventory, bool $isDefault) : string{
+		if(!$isDefault){
+			return $this->buildCreativeInventoryCache($inventory);
+		}
+		$key = FilesystemCacheKey::getCreativeInventory($this->protocolId);
+		$cache = FilesystemCache::getInstance();
+		$cached = $cache->get($key);
+		if($cached !== null){
+			return $cached;
+		}
+		$buffer = $this->buildCreativeInventoryCache($inventory);
+		$cache->put($key, $buffer);
+		return $buffer;
 	}
 
 	/**

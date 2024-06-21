@@ -28,7 +28,7 @@ use pocketmine\crafting\RecipeIngredient;
 use pocketmine\crafting\ShapedRecipe;
 use pocketmine\crafting\ShapelessRecipe;
 use pocketmine\crafting\TagWildcardRecipeIngredient;
-use pocketmine\utils\ProtocolSingletonTrait;
+use pocketmine\utils\CachedProtocolSingletonTrait;
 use pocketmine\utils\Utils;
 use function array_key_first;
 use function array_keys;
@@ -41,7 +41,7 @@ use function count;
  * @internal
  */
 final class ItemTagDowngrader{
-	use ProtocolSingletonTrait;
+	use CachedProtocolSingletonTrait;
 
 	private ItemTagToIdMap $map;
 	/** @phpstan-var array<string, list<string>> */

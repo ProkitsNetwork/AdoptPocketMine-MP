@@ -25,8 +25,8 @@ namespace pocketmine\data\bedrock;
 
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\CachedProtocolSingletonTrait;
 use pocketmine\utils\Filesystem;
-use pocketmine\utils\ProtocolSingletonTrait;
 use pocketmine\utils\Utils;
 use function array_keys;
 use function gettype;
@@ -42,7 +42,7 @@ use const JSON_THROW_ON_ERROR;
  * @internal
  */
 final class ItemTagToIdMap{
-	use ProtocolSingletonTrait;
+	use CachedProtocolSingletonTrait;
 
 	private const PATHS = [
 		ProtocolInfo::CURRENT_PROTOCOL => "",
@@ -56,7 +56,7 @@ final class ItemTagToIdMap{
 		ProtocolInfo::PROTOCOL_1_20_0 => "-1.20.0",
 	];
 
-	private static function make(int $protocolId) : self{
+	private static function makeCached(int $protocolId) : self{
 		$map = json_decode(Filesystem::fileGetContents(str_replace(".json", self::PATHS[$protocolId] . ".json", BedrockDataFiles::ITEM_TAGS_JSON)), true, flags: JSON_THROW_ON_ERROR);
 		if(!is_array($map)){
 			throw new AssumptionFailedError("Invalid item tag map, expected array");
