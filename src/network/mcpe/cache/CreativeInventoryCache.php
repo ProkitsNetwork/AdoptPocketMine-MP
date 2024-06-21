@@ -48,17 +48,11 @@ final class CreativeInventoryCache{
 		$isDefault = $inventory === CreativeInventory::getInstance();
 		$id = spl_object_id($inventory);
 		if(!isset($this->caches[$id])){
-			$inventory->getDestructorCallbacks()->add(function() use ($isDefault, $id) : void{
+			$inventory->getDestructorCallbacks()->add(function() use ($id) : void{
 				unset($this->caches[$id]);
-				if($isDefault){
-					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCreativeInventory($this->protocolId));
-				}
 			});
-			$inventory->getContentChangedCallbacks()->add(function() use ($isDefault, $id) : void{
+			$inventory->getContentChangedCallbacks()->add(function() use ($id) : void{
 				unset($this->caches[$id]);
-				if($isDefault){
-					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCreativeInventory($this->protocolId));
-				}
 			});
 			$this->caches[$id] = $this->getCraftingDataPayload($inventory,$isDefault);
 		}

@@ -67,17 +67,11 @@ final class CraftingDataCache{
 		$id = spl_object_id($manager);
 		$isDefault = $manager === Server::getInstance()->getCraftingManager();
 		if(!isset($this->caches[$id])){
-			$manager->getDestructorCallbacks()->add(function() use ($isDefault, $id) : void{
+			$manager->getDestructorCallbacks()->add(function() use ($id) : void{
 				unset($this->caches[$id]);
-				if($isDefault){
-					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCraftingDataKey($this->protocolId));
-				}
 			});
-			$manager->getRecipeRegisteredCallbacks()->add(function() use ($isDefault, $id) : void{
+			$manager->getRecipeRegisteredCallbacks()->add(function() use ($id) : void{
 				unset($this->caches[$id]);
-				if($isDefault){
-					FilesystemCache::getInstance()->remove(FilesystemCacheKey::getCraftingDataKey($this->protocolId));
-				}
 			});
 			$this->caches[$id] = $this->getCraftingDataPayload($manager, $isDefault);
 		}

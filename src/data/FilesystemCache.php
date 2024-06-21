@@ -33,9 +33,13 @@ use pocketmine\VersionInfo;
 use Symfony\Component\Filesystem\Path;
 use Throwable;
 use function file_exists;
+use function igbinary_serialize;
+use function igbinary_unserialize;
+use function is_dir;
 use function json_encode;
 use function mkdir;
 use function unlink;
+use const JSON_THROW_ON_ERROR;
 
 /**
  * @internal

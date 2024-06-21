@@ -28,6 +28,7 @@ use pmmp\thread\ThreadSafeArray;
 use pocketmine\crash\CrashDump;
 use pocketmine\errorhandler\ErrorToExceptionHandler;
 use pocketmine\Server;
+use function define;
 use function error_get_last;
 use function error_reporting;
 use function implode;
