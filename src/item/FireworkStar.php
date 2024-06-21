@@ -38,7 +38,7 @@ class FireworkStar extends Item{
 
 	protected ?Color $customColor = null;
 
-	public function __construct(ItemIdentifier $identifier, string $name){
+	public function __construct(int $identifier, string $name){
 		parent::__construct($identifier, $name);
 
 		$this->explosion = new FireworkRocketExplosion(FireworkRocketType::SMALL_BALL, [DyeColor::BLACK], [], false, false);

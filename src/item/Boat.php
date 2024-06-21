@@ -26,7 +26,7 @@ namespace pocketmine\item;
 class Boat extends Item{
 	private BoatType $boatType;
 
-	public function __construct(ItemIdentifier $identifier, string $name, BoatType $boatType){
+	public function __construct(int $identifier, string $name, BoatType $boatType){
 		parent::__construct($identifier, $name);
 		$this->boatType = $boatType;
 	}

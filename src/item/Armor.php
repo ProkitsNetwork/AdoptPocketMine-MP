@@ -47,7 +47,7 @@ class Armor extends Durable{
 	/**
 	 * @param string[] $enchantmentTags
 	 */
-	public function __construct(ItemIdentifier $identifier, string $name, ArmorTypeInfo $info, array $enchantmentTags = []){
+	public function __construct(int $identifier, string $name, ArmorTypeInfo $info, array $enchantmentTags = []){
 		parent::__construct($identifier, $name, $enchantmentTags);
 		$this->armorInfo = $info;
 	}

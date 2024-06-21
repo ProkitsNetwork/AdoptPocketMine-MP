@@ -35,7 +35,7 @@ final class CoralFan extends Item{
 		describeBlockItemState as encodeCoralType;
 	}
 
-	public function __construct(ItemIdentifier $identifier){
+	public function __construct(int $identifier){
 		parent::__construct($identifier, VanillaBlocks::CORAL_FAN()->getName());
 	}
 

@@ -26,14 +26,8 @@ namespace pocketmine\item;
 use pocketmine\block\Block;
 
 class ItemIdentifier{
-	public function __construct(
-		private int $typeId
-	){}
-
-	public static function fromBlock(Block $block) : self{
+	public static function fromBlock(Block $block) : int{
 		//TODO: maybe an ItemBlockIdentifier is in order?
-		return new self(ItemTypeIds::fromBlockTypeId($block->getTypeId()));
+		return ItemTypeIds::fromBlockTypeId($block->getTypeId());
 	}
-
-	public function getTypeId() : int{ return $this->typeId; }
 }

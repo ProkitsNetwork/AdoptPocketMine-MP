@@ -44,7 +44,7 @@ abstract class WritableBookBase extends Item{
 	 */
 	private array $pages = [];
 
-	public function __construct(ItemIdentifier $identifier, string $name){
+	public function __construct(int $identifier, string $name){
 		parent::__construct($identifier, $name);
 	}
 

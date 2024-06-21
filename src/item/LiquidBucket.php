@@ -33,7 +33,7 @@ use pocketmine\player\Player;
 class LiquidBucket extends Item{
 	private Liquid $liquid;
 
-	public function __construct(ItemIdentifier $identifier, string $name, Liquid $liquid){
+	public function __construct(int $identifier, string $name, Liquid $liquid){
 		parent::__construct($identifier, $name);
 		$this->liquid = $liquid;
 	}

@@ -29,7 +29,7 @@ class Record extends Item{
 	private RecordType $recordType;
 
 	//TODO: inconsistent parameter order
-	public function __construct(ItemIdentifier $identifier, RecordType $recordType, string $name){
+	public function __construct(int $identifier, RecordType $recordType, string $name){
 		$this->recordType = $recordType;
 		parent::__construct($identifier, $name);
 	}

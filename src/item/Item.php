@@ -111,7 +111,7 @@ class Item implements \JsonSerializable{
 	 * @param string[] $enchantmentTags
 	 */
 	public function __construct(
-		private ItemIdentifier $identifier,
+		private int $identifier,
 		protected string $name = "Unknown",
 		private array $enchantmentTags = []
 	){
@@ -493,11 +493,11 @@ class Item implements \JsonSerializable{
 	}
 
 	final public function getTypeId() : int{
-		return $this->identifier->getTypeId();
+		return $this->identifier;
 	}
 
 	final public function getStateId() : int{
-		return morton2d_encode($this->identifier->getTypeId(), $this->computeStateData());
+		return morton2d_encode($this->identifier, $this->computeStateData());
 	}
 
 	private function computeStateData() : int{

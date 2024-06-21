@@ -29,7 +29,7 @@ abstract class TieredTool extends Tool{
 	/**
 	 * @param string[] $enchantmentTags
 	 */
-	public function __construct(ItemIdentifier $identifier, string $name, ToolTier $tier, array $enchantmentTags = []){
+	public function __construct(int $identifier, string $name, ToolTier $tier, array $enchantmentTags = []){
 		parent::__construct($identifier, $name, $enchantmentTags);
 		$this->tier = $tier;
 	}
