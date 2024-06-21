@@ -167,7 +167,6 @@ use function strval;
 use function time;
 use function touch;
 use function trim;
-use function var_dump;
 use function yaml_parse;
 use const DIRECTORY_SEPARATOR;
 use const PHP_INT_MAX;

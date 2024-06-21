@@ -25,8 +25,10 @@ namespace pocketmine;
 
 use pocketmine\event\server\LowMemoryEvent;
 use pocketmine\network\mcpe\cache\ChunkCache;
-use pocketmine\scheduler\DumpWorkerMemoryTask;
+use pocketmine\scheduler\DumpWorkerMemoryRunnable;
 use pocketmine\scheduler\GarbageCollectionTask;
+use pocketmine\thread\ThreadManager;
+use pocketmine\thread\Worker;
 use pocketmine\timings\Timings;
 use pocketmine\utils\Filesystem;
 use pocketmine\utils\Process;
@@ -273,9 +275,11 @@ class MemoryManager{
 		self::dumpMemory($this->server, $outputFolder, $maxNesting, $maxStringSize, $logger);
 
 		if($this->dumpWorkers){
-			$pool = $this->server->getAsyncPool();
-			foreach($pool->getRunningWorkers() as $i){
-				$pool->submitTaskToWorker(new DumpWorkerMemoryTask($outputFolder, $maxNesting, $maxStringSize), $i);
+			$i = 0;
+			foreach(ThreadManager::getInstance()->getAll() as $worker){
+				if($worker instanceof Worker){
+					$worker->stack(new DumpWorkerMemoryRunnable(++$i, $outputFolder, $maxNesting, $maxStringSize));
+				}
 			}
 		}
 	}

@@ -23,30 +23,44 @@ declare(strict_types=1);
 
 namespace pocketmine\scheduler;
 
+use GlobalLogger;
+use pmmp\thread\Runnable;
 use pmmp\thread\Thread as NativeThread;
 use pocketmine\MemoryManager;
+use PrefixedLogger;
+use ReflectionClass;
 use Symfony\Component\Filesystem\Path;
-use function assert;
 
 /**
  * Task used to dump memory from AsyncWorkers
  */
-class DumpWorkerMemoryTask extends AsyncTask{
+class DumpWorkerMemoryRunnable extends Runnable{
 	public function __construct(
+		private int $id,
 		private string $outputFolder,
 		private int $maxNesting,
 		private int $maxStringSize
 	){}
 
-	public function onRun() : void{
+	public function run() : void{
 		$worker = NativeThread::getCurrentThread();
-		assert($worker instanceof AsyncWorker);
+		if($worker instanceof AsyncWorker){
+			$path = Path::join($this->outputFolder, "AsyncWorker#$this->id#" . $worker->getAsyncWorkerId());
+			$logger = $worker->getLogger();
+		}else{
+			$idName = (new ReflectionClass($worker::class))->getShortName() . "#" . $this->id;
+			$path = Path::join($this->outputFolder, $idName);
+			$logger = GlobalLogger::get();
+			if(!($logger instanceof PrefixedLogger)){
+				$logger = new PrefixedLogger($logger, $idName);
+			}
+		}
 		MemoryManager::dumpMemory(
 			$worker,
-			Path::join($this->outputFolder, "AsyncWorker#" . $worker->getAsyncWorkerId()),
+			$path,
 			$this->maxNesting,
 			$this->maxStringSize,
-			new \PrefixedLogger($worker->getLogger(), "Memory Dump")
+			new PrefixedLogger($logger, "Memory Dump")
 		);
 	}
 }
