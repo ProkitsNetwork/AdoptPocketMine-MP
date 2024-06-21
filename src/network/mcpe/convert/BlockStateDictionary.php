@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\convert;
 
+use Generator;
 use pocketmine\data\bedrock\block\BlockStateData;
 use pocketmine\data\bedrock\block\BlockTypeNames;
 use pocketmine\nbt\NbtDataException;
@@ -55,18 +56,21 @@ final class BlockStateDictionary{
 	 * @phpstan-var array<string, array<int, int>|int>|null
 	 */
 	private ?array $idMetaToStateIdLookupCache = null;
+	private BlockStateDictionaryEntry $entry;
 
 	/**
-	 * @param BlockStateDictionaryEntry[] $states
+	 * @param array{0:string,1:string,2:int,3:BlockStateData|null}[] $states
 	 *
-	 * @phpstan-param list<BlockStateDictionaryEntry> $states
+	 * @phpstan-param list<array{0:string,1:string,2:int,3:BlockStateData|null}> $states
 	 */
 	public function __construct(
 		private array $states
 	){
+		$this->entry = new BlockStateDictionaryEntry();
+		/** @var array<string, array<string, int>> $table */
 		$table = [];
 		foreach($this->states as $stateId => $stateNbt){
-			$table[$stateNbt->getStateName()][$stateNbt->getRawStateProperties()] = $stateId;
+			$table[$stateNbt[0]][$stateNbt[1]] = $stateId;
 		}
 
 		//setup fast path for stateless blocks
@@ -89,7 +93,7 @@ final class BlockStateDictionary{
 			//TODO: if we ever allow mutating the dictionary, this would need to be rebuilt on modification
 
 			foreach($this->states as $i => $state){
-				$table[$state->getStateName()][$state->getMeta()] = $i;
+				$table[$state[0]][$state[2]] = $i;
 			}
 
 			$this->idMetaToStateIdLookupCache = [];
@@ -107,11 +111,23 @@ final class BlockStateDictionary{
 	}
 
 	public function generateDataFromStateId(int $networkRuntimeId) : ?BlockStateData{
-		return ($this->states[$networkRuntimeId] ?? null)?->generateStateData();
+		$arr = $this->states[$networkRuntimeId] ?? null;
+		if($arr !== null){
+			$data = $this->entry->mutant($arr)->generateStateData();
+			$this->entry->clear();
+			return $data;
+		}
+		return null;
 	}
 
 	public function generateCurrentDataFromStateId(int $networkRuntimeId) : ?BlockStateData{
-		return ($this->states[$networkRuntimeId] ?? null)?->generateCurrentStateData();
+		$arr = $this->states[$networkRuntimeId] ?? null;
+		if($arr !== null){
+			$data = $this->entry->mutant($arr)->generateCurrentStateData();
+			$this->entry->clear();
+			return $data;
+		}
+		return null;
 	}
 
 	/**
@@ -134,7 +150,7 @@ final class BlockStateDictionary{
 	 * This is used for serializing crafting recipe inputs.
 	 */
 	public function getMetaFromStateId(int $networkRuntimeId) : ?int{
-		return ($this->states[$networkRuntimeId] ?? null)?->getMeta();
+		return $this->states[$networkRuntimeId][2] ?? null;
 	}
 
 	/**
@@ -152,10 +168,14 @@ final class BlockStateDictionary{
 
 	/**
 	 * Returns an array mapping runtime ID => blockstate data.
-	 * @return BlockStateDictionaryEntry[]
-	 * @phpstan-return array<int, BlockStateDictionaryEntry>
+	 * @return Generator|BlockStateDictionaryEntry[]
+	 * @phpstan-return Generator
 	 */
-	public function getStates() : array{ return $this->states; }
+	public function getStates() : Generator{
+		foreach($this->states as $stateId => $state){
+			yield $stateId => $this->entry->mutant($state);
+		}
+	}
 
 	/**
 	 * @return BlockStateData[]
@@ -199,7 +219,7 @@ final class BlockStateDictionary{
 			}
 			$newState = $upgrader->upgrade($state);
 			$uniqueName = $uniqueNames[$newState->getName()] ??= $newState->getName();
-			$entries[$i] = new BlockStateDictionaryEntry($uniqueName, $newState->getStates(), $meta, $newState->equals($state) ? null : $state);
+			$entries[$i] = [$uniqueName, BlockStateDictionaryEntry::encodeStateProperties($newState->getStates()), $meta, $newState->equals($state) ? null : $state];
 		}
 
 		return new self($entries);

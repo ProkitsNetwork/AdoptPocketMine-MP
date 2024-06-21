@@ -33,30 +33,24 @@ use function ksort;
 use const SORT_STRING;
 
 final class BlockStateDictionaryEntry{
-	/**
-	 * @var string[]
-	 * @phpstan-var array<string, string>
-	 */
-	private static array $uniqueRawStates = [];
-
+	private string $stateName;
+	private int $meta;
+	private ?BlockStateData $oldBlockStateData;
 	private string $rawStateProperties;
 
+	public function __construct(){ }
+
 	/**
-	 * @param Tag[] $stateProperties
+	 * @param array{0:string,1:string,2:int,3:BlockStateData|null} $data
 	 */
-	public function __construct(
-		private string $stateName,
-		array $stateProperties,
-		private int $meta,
-		private ?BlockStateData $oldBlockStateData
-	){
-		$rawStateProperties = self::encodeStateProperties($stateProperties);
-		$this->rawStateProperties = self::$uniqueRawStates[$rawStateProperties] ??= $rawStateProperties;
+	public function mutant(array $data) : self{
+		[$this->stateName, $this->rawStateProperties, $this->meta, $this->oldBlockStateData] = $data;
+		return $this;
 	}
 
-	public function getStateName() : string{ return $this->stateName; }
-
-	public function getRawStateProperties() : string{ return $this->rawStateProperties; }
+	public function clear() : void{
+		unset($this->stateName, $this->rawStateProperties, $this->meta, $this->oldBlockStateData);
+	}
 
 	public function generateStateData() : BlockStateData{
 		return $this->oldBlockStateData ?? $this->generateCurrentStateData();
