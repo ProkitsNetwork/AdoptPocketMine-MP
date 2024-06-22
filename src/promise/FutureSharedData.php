@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 /*
  *
  *  ____            _        _   __  __ _                  __  __ ____
@@ -19,12 +19,12 @@
  *
  */
 
-declare(strict_types=1);
-
 namespace pocketmine\promise;
 
 use pmmp\thread\ThreadSafe;
-use pocketmine\thread\ThreadCrashInfo;
+use pmmp\thread\ThreadSafeArray;
+use pocketmine\world\format\io\FastChunkSerializer;
+use pocketmine\world\format\io\LoadedChunkData;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 
@@ -35,20 +35,52 @@ use function igbinary_unserialize;
  */
 class FutureSharedData extends ThreadSafe{
 	public bool $done = false;
-	public ThreadCrashInfo $crash;
+	public bool $crashed = false;
+	public $crash;
 	private $value;
+	private $isChunkData = false;
+	private $typ;
+
+	public function __construct(){
+	}
 
 	public function setValue($value) : void{
-		if(!$value instanceof ThreadSafe){
-			$value = igbinary_serialize($value);
+		$this->typ=(get_debug_type($value));
+		if($value === null){
+			\GlobalLogger::get()->error("FJjjjjjEIJFIEJ");
 		}
+		if($value instanceof LoadedChunkData){
+			$this->value = FastChunkSerializer::serializeLoadedChunkData($value);
+			$this->isChunkData = true;
+			return;
+		}
+		if($value instanceof ThreadSafeArray){
+			$this->value = $value;
+			return;
+		}
+		$value = igbinary_serialize($value);
 		$this->value = $value;
+		if($this->value instanceof ThreadSafeArray){
+			throw new \RuntimeException();
+		}
 	}
 
 	public function getValue(){
-		if(!$this->value instanceof ThreadSafe){
-			return igbinary_unserialize($this->value);
+		var_dump("START");
+		var_dump($this->isChunkData);
+		var_dump(get_debug_type($this->value));
+		var_dump(($this->typ));
+		var_dump("END");
+		if($this->value === null){
+			return null;
 		}
-		return $this->value;
+		if($this->isChunkData){
+			return FastChunkSerializer::deserializeLoadedChunkData($this->value);
+		}
+		if($this->value instanceof ThreadSafeArray){
+			return $this->value;
+		}
+		$value = igbinary_unserialize($this->value);
+		return $value;
 	}
 }

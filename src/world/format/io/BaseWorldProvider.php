@@ -58,6 +58,10 @@ abstract class BaseWorldProvider implements WorldProvider{
 		$this->worldData = $this->loadLevelData();
 	}
 
+	public function reloadWorldData() : void{
+		$this->worldData = $this->loadLevelData();
+	}
+
 	/**
 	 * @throws CorruptedWorldException
 	 * @throws UnsupportedWorldFormatException

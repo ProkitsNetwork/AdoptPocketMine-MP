@@ -31,6 +31,7 @@ use pocketmine\lang\Language;
 use pocketmine\promise\Future;
 use pocketmine\promise\FutureResolver;
 use pocketmine\Server;
+use pocketmine\thread\log\ThreadSafeLogger;
 use pocketmine\thread\Thread;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\world\format\io\exception\CorruptedWorldException;
@@ -42,6 +43,7 @@ use pocketmine\world\format\io\WritableWorldProvider;
 use pocketmine\world\generator\GeneratorManager;
 use pocketmine\world\generator\InvalidGeneratorOptionsException;
 use PrefixedLogger;
+use RuntimeException;
 use Symfony\Component\Filesystem\Path;
 
 class WorldProviderThread extends Thread{
@@ -52,6 +54,7 @@ class WorldProviderThread extends Thread{
 	private ThreadSafeArray $transactionQueue;
 
 	private string $lang;
+	private ThreadSafeLogger $logger;
 
 	use SingletonTrait;
 
@@ -66,18 +69,16 @@ class WorldProviderThread extends Thread{
 		$this->loadQueue = new ThreadSafeArray();
 		$this->unloadQueue = new ThreadSafeArray();
 		$this->transactionQueue = new ThreadSafeArray();
+		$this->logger = Server::getInstance()->getLogger();
 	}
 
 	private function getWorldPath(string $name) : string{
-		return Path::join($this->dataPath, $name) . "/"; //TODO: check if we still need the trailing dirsep (I'm a little scared to remove it)
+		return Path::join($this->dataPath, "worlds", $name) . "/"; //TODO: check if we still need the trailing dirsep (I'm a little scared to remove it)
 	}
 
 	protected function loadWorldData(Language $lang, WorldProviderManager $providerManager, string $name, bool $autoUpgrade) : ?WorldProvider{
 		if(trim($name) === ""){
 			throw new InvalidArgumentException("Invalid empty world name");
-		}
-		if(isset($this->providers[$name])){
-			return $this->providers[$name];
 		}
 		$path = $this->getWorldPath($name);
 		if(!is_dir($path)){
@@ -148,43 +149,56 @@ class WorldProviderThread extends Thread{
 		return $provider;
 	}
 
-	public function unloadWorld(ThreadSafeArray $providers, string $world) : void{
-		if(!isset($providers[$world])){
-			return;
-		}
-		$provider = $providers[$world];
-		$provider->close();
-		unset($providers[$world], $this->transactionQueue[$world]);
-		GlobalLogger::get()->debug("Provider for world $world is unloaded.");
+	public function unloadWorld(array $providers, string $world) : void{
 	}
 
 	protected function onRun() : void{
+		GlobalLogger::set(new PrefixedLogger($this->logger, "WorldProvider"));
+		GlobalLogger::get()->error("FJEIJFI");
 		$lang = new Language($this->lang);
 		$mgr = new WorldProviderManager();
-		/** @var ThreadSafeArray|WorldProvider[] */
-		$providers = new ThreadSafeArray();
-		while(!$this->isKilled){
+		/** @var WorldProvider[] */
+		$providers = [];
+		while(!$this->isKilled || count($providers) !== 0){
 			while(($load = $this->loadQueue->pop()) !== null){
 				/** @var FutureResolver<array{0:string,1:bool},void> $load */
 				$load->do(function() use ($mgr, $lang, $load, &$providers){
 					[$folder, $autoUpgrade] = $load->getContext();
+					if(isset($providers[$folder])){
+						throw new RuntimeException("resolver $folder is already loaded.");
+					}
 					$provider = $this->loadWorldData($lang, $mgr, $folder, $autoUpgrade);
+					var_dump("loaded $folder");
 					if($provider === null){
+						var_dump("loaded $folder but null");
 						return null;
 					}
-					$providers[$folder] = $provider;
-					$this->transactionQueue[$folder] = new ThreadSafeArray();
-					return new BaseThreadedWorldProvider(
+					$ts = new BaseThreadedWorldProvider(
 						$provider->getWorldMinY(),
 						$provider->getWorldMaxY(),
 						$this->getWorldPath($folder),
 						$folder
 					);
+					$providers[$folder] = $provider;
+					$this->transactionQueue[$folder] = new ThreadSafeArray();
+					return $ts;
 				});
 			}
-			foreach($this->unloadQueue as $idx => $world){
-				if(empty($this->transactionQueue[$world])){
-					$this->unloadWorld($providers, $world);
+			foreach($this->unloadQueue as $idx => $resolver){
+				assert($resolver instanceof FutureResolver);
+				$folderName = $resolver->getContext();
+				assert(is_string($folderName));
+				if(!empty($this->transactionQueue[$folderName])){
+					if(!isset($providers[$folderName])){
+						continue;
+					}
+					$resolver->do(function() use (&$providers, $folderName){
+						var_dump("unloaded $folderName");
+						$provider = $providers[$folderName];
+						$provider->close();
+						unset($providers[$folderName], $this->transactionQueue[$folderName]);
+						GlobalLogger::get()->debug("Provider for world $folderName is unloaded.");
+					});
 					unset($this->unloadQueue[$idx]);
 				}
 			}
@@ -194,9 +208,9 @@ class WorldProviderThread extends Thread{
 					unset($this->transactionQueue[$world]);
 					continue;
 				}
-				while(($resolver = $this->transactionQueue->pop()) !== null){
+				while(($resolver = $queue->pop()) !== null){
 					assert($resolver instanceof FutureResolver);
-					$resolver->do($resolver->getContext());
+					$resolver->do(static fn() => $resolver->getContext()($provider));
 				}
 			}
 			usleep(1000);
@@ -210,6 +224,7 @@ class WorldProviderThread extends Thread{
 	 */
 	public function register(string $folderName, bool $autoUpgrade = true) : Future{
 		$resolver = new FutureResolver([$folderName, $autoUpgrade]);
+		var_dump("register $folderName");
 		$this->loadQueue->synchronized(fn() => $this->loadQueue[] = $resolver);
 		return $resolver->future();
 	}
@@ -221,7 +236,8 @@ class WorldProviderThread extends Thread{
 	 */
 	public function unregister(string $folderName) : Future{
 		$resolver = new FutureResolver($folderName);
-		$this->loadQueue->synchronized(fn() => $this->loadQueue[] = $resolver);
+		var_dump("unregister $folderName");
+		$this->unloadQueue->synchronized(fn() => $this->unloadQueue[] = $resolver);
 		return $resolver->future();
 	}
 
@@ -238,5 +254,9 @@ class WorldProviderThread extends Thread{
 		$resolver = new FutureResolver($c);
 		$this->transactionQueue[$world][] = $resolver;
 		return $resolver->future();
+	}
+
+	protected function onShutdown() : void{
+
 	}
 }

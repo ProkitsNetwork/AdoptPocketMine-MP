@@ -25,7 +25,7 @@ namespace pocketmine\thread;
 
 use pmmp\thread\ThreadSafe;
 
-final class ThreadCrashInfoFrame extends ThreadSafe{
+final class ThreadCrashInfoFrame extends ThreadSafe implements \Serializable{
 
 	public function __construct(
 		private string $printableFrame,
@@ -38,4 +38,20 @@ final class ThreadCrashInfoFrame extends ThreadSafe{
 	public function getFile() : ?string{ return $this->file; }
 
 	public function getLine() : int{ return $this->line; }
+
+	public function serialize(){
+		return serialize([$this->printableFrame, $this->file, $this->line]);
+	}
+
+	public function unserialize(string $data){
+		[$this->printableFrame, $this->file, $this->line] = unserialize($data);
+	}
+
+	public function __serialize() : array{
+		return [$this->printableFrame, $this->file, $this->line];
+	}
+
+	public function __unserialize(array $data) : void{
+		[$this->printableFrame, $this->file, $this->line] = $data;
+	}
 }

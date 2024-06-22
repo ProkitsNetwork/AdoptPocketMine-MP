@@ -54,6 +54,10 @@ final class ThreadCrashInfo extends ThreadSafe{
 		return new self(get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), Utils::printableTraceWithMetadata($e->getTrace()), $threadName);
 	}
 
+	public static function constructor(\Throwable $e, string $threadName) : string{
+		return igbinary_serialize([get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), Utils::printableTraceWithMetadataConstructor($e->getTrace()), $threadName]);
+	}
+
 	/**
 	 * @phpstan-param array{type: int, message: string, file: string, line: int} $info
 	 */

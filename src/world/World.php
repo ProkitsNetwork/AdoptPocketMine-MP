@@ -93,12 +93,16 @@ use pocketmine\utils\Utils;
 use pocketmine\world\biome\Biome;
 use pocketmine\world\biome\BiomeRegistry;
 use pocketmine\world\format\Chunk;
+use pocketmine\world\format\io\BaseWorldProvider;
 use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
+use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
+use pocketmine\world\format\io\WorldProvider;
 use pocketmine\world\format\io\WritableWorldProvider;
 use pocketmine\world\format\LightArray;
 use pocketmine\world\format\SubChunk;
+use pocketmine\world\format\ThreadedWorldProvider;
 use pocketmine\world\generator\GeneratorManager;
 use pocketmine\world\generator\GeneratorRegisterTask;
 use pocketmine\world\generator\GeneratorUnregisterTask;
@@ -386,6 +390,7 @@ class World implements ChunkManager{
 	private ?SkyLightUpdate $skyLightUpdate = null;
 
 	private \Logger $logger;
+	private $worldData;
 
 	/**
 	 * @phpstan-return ChunkPosHash
@@ -491,22 +496,23 @@ class World implements ChunkManager{
 	public function __construct(
 		private Server $server,
 		string $name, //TODO: this should be folderName (named arguments BC break)
-		private WritableWorldProvider $provider,
+		private ThreadedWorldProvider $provider,
 		private AsyncPool $workerPool
 	){
 		$this->folderName = $name;
 		$this->worldId = self::$worldIdCounter++;
 
-		$this->displayName = $this->provider->getWorldData()->getName();
+		$this->worldData = $this->provider->getWorldData()->get();
+		$this->displayName = $this->worldData->getName();
 		$this->logger = new \PrefixedLogger($server->getLogger(), "World: $this->displayName");
 
 		$this->minY = $this->provider->getWorldMinY();
 		$this->maxY = $this->provider->getWorldMaxY();
 
 		$this->server->getLogger()->info($this->server->getLanguage()->translate(KnownTranslationFactory::pocketmine_level_preparing($this->displayName)));
-		$generator = GeneratorManager::getInstance()->getGenerator($this->provider->getWorldData()->getGenerator()) ??
+		$generator = GeneratorManager::getInstance()->getGenerator($this->worldData->getGenerator()) ??
 			throw new AssumptionFailedError("WorldManager should already have checked that the generator exists");
-		$generator->validateGeneratorOptions($this->provider->getWorldData()->getGeneratorOptions());
+		$generator->validateGeneratorOptions($this->worldData->getGeneratorOptions());
 		$this->generator = $generator->getGeneratorClass();
 		$this->chunkPopulationRequestQueue = new \SplQueue();
 		$this->addOnUnloadCallback(function() : void{
@@ -528,7 +534,7 @@ class World implements ChunkManager{
 
 		$this->neighbourBlockUpdateQueue = new \SplQueue();
 
-		$this->time = $this->provider->getWorldData()->getTime();
+		$this->time = $this->worldData->getTime();
 
 		$cfg = $this->server->getConfigGroup();
 		$this->chunkTickRadius = min($this->server->getViewDistance(), max(0, $cfg->getPropertyInt(YmlServerProperties::CHUNK_TICKING_TICK_RADIUS, 4)));
@@ -596,7 +602,7 @@ class World implements ChunkManager{
 
 	public function registerGeneratorToWorker(int $worker) : void{
 		$this->logger->debug("Registering generator on worker $worker");
-		$this->workerPool->submitTaskToWorker(new GeneratorRegisterTask($this, $this->generator, $this->provider->getWorldData()->getGeneratorOptions()), $worker);
+		$this->workerPool->submitTaskToWorker(new GeneratorRegisterTask($this, $this->generator, $this->worldData->getGeneratorOptions()), $worker);
 		$this->generatorRegisteredWorkers[$worker] = true;
 	}
 
@@ -617,7 +623,7 @@ class World implements ChunkManager{
 		return $this->logger;
 	}
 
-	final public function getProvider() : WritableWorldProvider{
+	final public function getProvider() : BaseWorldProvider{
 		return $this->provider;
 	}
 
@@ -668,7 +674,7 @@ class World implements ChunkManager{
 
 		$this->unregisterGenerator();
 
-		$this->provider->close();
+		//$this->provider->close();
 		$this->blockCache = [];
 		$this->blockCollisionBoxCache = [];
 
@@ -1502,9 +1508,10 @@ class World implements ChunkManager{
 		$timings = $this->timings->syncDataSave;
 		$timings->startTiming();
 
-		$this->provider->getWorldData()->setTime($this->time);
+		$this->worldData->setTime($this->time);
 		$this->saveChunks();
-		$this->provider->getWorldData()->save();
+		$this->worldData->save();
+		$this->provider->reloadWorldData();
 
 		$timings->stopTiming();
 
@@ -2727,7 +2734,7 @@ class World implements ChunkManager{
 	 * Returns a Position pointing to the spawn
 	 */
 	public function getSpawnLocation() : Position{
-		return Position::fromObject($this->provider->getWorldData()->getSpawn(), $this);
+		return Position::fromObject($this->worldData->getSpawn(), $this);
 	}
 
 	/**
@@ -2735,7 +2742,7 @@ class World implements ChunkManager{
 	 */
 	public function setSpawnLocation(Vector3 $pos) : void{
 		$previousSpawn = $this->getSpawnLocation();
-		$this->provider->getWorldData()->setSpawn($pos);
+		$this->worldData->setSpawn($pos);
 		(new SpawnChangeEvent($this, $previousSpawn))->call();
 
 		$location = Position::fromObject($pos, $this);
@@ -2921,7 +2928,7 @@ class World implements ChunkManager{
 		$loadedChunkData = null;
 
 		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z);
+			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
@@ -2933,6 +2940,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
+		$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
 		$chunkData = $loadedChunkData->getData();
 		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
 		if(!$loadedChunkData->isUpgraded()){
@@ -2986,7 +2994,7 @@ class World implements ChunkManager{
 		$loadedChunkData = null;
 
 		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z);
+			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
@@ -2998,6 +3006,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
+		$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
 		$chunkData = $loadedChunkData->getData();
 		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
 		if(!$loadedChunkData->isUpgraded()){
@@ -3298,7 +3307,7 @@ class World implements ChunkManager{
 		(new WorldDisplayNameChangeEvent($this, $this->displayName, $name))->call();
 
 		$this->displayName = $name;
-		$this->provider->getWorldData()->setName($name);
+		$this->worldData->setName($name);
 	}
 
 	/**
@@ -3336,7 +3345,7 @@ class World implements ChunkManager{
 	 * Gets the world seed
 	 */
 	public function getSeed() : int{
-		return $this->provider->getWorldData()->getSeed();
+		return $this->worldData->getSeed();
 	}
 
 	public function getMinY() : int{
@@ -3348,7 +3357,7 @@ class World implements ChunkManager{
 	}
 
 	public function getDifficulty() : int{
-		return $this->provider->getWorldData()->getDifficulty();
+		return $this->worldData->getDifficulty();
 	}
 
 	public function setDifficulty(int $difficulty) : void{
@@ -3356,7 +3365,7 @@ class World implements ChunkManager{
 			throw new \InvalidArgumentException("Invalid difficulty level $difficulty");
 		}
 		(new WorldDifficultyChangeEvent($this, $this->getDifficulty(), $difficulty))->call();
-		$this->provider->getWorldData()->setDifficulty($difficulty);
+		$this->worldData->setDifficulty($difficulty);
 
 		foreach($this->players as $player){
 			$player->getNetworkSession()->syncWorldDifficulty($this->getDifficulty());

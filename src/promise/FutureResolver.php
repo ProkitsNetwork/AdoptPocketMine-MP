@@ -34,6 +34,7 @@ class FutureResolver extends ThreadSafe{
 	/** @var FutureSharedData<T> */
 	private FutureSharedData $data;
 	private $context = null;
+	private static array $neverDestruct = [];
 
 	/**
 	 * @param C $context
@@ -41,6 +42,7 @@ class FutureResolver extends ThreadSafe{
 	public function __construct($context = null){
 		$this->setContext($context);
 		$this->data = new FutureSharedData();
+		self::$neverDestruct[] = $this;
 	}
 
 	private function setContext($context) : void{
@@ -65,12 +67,14 @@ class FutureResolver extends ThreadSafe{
 	 * @param T $value
 	 */
 	public function finish($value) : void{
+		var_dump(get_debug_type($value));
 		$this->data->done = true;
 		$this->data->setValue($value);
 	}
 
-	public function crash(ThreadCrashInfo $info) : void{
+	public function crash($info) : void{
 		$this->data->done = true;
+		$this->data->crashed = true;
 		$this->data->crash = $info;
 	}
 
@@ -85,9 +89,10 @@ class FutureResolver extends ThreadSafe{
 		try{
 			$this->finish($c());
 		}catch(\Throwable $throwable){
+			\GlobalLogger::get()->logException($throwable);
 			$f = new \ReflectionFunction($c);
 			$class = $f->getClosureScopeClass()?->getShortName() ?? 'Unknown';
-			$this->crash(ThreadCrashInfo::fromThrowable($throwable, $class));
+			$this->crash(ThreadCrashInfo::constructor($throwable, $class));
 		}
 	}
 }

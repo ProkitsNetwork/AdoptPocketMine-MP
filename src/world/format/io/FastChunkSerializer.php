@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 namespace pocketmine\world\format\io;
 
-use pmmp\encoding\ByteBuffer;
 use pocketmine\utils\Binary;
 use pocketmine\utils\BinaryStream;
 use pocketmine\world\format\Chunk;
@@ -123,5 +122,67 @@ final class FastChunkSerializer{
 		}
 
 		return new Chunk($subChunks, $terrainPopulated);
+	}
+
+	public static function serializeChunkData(ChunkData $data) : string{
+		$stream = new BinaryStream();
+		$subChunks = $data->getSubChunks();
+		$entityNBT = $data->getEntityNBT();
+		$tileNBT = $data->getTileNBT();
+		$populated = $data->isPopulated();
+
+		$count = count($subChunks);
+		$stream->putByte($count);
+
+		foreach($subChunks as $y => $subChunk){
+			$stream->putByte($y);
+			$stream->putInt($subChunk->getEmptyBlockId());
+			$layers = $subChunk->getBlockLayers();
+			$stream->putByte(count($layers));
+			foreach($layers as $blocks){
+				self::serializePalettedArray($stream, $blocks);
+			}
+			self::serializePalettedArray($stream, $subChunk->getBiomeArray());
+		}
+
+		$str = igbinary_serialize([$entityNBT, $tileNBT, $populated]);
+		$stream->putUnsignedVarInt(strlen($str));
+		$stream->put($str);
+		return $stream->getBuffer();
+	}
+
+	public static function deserializeChunkData(string $data) : ChunkData{
+		$stream = new BinaryStream($data);
+		$subChunks = [];
+		$count = $stream->getByte();
+
+		for($i = 0; $i < $count; $i++){
+			$y = $stream->getByte();
+			$emptyBlockId = $stream->getInt();
+			$layerCount = $stream->getByte();
+			$layers = [];
+
+			for($j = 0; $j < $layerCount; $j++){
+				$layers[] = self::deserializePalettedArray($stream);
+			}
+
+			$biomeArray = self::deserializePalettedArray($stream);
+			$subChunks[$y] = new SubChunk($emptyBlockId, $layers, $biomeArray);
+		}
+
+		$strLen = $stream->getUnsignedVarInt();
+		$str = $stream->get($strLen);
+		[$entityNBT, $tileNBT, $populated] = igbinary_unserialize($str);
+
+		return new ChunkData($subChunks, $populated, $entityNBT, $tileNBT);
+	}
+
+	public static function serializeLoadedChunkData(LoadedChunkData $data) : string{
+		return igbinary_serialize([self::serializeChunkData($data->getData()), $data->isUpgraded(), $data->getFixerFlags()]);
+	}
+
+	public static function deserializeLoadedChunkData(string $data) : LoadedChunkData{
+		[$data, $upgraded, $flags] = igbinary_unserialize($data);
+		return new LoadedChunkData(self::deserializeChunkData($data), $upgraded, $flags);
 	}
 }

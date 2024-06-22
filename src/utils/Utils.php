@@ -497,6 +497,30 @@ final class Utils{
 	}
 
 	/**
+	 * Similar to {@link Utils::printableTrace()}, but associates metadata such as file and line number with each frame.
+	 * This is used to transmit thread-safe information about crash traces to the main thread when a thread crashes.
+	 *
+	 * @param mixed[][] $rawTrace
+	 * @phpstan-param list<array<string, mixed>> $rawTrace
+	 *
+	 * @return string[]
+	 */
+	public static function printableTraceWithMetadataConstructor(array $rawTrace, int $maxStringLength = 80) : string{
+		$printableTrace = self::printableTrace($rawTrace, $maxStringLength);
+		$safeTrace = [];
+		foreach($printableTrace as $frameId => $printableFrame){
+			$rawFrame = $rawTrace[$frameId];
+			$safeTrace[$frameId] = [
+				$printableFrame,
+				$rawFrame["file"] ?? "unknown",
+				$rawFrame["line"] ?? 0
+			];
+		}
+
+		return igbinary_serialize($safeTrace);
+	}
+
+	/**
 	 * @return mixed[][]
 	 * @phpstan-return list<array<string, mixed>>
 	 */

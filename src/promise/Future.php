@@ -25,6 +25,8 @@ namespace pocketmine\promise;
 
 use pmmp\thread\ThreadSafe;
 use pocketmine\thread\ThreadCrashException;
+use pocketmine\thread\ThreadCrashInfo;
+use pocketmine\thread\ThreadCrashInfoFrame;
 use function usleep;
 
 /**
@@ -46,11 +48,20 @@ class Future extends ThreadSafe{
 	 * @throws \RuntimeException
 	 */
 	public function get(){
+		$start = microtime(true);
 		while(!$this->data->done){
-			usleep(50);
+			if(microtime(true) - $start > 20){
+				throw new \RuntimeException('Future died,');
+			}
+			usleep(500);
 		}
-		if(isset($this->data->crash)){
-			throw new ThreadCrashException('Future crashed', $this->data->crash);
+		if($this->data->crashed){
+			$vvv = igbinary_unserialize($this->data->crash);
+			[$class, $message, $file, $line, $trac, $threadName] = $vvv;
+			$trac = array_map(fn($v) => new ThreadCrashInfoFrame(...$v), igbinary_unserialize($trac));
+			$construct = new ThreadCrashInfo($class, $message, $file, $line, $trac, $threadName);
+			\GlobalLogger::get()->error($construct->makePrettyMessage());
+			throw new ThreadCrashException('Future crashed. :', $construct);
 		}
 		return $this->data->getValue();
 	}
@@ -63,8 +74,12 @@ class Future extends ThreadSafe{
 		while(!$this->data->done){
 			yield;
 		}
-		if(isset($this->data->crash)){
-			throw new ThreadCrashException('Future crashed', $this->data->crash);
+		if($this->data->crashed){
+			$vvv = igbinary_unserialize($this->data->crash);
+			[$class, $message, $file, $line, $trac, $threadName] = $vvv;
+			$trac = array_map(fn($v) => new ThreadCrashInfoFrame(...igbinary_unserialize($v)), $trac);
+			$construct = new ThreadCrashInfo($class, $message, $file, $line, $trac, $threadName);
+			throw new ThreadCrashException('Future crashed', $construct);
 		}
 		return $this->data->getValue();
 	}

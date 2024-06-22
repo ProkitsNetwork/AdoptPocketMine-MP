@@ -42,16 +42,24 @@ interface ThreadedWorldProvider{
 	/**
 	 * Loads a chunk (usually from disk storage) and returns it. If the chunk does not exist, null is returned.
 	 *
-	 * @return Future<LoadedChunkData|null>
+	 * @return Future<string|null>
 	 * @throws CorruptedChunkException
 	 */
 	public function loadChunk(int $chunkX, int $chunkZ) : Future;
+
+	/**
+	 * Performs garbage collection in the world provider, such as cleaning up regions in Region-based worlds.
+	 * @return Future<void>
+	 */
+	public function doGarbageCollection() : Future;
 
 	/**
 	 * Returns information about the world
 	 * @return Future<WorldData>
 	 */
 	public function getWorldData() : Future;
+
+	public function reloadWorldData() : Future;
 
 	/**
 	 * Returns the number of chunks in the provider. Used for world conversion time estimations.

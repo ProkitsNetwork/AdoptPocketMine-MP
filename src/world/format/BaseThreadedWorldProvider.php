@@ -4,6 +4,7 @@ namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
 use pocketmine\world\format\io\ChunkData;
+use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\format\io\WorldData;
 use pocketmine\world\format\io\WorldProvider;
 use pocketmine\world\format\io\WritableWorldProvider;
@@ -34,7 +35,11 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
-			return $provider->loadChunk($chunkX, $chunkZ);
+			$data = $provider->loadChunk($chunkX, $chunkZ);
+			if($data === null){
+				return null;
+			}
+			return FastChunkSerializer::serializeLoadedChunkData($data);
 		});
 	}
 
@@ -68,6 +73,18 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 			}else{
 				throw new \RuntimeException("not saved");
 			}
+		});
+	}
+
+	public function reloadWorldData() : Future{
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
+			$provider->reloadWorldData();
+		});
+	}
+
+	public function doGarbageCollection() : Future{
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
+			$provider->doGarbageCollection();
 		});
 	}
 }
