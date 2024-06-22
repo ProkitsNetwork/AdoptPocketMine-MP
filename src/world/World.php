@@ -2964,6 +2964,71 @@ class World implements ChunkManager{
 		return $this->chunks[$chunkHash];
 	}
 
+	/**
+	 * Attempts to load a chunk from the world provider (if not already loaded). If the chunk is already loaded, it is
+	 * returned directly.
+	 *
+	 * @return Promise<Chunk|null> the requested chunk, or null on failure.
+	 */
+	public function loadChunkPromise(int $x, int $z) : ?Promise{
+		$resolver = new PromiseResolver();
+		if(isset($this->chunks[$chunkHash = World::chunkHash($x, $z)])){
+			$resolver->resolve($this->chunks[$chunkHash]);
+			return $resolver->getPromise();
+		}
+
+		$this->timings->syncChunkLoad->startTiming();
+
+		$this->cancelUnloadChunkRequest($x, $z);
+
+		$this->timings->syncChunkLoadData->startTiming();
+
+		$loadedChunkData = null;
+
+		try{
+			$loadedChunkData = $this->provider->loadChunk($x, $z);
+		}catch(CorruptedChunkException $e){
+			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
+		}
+
+		$this->timings->syncChunkLoadData->stopTiming();
+
+		if($loadedChunkData === null){
+			$this->timings->syncChunkLoad->stopTiming();
+			return null;
+		}
+
+		$chunkData = $loadedChunkData->getData();
+		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
+		if(!$loadedChunkData->isUpgraded()){
+			$chunk->clearTerrainDirtyFlags();
+		}else{
+			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
+		}
+		$this->chunks[$chunkHash] = $chunk;
+		unset($this->blockCache[$chunkHash]);
+		unset($this->blockCollisionBoxCache[$chunkHash]);
+
+		$this->initChunk($x, $z, $chunkData);
+
+		if(ChunkLoadEvent::hasHandlers()){
+			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
+		}
+
+		if(!$this->isChunkInUse($x, $z)){
+			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
+			$this->unloadChunkRequest($x, $z);
+		}
+		foreach($this->getChunkListeners($x, $z) as $listener){
+			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
+		}
+		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
+
+		$this->timings->syncChunkLoad->stopTiming();
+
+		return $this->chunks[$chunkHash];
+	}
+
 	private function initChunk(int $chunkX, int $chunkZ, ChunkData $chunkData) : void{
 		$logger = new \PrefixedLogger($this->logger, "Loading chunk $chunkX $chunkZ");
 
