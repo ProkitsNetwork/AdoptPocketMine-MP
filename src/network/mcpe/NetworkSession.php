@@ -1242,29 +1242,32 @@ class NetworkSession{
 	 * @param \Closure $onCompletion To be called when chunk sending has completed.
 	 * @phpstan-param \Closure() : void $onCompletion
 	 */
-	public function startUsingChunk(int $chunkX, int $chunkZ, \Closure $onCompletion) : void{
+	public function startUsingChunk(int $chunkX, int $chunkZ, \Closure $onCompletion, bool $force=false) : void{
 		$world = $this->player->getLocation()->getWorld();
 		ChunkCache::getInstance($world, $this->compressor)->request($chunkX, $chunkZ, $this->getTypeConverter())->onResolve(
 
 			//this callback may be called synchronously or asynchronously, depending on whether the promise is resolved yet
-			function(CachedChunkPromise $promise) use ($world, $onCompletion, $chunkX, $chunkZ) : void{
+			function(CachedChunkPromise $promise) use ($world, $onCompletion, $chunkX, $chunkZ,$force) : void{
 
 				if(!$this->isConnected()){
 					return;
 				}
 				$currentWorld = $this->player->getLocation()->getWorld();
+				if($world === $currentWorld && $force){
+					goto flush;
+				}
 				if($world !== $currentWorld || ($status = $this->player->getUsedChunkStatus($chunkX, $chunkZ)) === null){
 					$this->logger->debug("Tried to send no-longer-active chunk $chunkX $chunkZ in world " . $world->getFolderName());
 					return;
 				}
-				if($status !== UsedChunkStatus::REQUESTED_SENDING){
+				if($status !== UsedChunkStatus::REQUESTED_SENDING && !$force){
 					//TODO: make this an error
 					//this could be triggered due to the shitty way that chunk resends are handled
 					//right now - not because of the spammy re-requesting, but because the chunk status reverts
 					//to NEEDED if they want to be resent.
 					return;
 				}
-
+flush:
 				$compressBatchPromise = new CompressBatchPromise();
 				$result = $promise->getResult();
 

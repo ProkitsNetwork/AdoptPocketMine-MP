@@ -57,6 +57,8 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
+			usleep(0);
+			var_dump("work $chunkX $chunkZ");
 			return $provider->loadChunk($chunkX, $chunkZ);
 		});
 	}
@@ -88,7 +90,6 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX, $chunkData, $dirtyFlags){
 			if($provider instanceof WritableWorldProvider){
 				$provider->saveChunk($chunkX, $chunkZ, igbinary_unserialize($chunkData), $dirtyFlags);
-				var_dump("SAVE");
 			}else{
 				throw new \RuntimeException("not saved");
 			}

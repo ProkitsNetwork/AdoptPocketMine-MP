@@ -158,6 +158,7 @@ class WorldProviderThread extends Thread{
 	}
 
 	public function unloadWorld(array $providers, string $world) : void{
+
 	}
 
 	protected function onRun() : void{
@@ -195,7 +196,7 @@ class WorldProviderThread extends Thread{
 				assert($resolver instanceof FutureResolver);
 				$folderName = $resolver->getContext();
 				assert(is_string($folderName));
-				if(!empty($this->transactionQueue[$folderName])){
+				if(!$this->isKilled && !empty($this->transactionQueue[$folderName])){
 					if(!isset($providers[$folderName])){
 						continue;
 					}

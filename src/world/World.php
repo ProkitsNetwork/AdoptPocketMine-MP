@@ -560,7 +560,17 @@ class World implements ChunkManager{
 		$this->addOnUnloadCallback(static function() use ($workerPool, $workerStartHook) : void{
 			$workerPool->removeWorkerStartHook($workerStartHook);
 		});
-		$this->dirtyIntermediateChunk = new LoadedChunkData(new ChunkData([], true, [], []), false, LoadedChunkData::FIXER_FLAG_NONE);
+
+		$chunk = new Chunk([],true);
+		$glass = VanillaBlocks::GLASS()->getStateId();
+		for($x=0;$x<16;$x++){
+			for($y=0;$y<256;$y++){
+				for($z=0;$z<16;$z++){
+					$chunk->setBlockStateId($x, $y, $z, $glass);
+				}
+			}
+		}
+		$this->dirtyIntermediateChunk = new LoadedChunkData(new ChunkData($chunk->getSubChunks(), true, [], []), false, LoadedChunkData::FIXER_FLAG_NONE);
 	}
 
 	private function initRandomTickBlocksFromConfig(ServerConfigGroup $cfg) : void{
@@ -1020,8 +1030,23 @@ class World implements ChunkManager{
 		foreach($this->pending as $id => [$prom, $x, $y, $b]){
 			assert($prom instanceof Future);
 			if($prom->isDone()){
+				var_dump("pend $x $y");
 				unset($this->pending[$id]);
-				$this->realChunkLoad($prom->get(), $x, $y, $b);
+				$chunkData = $prom->get();
+				if($chunkData !==null){
+					assert($chunkData instanceof LoadedChunkData);
+					$chunkData = $chunkData->getData();
+					$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
+var_dump("SET");
+					$this->setChunk($x, $y, $chunk);
+				}else{
+					//$this->unloadChunk($x,$y,false,false);
+					$this->internalOrderChunkPopulation($x, $y, new class()implements ChunkLoader{}, new PromiseResolver());
+					var_dump("G");
+				}
+			}else{
+				var_dump("wait $x $y");
+
 			}
 		}
 
@@ -1530,7 +1555,16 @@ class World implements ChunkManager{
 	public function saveChunks() : void{
 		$this->timings->syncChunkSave->startTiming();
 		try{
+			$ww = [];
+			foreach($this->pending as [$_, $x, $y, $h]){
+				$ww[$h]=null;
+			}
 			foreach($this->chunks as $chunkHash => $chunk){
+				if(isset($ww[$chunkHash])){
+					var_dump("CC");
+					continue;
+				}
+				var_dump("BB");
 				self::getXZ($chunkHash, $chunkX, $chunkZ);
 				$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
 					$chunk->getSubChunks(),
@@ -2938,6 +2972,7 @@ class World implements ChunkManager{
 
 		try{
 			$fut = $this->provider->loadChunk($x, $z);
+			var_dump("load $x $z");
 			$this->pending[] = [$fut, $x, $z, $chunkHash];
 			$loadedChunkData = $this->dirtyIntermediateChunk;
 		}catch(CorruptedChunkException $e){

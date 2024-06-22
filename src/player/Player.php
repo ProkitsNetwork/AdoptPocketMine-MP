@@ -808,7 +808,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	 * Requests chunks from the world to be sent, up to a set limit every tick. This operates on the results of the most recent chunk
 	 * order.
 	 */
-	protected function requestChunks() : void{
+	public function requestChunks() : void{
 		if(!$this->isConnected()){
 			return;
 		}

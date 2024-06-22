@@ -53,7 +53,7 @@ class Future extends ThreadSafe{
 	public function get(){
 		$start = microtime(true);
 		while(!$this->data->done){
-			if(microtime(true) - $start > 20){
+			if(microtime(true) - $start > 200){
 				throw new \RuntimeException('Future died,');
 			}
 			usleep(500);
