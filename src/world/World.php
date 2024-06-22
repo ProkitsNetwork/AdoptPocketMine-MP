@@ -2940,7 +2940,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
-		$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
+		//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
 		$chunkData = $loadedChunkData->getData();
 		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
 		if(!$loadedChunkData->isUpgraded()){
@@ -3006,7 +3006,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
-		$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
+		//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
 		$chunkData = $loadedChunkData->getData();
 		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
 		if(!$loadedChunkData->isUpgraded()){

@@ -67,9 +67,8 @@ class FutureResolver extends ThreadSafe{
 	 * @param T $value
 	 */
 	public function finish($value) : void{
-		var_dump(get_debug_type($value));
-		$this->data->done = true;
 		$this->data->setValue($value);
+		$this->data->done = true;
 	}
 
 	public function crash($info) : void{

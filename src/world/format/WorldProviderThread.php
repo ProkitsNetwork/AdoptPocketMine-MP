@@ -153,8 +153,7 @@ class WorldProviderThread extends Thread{
 	}
 
 	protected function onRun() : void{
-		GlobalLogger::set(new PrefixedLogger($this->logger, "WorldProvider"));
-		GlobalLogger::get()->error("FJEIJFI");
+		GlobalLogger::set($this->logger);
 		$lang = new Language($this->lang);
 		$mgr = new WorldProviderManager();
 		/** @var WorldProvider[] */
@@ -254,9 +253,5 @@ class WorldProviderThread extends Thread{
 		$resolver = new FutureResolver($c);
 		$this->transactionQueue[$world][] = $resolver;
 		return $resolver->future();
-	}
-
-	protected function onShutdown() : void{
-
 	}
 }
