@@ -81,6 +81,7 @@ use pocketmine\network\mcpe\protocol\ClientboundPacket;
 use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\player\Player;
+use pocketmine\promise\Future;
 use pocketmine\promise\Promise;
 use pocketmine\promise\PromiseResolver;
 use pocketmine\scheduler\AsyncPool;
@@ -96,11 +97,8 @@ use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\BaseWorldProvider;
 use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
-use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
-use pocketmine\world\format\io\WorldProvider;
-use pocketmine\world\format\io\WritableWorldProvider;
-use pocketmine\world\format\LightArray;
+use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\SubChunk;
 use pocketmine\world\format\ThreadedWorldProvider;
 use pocketmine\world\generator\GeneratorManager;
@@ -391,6 +389,8 @@ class World implements ChunkManager{
 
 	private \Logger $logger;
 	private $worldData;
+	private array $pending = [];
+	private LoadedChunkData $dirtyIntermediateChunk;
 
 	/**
 	 * @phpstan-return ChunkPosHash
@@ -560,6 +560,7 @@ class World implements ChunkManager{
 		$this->addOnUnloadCallback(static function() use ($workerPool, $workerStartHook) : void{
 			$workerPool->removeWorkerStartHook($workerStartHook);
 		});
+		$this->dirtyIntermediateChunk = new LoadedChunkData(new ChunkData([], true, [], []), false, LoadedChunkData::FIXER_FLAG_NONE);
 	}
 
 	private function initRandomTickBlocksFromConfig(ServerConfigGroup $cfg) : void{
@@ -1013,6 +1014,14 @@ class World implements ChunkManager{
 				$this->time = PHP_INT_MIN;
 			}else{
 				$this->time++;
+			}
+		}
+
+		foreach($this->pending as $id => [$prom, $x, $y, $b]){
+			assert($prom instanceof Future);
+			if($prom->isDone()){
+				unset($this->pending[$id]);
+				$this->realChunkLoad($prom->get(), $x, $y, $b);
 			}
 		}
 
@@ -2928,7 +2937,9 @@ class World implements ChunkManager{
 		$loadedChunkData = null;
 
 		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
+			$fut = $this->provider->loadChunk($x, $z);
+			$this->pending[] = [$fut, $x, $z, $chunkHash];
+			$loadedChunkData = $this->dirtyIntermediateChunk;
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
@@ -2940,34 +2951,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
-		//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
-		$chunkData = $loadedChunkData->getData();
-		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
-		if(!$loadedChunkData->isUpgraded()){
-			$chunk->clearTerrainDirtyFlags();
-		}else{
-			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
-		}
-		$this->chunks[$chunkHash] = $chunk;
-		unset($this->blockCache[$chunkHash]);
-		unset($this->blockCollisionBoxCache[$chunkHash]);
-
-		$this->initChunk($x, $z, $chunkData);
-
-		if(ChunkLoadEvent::hasHandlers()){
-			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
-		}
-
-		if(!$this->isChunkInUse($x, $z)){
-			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
-			$this->unloadChunkRequest($x, $z);
-		}
-		foreach($this->getChunkListeners($x, $z) as $listener){
-			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
-		}
-		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
-
-		$this->timings->syncChunkLoad->stopTiming();
+		$this->realChunkLoad($loadedChunkData, $x, $z, $chunkHash);
 
 		return $this->chunks[$chunkHash];
 	}
@@ -3006,34 +2990,7 @@ class World implements ChunkManager{
 			return null;
 		}
 
-		//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
-		$chunkData = $loadedChunkData->getData();
-		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
-		if(!$loadedChunkData->isUpgraded()){
-			$chunk->clearTerrainDirtyFlags();
-		}else{
-			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
-		}
-		$this->chunks[$chunkHash] = $chunk;
-		unset($this->blockCache[$chunkHash]);
-		unset($this->blockCollisionBoxCache[$chunkHash]);
-
-		$this->initChunk($x, $z, $chunkData);
-
-		if(ChunkLoadEvent::hasHandlers()){
-			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
-		}
-
-		if(!$this->isChunkInUse($x, $z)){
-			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
-			$this->unloadChunkRequest($x, $z);
-		}
-		foreach($this->getChunkListeners($x, $z) as $listener){
-			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
-		}
-		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
-
-		$this->timings->syncChunkLoad->stopTiming();
+		$this->realChunkLoad($loadedChunkData, $x, $z, $chunkHash);
 
 		return $this->chunks[$chunkHash];
 	}
@@ -3689,5 +3646,36 @@ class World implements ChunkManager{
 				}
 			}
 		}
+	}
+
+	private function realChunkLoad(LoadedChunkData $loadedChunkData, int $x, int $z, int $chunkHash) : void{
+//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
+		$chunkData = $loadedChunkData->getData();
+		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
+		if(!$loadedChunkData->isUpgraded()){
+			$chunk->clearTerrainDirtyFlags();
+		}else{
+			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
+		}
+		$this->chunks[$chunkHash] = $chunk;
+		unset($this->blockCache[$chunkHash]);
+		unset($this->blockCollisionBoxCache[$chunkHash]);
+
+		$this->initChunk($x, $z, $chunkData);
+
+		if(ChunkLoadEvent::hasHandlers()){
+			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
+		}
+
+		if(!$this->isChunkInUse($x, $z)){
+			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
+			$this->unloadChunkRequest($x, $z);
+		}
+		foreach($this->getChunkListeners($x, $z) as $listener){
+			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
+		}
+		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
+
+		$this->timings->syncChunkLoad->stopTiming();
 	}
 }

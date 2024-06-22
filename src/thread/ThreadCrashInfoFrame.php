@@ -24,6 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\thread;
 
 use pmmp\thread\ThreadSafe;
+use function serialize;
+use function unserialize;
 
 final class ThreadCrashInfoFrame extends ThreadSafe implements \Serializable{
 

@@ -25,6 +25,8 @@ namespace pocketmine\promise;
 
 use pmmp\thread\ThreadSafe;
 use pocketmine\thread\ThreadCrashInfo;
+use function igbinary_serialize;
+use function igbinary_unserialize;
 
 /**
  * @template C

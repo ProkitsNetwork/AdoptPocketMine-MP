@@ -1,5 +1,26 @@
 <?php
 
+/*
+ *
+ *  ____            _        _   __  __ _                  __  __ ____
+ * |  _ \ ___   ___| | _____| |_|  \/  (_)_ __   ___      |  \/  |  _ \
+ * | |_) / _ \ / __| |/ / _ \ __| |\/| | | '_ \ / _ \_____| |\/| | |_) |
+ * |  __/ (_) | (__|   <  __/ |_| |  | | | | | |  __/_____| |  | |  __/
+ * |_|   \___/ \___|_|\_\___|\__|_|  |_|_|_| |_|\___|     |_|  |_|_|
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * @author PocketMine Team
+ * @link http://www.pocketmine.net/
+ *
+ *
+ */
+
+declare(strict_types=1);
+
 namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
@@ -7,6 +28,8 @@ use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\WorldData;
 use pocketmine\world\format\io\WorldProvider;
 use pocketmine\world\format\io\WritableWorldProvider;
+use function igbinary_serialize;
+use function igbinary_unserialize;
 
 class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 	public function __construct(
@@ -65,6 +88,7 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX, $chunkData, $dirtyFlags){
 			if($provider instanceof WritableWorldProvider){
 				$provider->saveChunk($chunkX, $chunkZ, igbinary_unserialize($chunkData), $dirtyFlags);
+				var_dump("SAVE");
 			}else{
 				throw new \RuntimeException("not saved");
 			}

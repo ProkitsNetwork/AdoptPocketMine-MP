@@ -27,6 +27,9 @@ use pmmp\thread\ThreadSafe;
 use pocketmine\thread\ThreadCrashException;
 use pocketmine\thread\ThreadCrashInfo;
 use pocketmine\thread\ThreadCrashInfoFrame;
+use function array_map;
+use function igbinary_unserialize;
+use function microtime;
 use function usleep;
 
 /**

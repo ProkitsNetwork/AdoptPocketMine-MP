@@ -56,6 +56,7 @@ use function get_current_user;
 use function get_loaded_extensions;
 use function getenv;
 use function gettype;
+use function igbinary_serialize;
 use function implode;
 use function interface_exists;
 use function is_a;

@@ -45,11 +45,19 @@ use pocketmine\world\generator\InvalidGeneratorOptionsException;
 use PrefixedLogger;
 use RuntimeException;
 use Symfony\Component\Filesystem\Path;
+use function array_keys;
+use function array_shift;
+use function assert;
+use function count;
+use function implode;
+use function is_dir;
+use function is_string;
+use function trim;
+use function usleep;
+use function var_dump;
 
 class WorldProviderThread extends Thread{
-	/** @var ThreadSafeArray */
 	private ThreadSafeArray $loadQueue;
-	/** @var ThreadSafeArray */
 	private ThreadSafeArray $unloadQueue;
 	private ThreadSafeArray $transactionQueue;
 
@@ -217,8 +225,6 @@ class WorldProviderThread extends Thread{
 	}
 
 	/**
-	 * @param string $folderName
-	 *
 	 * @return Future<ThreadedWorldProvider|null>
 	 */
 	public function register(string $folderName, bool $autoUpgrade = true) : Future{
@@ -229,8 +235,6 @@ class WorldProviderThread extends Thread{
 	}
 
 	/**
-	 * @param string $folderName
-	 *
 	 * @return Future<ThreadedWorldProvider>
 	 */
 	public function unregister(string $folderName) : Future{

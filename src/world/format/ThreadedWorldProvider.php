@@ -25,7 +25,6 @@ namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
-use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\io\WorldData;
 
 interface ThreadedWorldProvider{

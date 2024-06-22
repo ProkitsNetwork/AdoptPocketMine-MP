@@ -29,6 +29,7 @@ use pocketmine\errorhandler\ErrorTypeToStringMap;
 use pocketmine\utils\Filesystem;
 use pocketmine\utils\Utils;
 use function get_class;
+use function igbinary_serialize;
 use function sprintf;
 
 final class ThreadCrashInfo extends ThreadSafe{
