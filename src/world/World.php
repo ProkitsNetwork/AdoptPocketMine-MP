@@ -430,8 +430,8 @@ class World implements ChunkManager{
 		return morton3d_encode(
 			$x & self::BLOCKHASH_XZ_MASK,
 			($shiftedY /* & self::BLOCKHASH_Y_MASK */) |
-				((($x >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_X_SHIFT) |
-				((($z >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_Z_SHIFT),
+			((($x >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_X_SHIFT) |
+			((($z >> self::MORTON3D_BIT_SIZE) & self::BLOCKHASH_XZ_EXTRA_MASK) << self::BLOCKHASH_Z_SHIFT),
 			$z & self::BLOCKHASH_XZ_MASK
 		);
 	}
@@ -1044,20 +1044,15 @@ class World implements ChunkManager{
 			}
 			unset($this->loadingChunks[$chunkPosHash]);
 			$chunkData = $future->get();
-			if($chunkData !== null){
-				assert($chunkData instanceof LoadedChunkData);
-				$chunkData = $chunkData->getData();
-				$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
-				var_dump("SET");
-				$this->setChunk($chunkX, $chunkZ, $chunk);
-			}else{
-				$this->unloadChunk($chunkX,$chunkZ,false,false);
-				$this->internalOrderChunkPopulation($chunkX,$chunkZ,new class()implements ChunkLoader{},new PromiseResolver());
-				var_dump("G");
-			}
+			/*$chunk = $this->loadChunk($chunkX, $chunkZ, true, $chunkData);
+			if($chunk !== null){
+				foreach($this->getChunkListeners($chunkX, $chunkZ) as $listener){
+					$listener->onChunkChanged($chunkX, $chunkZ, $chunk);
+				}
+			}*/
 		}
 
-		$this->sunAnglePercentage = $this->computeSunAnglePercentage(); //Sun angle depends on the current time
+		$this->sunAnglePe		tage = $this->computeSunAnglePercentage(); //Sun angle depends on the current time
 		$this->skyLightReduction = $this->computeSkyLightReduction(); //Sky light reduction depends on the sun angle
 
 		if(++$this->sendTimeTicker === 200){
@@ -2618,11 +2613,7 @@ class World implements ChunkManager{
 				if($xx === 0 && $zz === 0){
 					continue; //center chunk
 				}
-				$chnk = $this->loadChunk($x + $xx, $z + $zz);
-				if($chnk === $this->intermediateChunk){
-					$chnk=null;
-				}
-				$result[World::chunkHash($xx, $zz)] = $chnk;
+				$result[World::chunkHash($xx, $zz)] = $this->loadChunk($x + $xx, $z + $zz);
 			}
 		}
 
@@ -2963,41 +2954,10 @@ class World implements ChunkManager{
 	 *
 	 * @return Chunk|null the requested chunk, or null on failure.
 	 */
-	public function loadChunk(int $x, int $z, bool $sync=false) : ?Chunk{
-		if(isset($this->chunks[$chunkHash = World::chunkHash($x, $z)])){
+	public function loadChunk(int $x, int $z) : ?Chunk{
+		$chunkHash = World::chunkHash($x, $z);
+		if(isset($this->chunks[$chunkHash])){
 			return $this->chunks[$chunkHash];
-		}
-
-		$this->timings->syncChunkLoad->startTiming();
-
-		$this->cancelUnloadChunkRequest($x, $z);
-
-		$this->timings->syncChunkLoadData->startTiming();
-
-		try{
-			$fut = $this->provider->loadChunk($x, $z);
-				$this->loadingChunks[$chunkHash] = $fut;
-				var_dump("REQUEST LOADING");
-		}catch(CorruptedChunkException $e){
-			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
-		}
-
-		$this->timings->syncChunkLoadData->stopTiming();
-$this->chunks[$chunkHash] = $this->intermediateChunk;
-		return $this->chunks[$chunkHash];
-	}
-
-	/**
-	 * Attempts to load a chunk from the world provider (if not already loaded). If the chunk is already loaded, it is
-	 * returned directly.
-	 *
-	 * @return Promise<Chunk|null> the requested chunk, or null on failure.
-	 */
-	public function loadChunkPromise(int $x, int $z) : ?Promise{
-		$resolver = new PromiseResolver();
-		if(isset($this->chunks[$chunkHash = World::chunkHash($x, $z)])){
-			$resolver->resolve($this->chunks[$chunkHash]);
-			return $resolver->getPromise();
 		}
 
 		$this->timings->syncChunkLoad->startTiming();
@@ -3009,7 +2969,9 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 		$loadedChunkData = null;
 
 		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
+			$fut = $this->provider->loadChunk($x, $z);
+			//$this->loadingChunks[$chunkHash] = $fut;
+			$loadedChunkData = $fut->get();
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
@@ -3021,7 +2983,33 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 			return null;
 		}
 
-		$this->realChunkLoad($loadedChunkData, $x, $z, $chunkHash);
+		$chunkData = $loadedChunkData->getData();
+		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
+		if(!$loadedChunkData->isUpgraded()){
+			$chunk->clearTerrainDirtyFlags();
+		}else{
+			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
+		}
+		$this->chunks[$chunkHash] = $chunk;
+		unset($this->blockCache[$chunkHash]);
+		unset($this->blockCollisionBoxCache[$chunkHash]);
+
+		$this->initChunk($x, $z, $chunkData);
+
+		if(ChunkLoadEvent::hasHandlers()){
+			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
+		}
+
+		if(!$this->isChunkInUse($x, $z)){
+			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
+			$this->unloadChunkRequest($x, $z);
+		}
+		foreach($this->getChunkListeners($x, $z) as $listener){
+			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
+		}
+		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
+
+		$this->timings->syncChunkLoad->stopTiming();
 
 		return $this->chunks[$chunkHash];
 	}
@@ -3425,7 +3413,6 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 		$temporaryChunkLoader = new class implements ChunkLoader{};
 		$this->registerChunkLoader($temporaryChunkLoader, $chunkX, $chunkZ);
 		$chunk = $this->loadChunk($chunkX, $chunkZ);
-
 		if($chunk === null && RequestChunkPopulationEvent::hasHandlers()){
 			$event = new RequestChunkPopulationEvent($this, $chunkX, $chunkZ);
 			$event->call();
@@ -3459,7 +3446,6 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 	 */
 	public function requestChunkPopulation(int $chunkX, int $chunkZ, ?ChunkLoader $associatedChunkLoader) : Promise{
 		[$resolver, $proceedWithPopulation] = $this->checkChunkPopulationPreconditions($chunkX, $chunkZ);
-		var_dump($proceedWithPopulation);
 		if(!$proceedWithPopulation){
 			return $resolver?->getPromise() ?? $this->enqueuePopulationRequest($chunkX, $chunkZ, $associatedChunkLoader);
 		}
@@ -3528,11 +3514,7 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 			}
 
 			$centerChunk = $this->loadChunk($chunkX, $chunkZ);
-			if($centerChunk === $this->intermediateChunk){
-				$centerChunk=null;
-			}
 			$adjacentChunks = $this->getAdjacentChunks($chunkX, $chunkZ);
-			var_dump("ORDERED");
 			$task = new PopulationTask(
 				$this->worldId,
 				$chunkX,
@@ -3590,9 +3572,8 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 			unset($this->activeChunkPopulationTasks[$index]);
 		}else{
 			if($dirtyChunks === 0){
-				$oldChunk = $this->loadChunk($x, $z, true);
+				$oldChunk = $this->loadChunk($x, $z);
 				$this->setChunk($x, $z, $chunk);
-				$this->logger->debug("Generated x=$x z=$z");
 
 				foreach($adjacentChunks as $relativeChunkHash => $adjacentChunk){
 					World::getXZ($relativeChunkHash, $relativeX, $relativeZ);
@@ -3684,36 +3665,5 @@ $this->chunks[$chunkHash] = $this->intermediateChunk;
 				}
 			}
 		}
-	}
-
-	private function realChunkLoad(LoadedChunkData $loadedChunkData, int $x, int $z, int $chunkHash) : void{
-//$loadedChunkData = FastChunkSerializer::deserializeLoadedChunkData($loadedChunkData);
-		$chunkData = $loadedChunkData->getData();
-		$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
-		if(!$loadedChunkData->isUpgraded()){
-			$chunk->clearTerrainDirtyFlags();
-		}else{
-			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
-		}
-		$this->chunks[$chunkHash] = $chunk;
-		unset($this->blockCache[$chunkHash]);
-		unset($this->blockCollisionBoxCache[$chunkHash]);
-
-		$this->initChunk($x, $z, $chunkData);
-
-		if(ChunkLoadEvent::hasHandlers()){
-			(new ChunkLoadEvent($this, $x, $z, $this->chunks[$chunkHash], false))->call();
-		}
-
-		if(!$this->isChunkInUse($x, $z)){
-			$this->logger->debug("Newly loaded chunk $x $z has no loaders registered, will be unloaded at next available opportunity");
-			$this->unloadChunkRequest($x, $z);
-		}
-		foreach($this->getChunkListeners($x, $z) as $listener){
-			$listener->onChunkLoaded($x, $z, $this->chunks[$chunkHash]);
-		}
-		$this->markTickingChunkForRecheck($x, $z); //tickers may have been registered before the chunk was loaded
-
-		$this->timings->syncChunkLoad->stopTiming();
 	}
 }

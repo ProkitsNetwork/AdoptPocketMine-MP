@@ -51,7 +51,7 @@ class Future extends ThreadSafe{
 			if($this->data->cancelled){
 				throw new FutureCancelledException("Future cancelled");
 			}
-			if(microtime(true) - $start > 200){
+			if(microtime(true) - $start > 5){
 				throw new \RuntimeException('Future died.');
 			}
 			usleep(500);

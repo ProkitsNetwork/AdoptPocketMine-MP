@@ -840,7 +840,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 				$world->registerTickingChunk($this->chunkTicker, $X, $Z);
 			}
 
-			$world->requestChunkPopulation($X, $Z, $this->chunkLoader)->onCompletion(
+			$world->requestChunkPopulation($X, $Z, $this->chunkLoader, false)->onCompletion(
 				function() use ($X, $Z, $index, $world) : void{
 					if(!$this->isConnected() || !isset($this->usedChunks[$index]) || $world !== $this->getWorld()){
 						return;
