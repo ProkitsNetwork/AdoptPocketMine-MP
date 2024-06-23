@@ -145,6 +145,8 @@ class UpdateChecker{
 			}else{
 				$this->updateInfo = $updateInfo;
 			}
+		}else{
+			$this->logger->debug("API reported version is the same version, not showing notification");
 		}
 	}
 
