@@ -53,8 +53,6 @@ use function implode;
 use function is_dir;
 use function is_string;
 use function trim;
-use function usleep;
-use function var_dump;
 
 class WorldProviderThread extends Thread{
 	private ThreadSafeArray $loadQueue;
@@ -73,7 +71,7 @@ class WorldProviderThread extends Thread{
 	}
 
 	public function __construct(private string $dataPath){
-		$this->lang = Server::getInstance()->getLanguage()->getLang();
+		$this->lang = igbinary_serialize(Server::getInstance()->getLanguage());
 		$this->loadQueue = new ThreadSafeArray();
 		$this->unloadQueue = new ThreadSafeArray();
 		$this->transactionQueue = new ThreadSafeArray();
@@ -94,7 +92,7 @@ class WorldProviderThread extends Thread{
 		}
 		$providers = $providerManager->getMatchingProviders($path);
 		if(count($providers) !== 1){
-			GlobalLogger::get()->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
+			$this->logger->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
 				$name,
 				count($providers) === 0 ?
 					KnownTranslationFactory::pocketmine_level_unknownFormat() :
@@ -107,13 +105,13 @@ class WorldProviderThread extends Thread{
 		try{
 			$provider = $providerClass->fromPath($path, new PrefixedLogger(GlobalLogger::get(), "World Provider: $name"));
 		}catch(CorruptedWorldException $e){
-			GlobalLogger::get()->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
+			$this->logger->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
 				$name,
 				KnownTranslationFactory::pocketmine_level_corrupted($e->getMessage())
 			)));
 			return null;
 		}catch(UnsupportedWorldFormatException $e){
-			GlobalLogger::get()->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
+			$this->logger->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
 				$name,
 				KnownTranslationFactory::pocketmine_level_unsupportedFormat($e->getMessage())
 			)));
@@ -122,7 +120,7 @@ class WorldProviderThread extends Thread{
 
 		$generatorEntry = GeneratorManager::getInstance()->getGenerator($provider->getWorldData()->getGenerator());
 		if($generatorEntry === null){
-			GlobalLogger::get()->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
+			$this->logger->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
 				$name,
 				KnownTranslationFactory::pocketmine_level_unknownGenerator($provider->getWorldData()->getGenerator())
 			)));
@@ -131,7 +129,7 @@ class WorldProviderThread extends Thread{
 		try{
 			$generatorEntry->validateGeneratorOptions($provider->getWorldData()->getGeneratorOptions());
 		}catch(InvalidGeneratorOptionsException $e){
-			GlobalLogger::get()->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
+			$this->logger->error($lang->translate(KnownTranslationFactory::pocketmine_level_loadError(
 				$name,
 				KnownTranslationFactory::pocketmine_level_invalidGeneratorOptions(
 					$provider->getWorldData()->getGeneratorOptions(),
@@ -145,71 +143,74 @@ class WorldProviderThread extends Thread{
 			if(!$autoUpgrade){
 				throw new UnsupportedWorldFormatException("World \"$name\" is in an unsupported format and needs to be upgraded");
 			}
-			GlobalLogger::get()->notice($lang->translate(KnownTranslationFactory::pocketmine_level_conversion_start($name)));
+			$this->logger->notice($lang->translate(KnownTranslationFactory::pocketmine_level_conversion_start($name)));
 
 			$providerClass = $providerManager->getDefault();
 			$converter = new FormatConverter($provider, $providerClass, Path::join(DATA_PATH, "backups", "worlds"), GlobalLogger::get());
 			$converter->execute();
 			$provider = $providerClass->fromPath($path, new PrefixedLogger(GlobalLogger::get(), "World Provider: $name"));
 
-			GlobalLogger::get()->notice($lang->translate(KnownTranslationFactory::pocketmine_level_conversion_finish($name, $converter->getBackupPath())));
+			$this->logger->notice($lang->translate(KnownTranslationFactory::pocketmine_level_conversion_finish($name, $converter->getBackupPath())));
 		}
 		return $provider;
 	}
 
-	public function unloadWorld(array $providers, string $world) : void{
-
-	}
-
 	protected function onRun() : void{
 		GlobalLogger::set($this->logger);
-		$lang = new Language($this->lang);
-		$mgr = new WorldProviderManager();
-		/** @var WorldProvider[] */
+		/** @var WorldProvider[] $providers */
 		$providers = [];
+		$lang = igbinary_unserialize($this->lang);
+		$mgr = new WorldProviderManager();
+
 		while(!$this->isKilled || count($providers) !== 0){
-			while(($load = $this->loadQueue->pop()) !== null){
-				/** @var FutureResolver<array{0:string,1:bool},void> $load */
-				$load->do(function() use ($mgr, $lang, $load, &$providers){
-					[$folder, $autoUpgrade] = $load->getContext();
-					if(isset($providers[$folder])){
-						throw new RuntimeException("resolver $folder is already loaded.");
+			while(($resolver = $this->loadQueue->pop()) !== null){
+				/** @var FutureResolver<array{0:string,1:bool},void> $resolver */
+				if($resolver->isCancelled()){
+					continue;
+				}
+				$resolver->do(function() use ($mgr, $lang, $resolver, &$providers){
+					[$folderName, $autoUpgrade] = $resolver->getContext();
+					if(isset($providers[$folderName])){
+						throw new RuntimeException("Provider for world $folderName has already loaded.");
 					}
-					$provider = $this->loadWorldData($lang, $mgr, $folder, $autoUpgrade);
-					var_dump("loaded $folder");
+					$provider = $this->loadWorldData($lang, $mgr, $folderName, $autoUpgrade);
+					$this->logger->debug("World provider for $folderName is loaded.");
 					if($provider === null){
-						var_dump("loaded $folder but null");
 						return null;
 					}
-					$ts = new BaseThreadedWorldProvider(
+					$providers[$folderName] = $provider;
+					$this->transactionQueue[$folderName] = new ThreadSafeArray();
+					return new BaseThreadedWorldProvider(
 						$provider->getWorldMinY(),
 						$provider->getWorldMaxY(),
-						$this->getWorldPath($folder),
-						$folder
+						$this->getWorldPath($folderName),
+						$folderName
 					);
-					$providers[$folder] = $provider;
-					$this->transactionQueue[$folder] = new ThreadSafeArray();
-					return $ts;
 				});
 			}
+
 			foreach($this->unloadQueue as $idx => $resolver){
 				assert($resolver instanceof FutureResolver);
+				if($resolver->isCancelled()){
+					continue;
+				}
 				$folderName = $resolver->getContext();
 				assert(is_string($folderName));
+
 				if(!$this->isKilled && !empty($this->transactionQueue[$folderName])){
 					if(!isset($providers[$folderName])){
 						continue;
 					}
 					$resolver->do(function() use (&$providers, $folderName){
-						var_dump("unloaded $folderName");
 						$provider = $providers[$folderName];
 						$provider->close();
+						$this->logger->debug("World provider for $folderName is unloaded.");
 						unset($providers[$folderName], $this->transactionQueue[$folderName]);
-						GlobalLogger::get()->debug("Provider for world $folderName is unloaded.");
 					});
 					unset($this->unloadQueue[$idx]);
 				}
 			}
+
 			foreach($this->transactionQueue as $world => $queue){
 				$provider = $providers[$world];
 				if($provider === null){
@@ -217,11 +218,27 @@ class WorldProviderThread extends Thread{
 					continue;
 				}
 				while(($resolver = $queue->pop()) !== null){
+					if($resolver->isCancelled()){
+						continue;
+					}
 					assert($resolver instanceof FutureResolver);
 					$resolver->do(static fn() => $resolver->getContext()($provider));
 				}
 			}
-			usleep(1000);
+			$need = false;
+			foreach($this->transactionQueue as $k => $queue){
+				if(count($queue) !== 0){
+					$need = true;
+					break;
+				}
+			}
+			if(!$need && count($this->unloadQueue) === 0){
+				$this->synchronized(function() : void{
+					if(!$this->isKilled){
+						$this->wait(1000);
+					}
+				});
+			}
 		}
 	}
 
@@ -230,8 +247,11 @@ class WorldProviderThread extends Thread{
 	 */
 	public function register(string $folderName, bool $autoUpgrade = true) : Future{
 		$resolver = new FutureResolver([$folderName, $autoUpgrade]);
-		var_dump("register $folderName");
+		$this->logger->debug("Registering world provider for $folderName.");
 		$this->loadQueue->synchronized(fn() => $this->loadQueue[] = $resolver);
+		$this->synchronized(function() : void{
+			$this->notify();
+		});
 		return $resolver->future();
 	}
 
@@ -240,8 +260,11 @@ class WorldProviderThread extends Thread{
 	 */
 	public function unregister(string $folderName) : Future{
 		$resolver = new FutureResolver($folderName);
-		var_dump("unregister $folderName");
+		$this->logger->debug("Unregistering world provider for $folderName.");
 		$this->unloadQueue->synchronized(fn() => $this->unloadQueue[] = $resolver);
+		$this->synchronized(function() : void{
+			$this->notify();
+		});
 		return $resolver->future();
 	}
 
@@ -257,6 +280,9 @@ class WorldProviderThread extends Thread{
 		}
 		$resolver = new FutureResolver($c);
 		$this->transactionQueue[$world][] = $resolver;
+		$this->synchronized(function() : void{
+			$this->notify();
+		});
 		return $resolver->future();
 	}
 }

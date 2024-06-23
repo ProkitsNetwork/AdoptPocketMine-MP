@@ -57,7 +57,7 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
-			usleep(0);
+
 			var_dump("work $chunkX $chunkZ");
 			return $provider->loadChunk($chunkX, $chunkZ);
 		});

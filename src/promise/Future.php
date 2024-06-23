@@ -48,10 +48,16 @@ class Future extends ThreadSafe{
 	public function get(){
 		$start = microtime(true);
 		while(!$this->data->done){
+			if($this->data->cancelled){
+				throw new FutureCancelledException("Future cancelled");
+			}
 			if(microtime(true) - $start > 200){
 				throw new \RuntimeException('Future died.');
 			}
 			usleep(500);
+		}
+		if($this->data->cancelled){
+			throw new FutureCancelledException("Future cancelled");
 		}
 		if($this->data->crashed){
 			throw new FutureExecutionException('Future crashed :' . $this->data->crashMessage);
@@ -64,8 +70,18 @@ class Future extends ThreadSafe{
 	 * @throws \RuntimeException
 	 */
 	public function getGenerator(){
+		$start = microtime(true);
 		while(!$this->data->done){
+			if($this->data->cancelled){
+				throw new FutureCancelledException("Future cancelled");
+			}
+			if(microtime(true) - $start > 5){
+				throw new \RuntimeException('Future died.');
+			}
 			yield;
+		}
+		if($this->data->cancelled){
+			throw new FutureCancelledException("Future cancelled");
 		}
 		if($this->data->crashed){
 			throw new FutureExecutionException('Future crashed :' . $this->data->crashMessage);
@@ -75,5 +91,13 @@ class Future extends ThreadSafe{
 
 	public function isDone() : bool{
 		return $this->data->done;
+	}
+
+	public function cancel() : void{
+		$this->data->cancelled = true;
+	}
+
+	public function isCancelled() : bool{
+		return $this->data->cancelled;
 	}
 }

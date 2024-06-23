@@ -34,6 +34,9 @@ use function igbinary_unserialize;
 class FutureResolver extends ThreadSafe{
 	/** @var FutureSharedData<T> */
 	private FutureSharedData $data;
+	/**
+	 * @var C
+	 */
 	private $context = null;
 	/**
 	 * @internal
@@ -47,10 +50,14 @@ class FutureResolver extends ThreadSafe{
 	public function __construct($context = null){
 		$this->setContext($context);
 		$this->data = new FutureSharedData();
-		$this->data->resolver = spl_object_id($this);
-		self::$neverDestruct[spl_object_id($this)] = $this;
+		$id = spl_object_id($this);
+		$this->data->resolver = $id;
+		self::$neverDestruct[$id] = $this;
 	}
 
+	/**
+	 * @param C $context
+	 */
 	private function setContext($context) : void{
 		if(!$context instanceof \Closure && !$context instanceof ThreadSafe){
 			$this->context = igbinary_serialize($context);
@@ -97,5 +104,9 @@ class FutureResolver extends ThreadSafe{
 			\GlobalLogger::get()->logException($throwable);
 			$this->crash($throwable->getMessage());
 		}
+	}
+
+	public function isCancelled() : bool{
+		return $this->data->cancelled;
 	}
 }

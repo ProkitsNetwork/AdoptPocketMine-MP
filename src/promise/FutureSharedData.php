@@ -36,7 +36,8 @@ class FutureSharedData extends ThreadSafe{
 	public int $resolver;
 	public bool $done = false;
 	public bool $crashed = false;
-	public $crashMessage;
+	public bool $cancelled = false;
+	public string $crashMessage;
 	private ?string $value;
 
 	public function __construct(){

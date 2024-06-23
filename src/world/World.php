@@ -389,8 +389,13 @@ class World implements ChunkManager{
 
 	private \Logger $logger;
 	private $worldData;
-	private array $pending = [];
+	/**
+	 * @var Future<LoadedChunkData|null>[]
+	 * @phpstan-var array<ChunkPosHash,Future<LoadedChunkData|null>>[]
+	 */
+	private array $loadingChunks = [];
 	private LoadedChunkData $dirtyIntermediateChunk;
+	private Chunk $intermediateChunk;
 
 	/**
 	 * @phpstan-return ChunkPosHash
@@ -570,6 +575,7 @@ class World implements ChunkManager{
 				}
 			}
 		}
+		$this->intermediateChunk = $chunk;
 		$this->dirtyIntermediateChunk = new LoadedChunkData(new ChunkData($chunk->getSubChunks(), true, [], []), false, LoadedChunkData::FIXER_FLAG_NONE);
 	}
 
@@ -655,6 +661,9 @@ class World implements ChunkManager{
 	public function onUnload() : void{
 		if($this->unloaded){
 			throw new \LogicException("Tried to close a world which is already closed");
+		}
+		foreach($this->loadingChunks as $loadFuture){
+			$loadFuture->cancel();
 		}
 
 		foreach($this->unloadCallbacks as $callback){
@@ -1027,26 +1036,24 @@ class World implements ChunkManager{
 			}
 		}
 
-		foreach($this->pending as $id => [$prom, $x, $y, $b]){
-			assert($prom instanceof Future);
-			if($prom->isDone()){
-				var_dump("pend $x $y");
-				unset($this->pending[$id]);
-				$chunkData = $prom->get();
-				if($chunkData !==null){
-					assert($chunkData instanceof LoadedChunkData);
-					$chunkData = $chunkData->getData();
-					$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
-var_dump("SET");
-					$this->setChunk($x, $y, $chunk);
-				}else{
-					//$this->unloadChunk($x,$y,false,false);
-					$this->internalOrderChunkPopulation($x, $y, new class()implements ChunkLoader{}, new PromiseResolver());
-					var_dump("G");
-				}
+		foreach($this->loadingChunks as $chunkPosHash => $future){
+			assert(is_int($chunkPosHash));
+			World::getXZ($chunkPosHash,$chunkX, $chunkZ);
+			if(!$future->isDone()){
+				continue;
+			}
+			unset($this->loadingChunks[$chunkPosHash]);
+			$chunkData = $future->get();
+			if($chunkData !== null){
+				assert($chunkData instanceof LoadedChunkData);
+				$chunkData = $chunkData->getData();
+				$chunk = new Chunk($chunkData->getSubChunks(), $chunkData->isPopulated());
+				var_dump("SET");
+				$this->setChunk($chunkX, $chunkZ, $chunk);
 			}else{
-				var_dump("wait $x $y");
-
+				$this->unloadChunk($chunkX,$chunkZ,false,false);
+				$this->internalOrderChunkPopulation($chunkX,$chunkZ,new class()implements ChunkLoader{},new PromiseResolver());
+				var_dump("G");
 			}
 		}
 
@@ -1555,23 +1562,18 @@ var_dump("SET");
 	public function saveChunks() : void{
 		$this->timings->syncChunkSave->startTiming();
 		try{
-			$ww = [];
-			foreach($this->pending as [$_, $x, $y, $h]){
-				$ww[$h]=null;
-			}
 			foreach($this->chunks as $chunkHash => $chunk){
-				if(isset($ww[$chunkHash])){
-					var_dump("CC");
+				self::getXZ($chunkHash, $chunkX, $chunkZ);
+				if(isset($this->loadingChunks[$chunkHash])){
+					$this->logger->debug("Ignoring chunk x=$chunkX z=$chunkZ");
 					continue;
 				}
-				var_dump("BB");
-				self::getXZ($chunkHash, $chunkX, $chunkZ);
 				$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
 					$chunk->getSubChunks(),
 					$chunk->isPopulated(),
 					array_map(fn(Entity $e) => $e->saveNBT(), array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk())),
 					array_map(fn(Tile $t) => $t->saveNBT(), $chunk->getTiles()),
-				), $chunk->getTerrainDirtyFlags());
+				), $chunk->getTerrainDirtyFlags())->get();
 				$chunk->clearTerrainDirtyFlags();
 			}
 		}finally{
@@ -2616,7 +2618,11 @@ var_dump("SET");
 				if($xx === 0 && $zz === 0){
 					continue; //center chunk
 				}
-				$result[World::chunkHash($xx, $zz)] = $this->loadChunk($x + $xx, $z + $zz);
+				$chnk = $this->loadChunk($x + $xx, $z + $zz);
+				if($chnk === $this->intermediateChunk){
+					$chnk=null;
+				}
+				$result[World::chunkHash($xx, $zz)] = $chnk;
 			}
 		}
 
@@ -2957,7 +2963,7 @@ var_dump("SET");
 	 *
 	 * @return Chunk|null the requested chunk, or null on failure.
 	 */
-	public function loadChunk(int $x, int $z) : ?Chunk{
+	public function loadChunk(int $x, int $z, bool $sync=false) : ?Chunk{
 		if(isset($this->chunks[$chunkHash = World::chunkHash($x, $z)])){
 			return $this->chunks[$chunkHash];
 		}
@@ -2968,26 +2974,16 @@ var_dump("SET");
 
 		$this->timings->syncChunkLoadData->startTiming();
 
-		$loadedChunkData = null;
-
 		try{
 			$fut = $this->provider->loadChunk($x, $z);
-			var_dump("load $x $z");
-			$this->pending[] = [$fut, $x, $z, $chunkHash];
-			$loadedChunkData = $this->dirtyIntermediateChunk;
+				$this->loadingChunks[$chunkHash] = $fut;
+				var_dump("REQUEST LOADING");
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
 
 		$this->timings->syncChunkLoadData->stopTiming();
-
-		if($loadedChunkData === null){
-			$this->timings->syncChunkLoad->stopTiming();
-			return null;
-		}
-
-		$this->realChunkLoad($loadedChunkData, $x, $z, $chunkHash);
-
+$this->chunks[$chunkHash] = $this->intermediateChunk;
 		return $this->chunks[$chunkHash];
 	}
 
@@ -3429,6 +3425,7 @@ var_dump("SET");
 		$temporaryChunkLoader = new class implements ChunkLoader{};
 		$this->registerChunkLoader($temporaryChunkLoader, $chunkX, $chunkZ);
 		$chunk = $this->loadChunk($chunkX, $chunkZ);
+
 		if($chunk === null && RequestChunkPopulationEvent::hasHandlers()){
 			$event = new RequestChunkPopulationEvent($this, $chunkX, $chunkZ);
 			$event->call();
@@ -3462,6 +3459,7 @@ var_dump("SET");
 	 */
 	public function requestChunkPopulation(int $chunkX, int $chunkZ, ?ChunkLoader $associatedChunkLoader) : Promise{
 		[$resolver, $proceedWithPopulation] = $this->checkChunkPopulationPreconditions($chunkX, $chunkZ);
+		var_dump($proceedWithPopulation);
 		if(!$proceedWithPopulation){
 			return $resolver?->getPromise() ?? $this->enqueuePopulationRequest($chunkX, $chunkZ, $associatedChunkLoader);
 		}
@@ -3530,7 +3528,11 @@ var_dump("SET");
 			}
 
 			$centerChunk = $this->loadChunk($chunkX, $chunkZ);
+			if($centerChunk === $this->intermediateChunk){
+				$centerChunk=null;
+			}
 			$adjacentChunks = $this->getAdjacentChunks($chunkX, $chunkZ);
+			var_dump("ORDERED");
 			$task = new PopulationTask(
 				$this->worldId,
 				$chunkX,
@@ -3588,8 +3590,9 @@ var_dump("SET");
 			unset($this->activeChunkPopulationTasks[$index]);
 		}else{
 			if($dirtyChunks === 0){
-				$oldChunk = $this->loadChunk($x, $z);
+				$oldChunk = $this->loadChunk($x, $z, true);
 				$this->setChunk($x, $z, $chunk);
+				$this->logger->debug("Generated x=$x z=$z");
 
 				foreach($adjacentChunks as $relativeChunkHash => $adjacentChunk){
 					World::getXZ($relativeChunkHash, $relativeX, $relativeZ);
