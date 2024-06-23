@@ -30,6 +30,7 @@ use pocketmine\VersionInfo;
 use pocketmine\YmlServerProperties;
 use function date;
 use function strtolower;
+use function time;
 use function ucfirst;
 
 class UpdateChecker{
@@ -138,19 +139,12 @@ class UpdateChecker{
 	 * Checks the update information against the current server version to decide if there's an update
 	 */
 	protected function checkUpdate(UpdateInfo $updateInfo) : void{
-		$currentVersion = VersionInfo::VERSION();
-		try{
-			$newVersion = new VersionString($updateInfo->base_version, $updateInfo->is_dev, $updateInfo->build);
-		}catch(\InvalidArgumentException $e){
-			//Invalid version returned from API, assume there's no update
-			$this->logger->debug("Assuming no update because \"" . $e->getMessage() . "\"");
-			return;
-		}
-
-		if($currentVersion->getBuild() > 0 && $currentVersion->compare($newVersion) > 0){
-			$this->updateInfo = $updateInfo;
-		}else{
-			$this->logger->debug("API reported version is an older version or the same version (" . $newVersion->getFullVersion() . "), not showing notification");
+		if(VersionInfo::GIT_HASH() !== $updateInfo->git_commit){
+			if($updateInfo->date <= time()){
+				$this->logger->debug("API reported version is an older version, not showing notification");
+			}else{
+				$this->updateInfo = $updateInfo;
+			}
 		}
 	}
 
