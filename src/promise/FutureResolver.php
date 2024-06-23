@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace pocketmine\promise;
 
 use pmmp\thread\ThreadSafe;
-use pocketmine\thread\ThreadCrashInfo;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 
@@ -36,7 +35,11 @@ class FutureResolver extends ThreadSafe{
 	/** @var FutureSharedData<T> */
 	private FutureSharedData $data;
 	private $context = null;
-	private static array $neverDestruct = [];
+	/**
+	 * @internal
+	 * @var FutureResolver[]
+	 */
+	public static array $neverDestruct = [];
 
 	/**
 	 * @param C $context
@@ -44,7 +47,8 @@ class FutureResolver extends ThreadSafe{
 	public function __construct($context = null){
 		$this->setContext($context);
 		$this->data = new FutureSharedData();
-		self::$neverDestruct[] = $this;
+		$this->data->resolver = spl_object_id($this);
+		self::$neverDestruct[spl_object_id($this)] = $this;
 	}
 
 	private function setContext($context) : void{
@@ -76,7 +80,7 @@ class FutureResolver extends ThreadSafe{
 	public function crash($info) : void{
 		$this->data->done = true;
 		$this->data->crashed = true;
-		$this->data->crash = $info;
+		$this->data->crashMessage = $info;
 	}
 
 	/**
@@ -91,9 +95,7 @@ class FutureResolver extends ThreadSafe{
 			$this->finish($c());
 		}catch(\Throwable $throwable){
 			\GlobalLogger::get()->logException($throwable);
-			$f = new \ReflectionFunction($c);
-			$class = $f->getClosureScopeClass()?->getShortName() ?? 'Unknown';
-			$this->crash(ThreadCrashInfo::constructor($throwable, $class));
+			$this->crash($throwable->getMessage());
 		}
 	}
 }

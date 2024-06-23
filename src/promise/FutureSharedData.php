@@ -33,9 +33,10 @@ use function igbinary_unserialize;
  * @template T
  */
 class FutureSharedData extends ThreadSafe{
+	public int $resolver;
 	public bool $done = false;
 	public bool $crashed = false;
-	public $crash;
+	public $crashMessage;
 	private ?string $value;
 
 	public function __construct(){
@@ -43,12 +44,14 @@ class FutureSharedData extends ThreadSafe{
 
 	public function setValue($value) : void{
 		$this->value = igbinary_serialize($value);
+		unset(FutureResolver::$neverDestruct[$this->resolver]);
 	}
 
 	public function getValue(){
 		if($this->value === null){
 			return null;
 		}
+		unset(FutureResolver::$neverDestruct[$this->resolver]);
 		return igbinary_unserialize($this->value);
 	}
 }

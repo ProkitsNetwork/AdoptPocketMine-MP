@@ -29,7 +29,6 @@ use pocketmine\errorhandler\ErrorTypeToStringMap;
 use pocketmine\utils\Filesystem;
 use pocketmine\utils\Utils;
 use function get_class;
-use function igbinary_serialize;
 use function sprintf;
 
 final class ThreadCrashInfo extends ThreadSafe{
@@ -53,10 +52,6 @@ final class ThreadCrashInfo extends ThreadSafe{
 
 	public static function fromThrowable(\Throwable $e, string $threadName) : self{
 		return new self(get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), Utils::printableTraceWithMetadata($e->getTrace()), $threadName);
-	}
-
-	public static function constructor(\Throwable $e, string $threadName) : string{
-		return igbinary_serialize([get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), Utils::printableTraceWithMetadataConstructor($e->getTrace()), $threadName]);
 	}
 
 	/**
