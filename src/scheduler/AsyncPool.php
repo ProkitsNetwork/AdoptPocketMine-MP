@@ -45,7 +45,7 @@ use const PHP_INT_MAX;
  * workers.
  */
 class AsyncPool{
-	private const WORKER_START_OPTIONS = NativeThread::INHERIT_INI | NativeThread::INHERIT_COMMENTS;
+	private const WORKER_START_OPTIONS = NativeThread::INHERIT_INI | NativeThread::INHERIT_COMMENTS | NativeThread::INHERIT_CONSTANTS;
 
 	/**
 	 * @var AsyncPoolWorkerEntry[]

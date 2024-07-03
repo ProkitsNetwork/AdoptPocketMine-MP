@@ -137,9 +137,10 @@ class UpdateChecker{
 	 */
 	protected function checkUpdate(UpdateInfo $updateInfo) : void{
 		if(VersionInfo::GIT_HASH() !== $updateInfo->git_commit){
-			if($updateInfo->date <= VersionInfo::GIT_COMMIT_DATE()){
+			$commitDate = VersionInfo::GIT_COMMIT_DATE();
+			if($updateInfo->date <= $commitDate){
 				$this->logger->debug("API reported version is an older version, not showing notification");
-			}else{
+			}elseif($commitDate !== 0){
 				$this->updateInfo = $updateInfo;
 			}
 		}else{
