@@ -60,7 +60,6 @@ function preg_quote_array(array $strings, string $delim) : array{
 /**
  * @param string[] $includedPaths
  * @param mixed[]  $metadata
- *
  * @phpstan-param array<string, mixed> $metadata
  *
  * @return \Generator|string[]
@@ -139,14 +138,19 @@ function main() : void{
 		exit(1);
 	}
 
-	$opts = getopt("", ["out:", "git:"]);
+	$opts = getopt("", ["out:", "git:", "build:"]);
 	if(isset($opts["git"])){
 		$gitHash = $opts["git"];
 	}else{
 		$gitHash = Git::getRepositoryStatePretty(dirname(__DIR__));
 		echo "Git hash detected as $gitHash" . PHP_EOL;
 	}
-	$gitCommitTime = Git::getRepositoryCommitDate(dirname(__DIR__), $gitHash);
+	$gitCommitDate = Git::getRepositoryCommitDate(dirname(__DIR__), $gitHash);
+	if(isset($opts["build"])){
+		$build = (int) $opts["build"];
+	}else{
+		$build = 0;
+	}
 	if(isset($opts["out"])){
 		if(!is_string($opts["out"])){
 			echo "--out cannot be specified multiple times" . PHP_EOL;
@@ -166,7 +170,8 @@ function main() : void{
 		],
 		[
 			'git' => $gitHash,
-			'git_commit_date' => $gitCommitTime,
+			'git_commit_date' => $gitCommitDate,
+			'build' => $build
 		],
 		Filesystem::fileGetContents(Path::join(__DIR__, 'server-phar-stub.php')) . "\n__HALT_COMPILER();",
 		\Phar::SHA1,

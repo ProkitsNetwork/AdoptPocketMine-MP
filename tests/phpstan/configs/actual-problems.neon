@@ -1214,3 +1214,22 @@ parameters:
 			message: "#^Method pocketmine\\\\network\\\\mcpe\\\\cache\\\\ChunkCache\\:\\:restartPendingRequest\\(\\) is unused\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/cache/ChunkCache.php
+		-
+			message: "#^Parameter \\#2 \\$commit of static method pocketmine\\\\utils\\\\Git\\:\\:getRepositoryCommitDate\\(\\) expects string, array\\<int, mixed\\>\\|string\\|false given\\.$#"
+			count: 1
+			path: ../../../build/server-phar.php
+
+		-
+			message: "#^Cannot access offset 'git_commit_date' on mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php
+
+		-
+			message: "#^Method pocketmine\\\\VersionInfo\\:\\:GIT_COMMIT_DATE\\(\\) should return int but returns mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php
+
+		-
+			message: "#^Static property pocketmine\\\\VersionInfo\\:\\:\\$gitCommitDate \\(int\\|null\\) does not accept mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php
