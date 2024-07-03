@@ -160,7 +160,7 @@ auto-updater:
     warn-console: true
   branch: stable
   #If using a development version, it will suggest changing the channel
-  suggest-channels: true
+  suggest-channels: false
 
 timings:
   #Choose the host to use for viewing your timings results.
