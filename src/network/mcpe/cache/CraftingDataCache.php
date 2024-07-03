@@ -52,6 +52,7 @@ use pocketmine\utils\Binary;
 use pocketmine\utils\ProtocolSingletonTrait;
 use Ramsey\Uuid\Uuid;
 use function array_map;
+use function is_string;
 use function spl_object_id;
 
 final class CraftingDataCache{

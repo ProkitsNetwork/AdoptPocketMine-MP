@@ -25,6 +25,7 @@ namespace pocketmine\updater;
 
 use pocketmine\utils\Internet;
 use pocketmine\utils\Utils;
+use function is_array;
 use function json_decode;
 use function parse_url;
 use function preg_match;

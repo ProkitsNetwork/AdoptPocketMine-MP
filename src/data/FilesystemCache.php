@@ -34,6 +34,7 @@ use pocketmine\VersionInfo;
 use RuntimeException;
 use Symfony\Component\Filesystem\Path;
 use Throwable;
+use function defined;
 use function file_exists;
 use function igbinary_serialize;
 use function igbinary_unserialize;

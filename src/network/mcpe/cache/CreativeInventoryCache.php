@@ -33,6 +33,7 @@ use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\inventory\CreativeContentEntry;
 use pocketmine\timings\Timings;
 use pocketmine\utils\ProtocolSingletonTrait;
+use function is_string;
 use function spl_object_id;
 
 final class CreativeInventoryCache{
