@@ -32,7 +32,6 @@ class UpdateCheckTask extends AsyncTask{
 
 	public function __construct(
 		UpdateChecker $updater,
-		private string $endpoint,
 		private string $channel
 	){
 		$this->storeLocal(self::TLS_KEY_UPDATER, $updater);
@@ -40,7 +39,7 @@ class UpdateCheckTask extends AsyncTask{
 
 	public function onRun() : void{
 		try{
-			$this->setResult(UpdaterApi::retrieve());
+			$this->setResult(UpdaterApi::retrieve($this->channel));
 		}catch(\RuntimeException $e){
 			$this->error = $e->getMessage();
 		}

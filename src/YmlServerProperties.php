@@ -48,7 +48,6 @@ final class YmlServerProperties{
 	public const AUTO_REPORT_USE_HTTPS = 'auto-report.use-https';
 	public const AUTO_UPDATER = 'auto-updater';
 	public const AUTO_UPDATER_ENABLED = 'auto-updater.enabled';
-	public const AUTO_UPDATER_HOST = 'auto-updater.host';
 	public const AUTO_UPDATER_ON_UPDATE = 'auto-updater.on-update';
 	public const AUTO_UPDATER_ON_UPDATE_WARN_CONSOLE = 'auto-updater.on-update.warn-console';
 	public const AUTO_UPDATER_PREFERRED_CHANNEL = 'auto-updater.preferred-channel';

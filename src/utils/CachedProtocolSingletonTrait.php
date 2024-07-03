@@ -31,14 +31,11 @@ trait CachedProtocolSingletonTrait{
 
 	private static function make(int $protocolId) : self{
 		$key = "protocol_singleton_{$protocolId}_" . (new ReflectionClass(__CLASS__))->getShortName();
-		$cache = FilesystemCache::getInstance();
-		$v = $cache->get($key);
-		if($v instanceof self){
-			return $v;
-		}
-		$v = self::makeCached($protocolId);
-		$cache->put($key, $v);
-		return $v;
+		return FilesystemCache::getInstance()->getOrDefault(
+			$key,
+			fn() => self::makeCached($protocolId),
+			fn($val) => $val instanceof self
+		);
 	}
 
 	private static function makeCached(int $protocolId) : self{

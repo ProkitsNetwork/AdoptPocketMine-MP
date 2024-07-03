@@ -50,3 +50,7 @@ parameters:
 			count: 2
 			path: ../../phpunit/promise/PromiseTest.php
 
+		-
+			message: "#^Parameter \\#1 \\$objectOrClass of class ReflectionClass constructor expects class\\-string\\<T of object\\>\\|T of object, pmmp\\\\thread\\\\Thread\\|null given\\.$#"
+			count: 1
+			path: ../../../src/scheduler/DumpWorkerMemoryRunnable.php

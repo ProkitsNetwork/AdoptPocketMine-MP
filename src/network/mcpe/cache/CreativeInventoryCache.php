@@ -63,15 +63,11 @@ final class CreativeInventoryCache{
 		if(!$isDefault){
 			return $this->buildCreativeInventoryCache($inventory);
 		}
-		$key = FilesystemCacheKey::getCreativeInventory($this->protocolId);
-		$cache = FilesystemCache::getInstance();
-		$cached = $cache->get($key);
-		if($cached !== null){
-			return $cached;
-		}
-		$buffer = $this->buildCreativeInventoryCache($inventory);
-		$cache->put($key, $buffer);
-		return $buffer;
+		return FilesystemCache::getInstance()->getOrDefault(
+			FilesystemCacheKey::getCreativeInventory($this->protocolId),
+			fn() => $this->buildCreativeInventoryCache($inventory),
+			static fn($val) => is_string($val)
+		);
 	}
 
 	/**

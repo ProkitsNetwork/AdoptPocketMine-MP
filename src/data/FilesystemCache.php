@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\data;
 
+use Closure;
 use GlobalLogger;
 use pocketmine\network\mcpe\compression\ZlibCompressor;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
@@ -30,6 +31,7 @@ use pocketmine\utils\Filesystem;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\utils\Utils;
 use pocketmine\VersionInfo;
+use RuntimeException;
 use Symfony\Component\Filesystem\Path;
 use Throwable;
 use function file_exists;
@@ -48,11 +50,6 @@ class FilesystemCache{
 	use SingletonTrait;
 
 	private FilesystemMutex $mutex;
-
-	private static function make() : self{
-		$path = Path::join(DATA_PATH, "cache_data");
-		return new self($path);
-	}
 
 	public function __construct(private string $path){
 		if(!is_dir($this->path)){
@@ -78,36 +75,32 @@ class FilesystemCache{
 		});
 	}
 
-	public function put(string $key, mixed $value) : void{
-		$this->mutex->do(function() use ($value, $key){
-			$file = Path::join($this->path, $this->toPathName($key));
-			Filesystem::safeFilePutContents($file, ZlibCompressor::getInstance()->compress(igbinary_serialize($value)));
-		});
-	}
-
-	public function has(string $key) : bool{
-		return $this->mutex->do(function() use ($key){
-			$path = Path::join($this->path, $this->toPathName($key));
-			return file_exists($path);
-		});
-	}
-
 	public function get(string $key) : mixed{
-		return $this->mutex->do(function() use ($key){
-			$file = Path::join($this->path, $this->toPathName($key));
-			if(!file_exists($file)){
+		return $this->mutex->do(fn() => $this->getValInternal($key));
+	}
+
+	private function getValInternal(string $key) : mixed{
+		$file = Path::join($this->path, $this->toPathName($key));
+		if(!file_exists($file)){
+			return null;
+		}
+		try{
+			$decompressed = ZlibCompressor::getInstance()->decompress(Filesystem::fileGetContents($file));
+			if($decompressed === ''){
 				return null;
 			}
-			try{
-				return igbinary_unserialize(ZlibCompressor::getInstance()->decompress(Filesystem::fileGetContents($file)));
-			}catch(Throwable $throwable){
-				$logger = GlobalLogger::get();
-				$logger->error("Data for $key is corrupted.");
-				$logger->logException($throwable);
-				$this->remove($key);
-			}
-			return null;
-		});
+			return igbinary_unserialize($decompressed);
+		}catch(Throwable $throwable){
+			$logger = GlobalLogger::get();
+			$logger->error("Data for $key is corrupted.");
+			$logger->logException($throwable);
+			$this->remove($key);
+		}
+		return null;
+	}
+
+	private function toPathName(string $key) : string{
+		return $key . '.dat';
 	}
 
 	public function remove(string $key) : void{
@@ -119,7 +112,58 @@ class FilesystemCache{
 		});
 	}
 
-	private function toPathName(string $key) : string{
-		return $key . '.dat';
+	public function put(string $key, mixed $value) : void{
+		$this->mutex->do(function() use ($value, $key){
+			$file = Path::join($this->path, $this->toPathName($key));
+			$this->putValInternal($file, $value);
+		});
+	}
+
+	private function putValInternal(string $file, mixed $value) : void{
+		$serialized = igbinary_serialize($value) ?? '';
+		$compressed = ZlibCompressor::getInstance()->compress($serialized);
+		Filesystem::safeFilePutContents($file, $compressed);
+	}
+
+	private static function make() : self{
+		if(!defined("DATA_PATH")){
+			throw new RuntimeException("Data path is not defined");
+		}
+		$path = Path::join(DATA_PATH, "cache_data");
+		return new self($path);
+	}
+
+	/**
+	 * @template T
+	 * @param Closure():T              $fn
+	 * @param null|Closure(mixed):bool $validator
+	 *
+	 * @return T
+	 */
+	public function getOrDefault(string $key, Closure $fn, ?Closure $validator = null){
+		return $this->mutex->do(function() use ($validator, $key, $fn){
+			$path = Path::join($this->path, $this->toPathName($key));
+			if(!file_exists($path)){
+				write_default:
+				$v = $fn();
+				if($validator !== null){
+					Utils::assumeNotFalse($validator($v));
+				}
+				$this->putValInternal($path, $v);
+				return $v;
+			}
+			$val = $this->getValInternal($path);
+			if($validator !== null && !$validator($val)){
+				goto write_default;
+			}
+			return $val;
+		});
+	}
+
+	public function has(string $key) : bool{
+		return $this->mutex->do(function() use ($key) : bool{
+			$path = Path::join($this->path, $this->toPathName($key));
+			return file_exists($path);
+		});
 	}
 }

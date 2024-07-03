@@ -56,7 +56,9 @@ final class StringToItemParser extends StringToTParser{
 		$result = new self();
 		$cache = FilesystemCache::getInstance();
 		$data = $cache->get(FilesystemCacheKey::STRING_TO_ITEM_PARSER);
-		if($data !== null){
+		if(is_array($data)){
+			//TODO validate cached data
+			/** @var array<int, array<string, true>> $data */
 			self::$useCache = true;
 			$result->reverseMap = $data;
 		}
@@ -67,6 +69,7 @@ final class StringToItemParser extends StringToTParser{
 		self::registerItems($result);
 
 		if(!self::$useCache){
+			/** @phpstan-ignore-next-line */
 			$cache->put(FilesystemCacheKey::STRING_TO_ITEM_PARSER, $result->reverseMap);
 		}
 		return $result;

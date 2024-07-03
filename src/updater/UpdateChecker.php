@@ -36,14 +36,12 @@ use function ucfirst;
 class UpdateChecker{
 
 	protected Server $server;
-	protected string $endpoint;
 	protected ?UpdateInfo $updateInfo = null;
 	private \Logger $logger;
 
-	public function __construct(Server $server, string $endpoint){
+	public function __construct(Server $server){
 		$this->server = $server;
 		$this->logger = new \PrefixedLogger($server->getLogger(), "Update Checker");
-		$this->endpoint = "http://$endpoint/api/";
 
 		if($server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_ENABLED, true)){
 			$this->doCheck();
@@ -132,7 +130,7 @@ class UpdateChecker{
 	 * Schedules an AsyncTask to check for an update.
 	 */
 	public function doCheck() : void{
-		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->endpoint, $this->getChannel()));
+		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->getChannel()));
 	}
 
 	/**
@@ -155,12 +153,5 @@ class UpdateChecker{
 	 */
 	public function getChannel() : string{
 		return strtolower($this->server->getConfigGroup()->getPropertyString(YmlServerProperties::AUTO_UPDATER_PREFERRED_CHANNEL, "stable"));
-	}
-
-	/**
-	 * Returns the host used for update checks.
-	 */
-	public function getEndpoint() : string{
-		return $this->endpoint;
 	}
 }

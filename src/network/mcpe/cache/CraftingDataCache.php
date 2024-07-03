@@ -82,15 +82,11 @@ final class CraftingDataCache{
 		if(!$isDefault){
 			return $this->buildCraftingDataCache($manager);
 		}
-		$key = FilesystemCacheKey::getCraftingDataKey($this->protocolId);
-		$cache = FilesystemCache::getInstance();
-		$cached = $cache->get($key);
-		if($cached !== null){
-			return $cached;
-		}
-		$buffer = $this->buildCraftingDataCache($manager);
-		$cache->put($key, $buffer);
-		return $buffer;
+		return FilesystemCache::getInstance()->getOrDefault(
+			FilesystemCacheKey::getCraftingDataKey($this->protocolId),
+			fn() => $this->buildCraftingDataCache($manager),
+			static fn($val) => is_string($val)
+		);
 	}
 
 	/**
