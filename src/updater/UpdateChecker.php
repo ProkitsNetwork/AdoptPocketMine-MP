@@ -62,10 +62,10 @@ class UpdateChecker{
 			if($this->server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_ON_UPDATE_WARN_CONSOLE, true)){
 				$this->showConsoleUpdate();
 			}
-		}else{
-			if(!VersionInfo::IS_DEVELOPMENT_BUILD && $this->getChannel() !== "stable"){
+		}elseif($this->server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_SUGGEST_CHANNELS, true)){
+			if(!VersionInfo::IS_DEVELOPMENT_BUILD && $this->getBranch() !== "stable"){
 				$this->showChannelSuggestionStable();
-			}elseif(VersionInfo::IS_DEVELOPMENT_BUILD && $this->getChannel() === "stable"){
+			}elseif(VersionInfo::IS_DEVELOPMENT_BUILD && $this->getBranch() === "stable"){
 				$this->showChannelSuggestionBeta();
 			}
 		}
@@ -98,7 +98,7 @@ class UpdateChecker{
 
 	protected function showChannelSuggestionStable() : void{
 		$this->printConsoleMessage([
-			"You're running a Stable build, but you're receiving update notifications for " . ucfirst($this->getChannel()) . " builds.",
+			"You're running a Stable build, but you're receiving update notifications for " . ucfirst($this->getBranch()) . " builds.",
 			"To get notified about new Stable builds only, change 'preferred-channel' in your pocketmine.yml to 'stable'."
 		]);
 	}
@@ -130,7 +130,7 @@ class UpdateChecker{
 	 * Schedules an AsyncTask to check for an update.
 	 */
 	public function doCheck() : void{
-		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->getChannel()));
+		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->getBranch()));
 	}
 
 	/**
@@ -138,7 +138,7 @@ class UpdateChecker{
 	 */
 	protected function checkUpdate(UpdateInfo $updateInfo) : void{
 		if(VersionInfo::GIT_HASH() !== $updateInfo->git_commit){
-			if($updateInfo->date <= time()){
+			if($updateInfo->date <= VersionInfo::GIT_COMMIT_DATE()){
 				$this->logger->debug("API reported version is an older version, not showing notification");
 			}else{
 				$this->updateInfo = $updateInfo;
@@ -149,9 +149,9 @@ class UpdateChecker{
 	}
 
 	/**
-	 * Returns the channel used for update checking (stable, beta, dev)
+	 * Returns the branch used for update checking
 	 */
-	public function getChannel() : string{
-		return strtolower($this->server->getConfigGroup()->getPropertyString(YmlServerProperties::AUTO_UPDATER_PREFERRED_CHANNEL, "stable"));
+	public function getBranch() : string{
+		return strtolower($this->server->getConfigGroup()->getPropertyString(YmlServerProperties::AUTO_UPDATER_BRANCH, "stable"));
 	}
 }

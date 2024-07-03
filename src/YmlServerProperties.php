@@ -50,7 +50,7 @@ final class YmlServerProperties{
 	public const AUTO_UPDATER_ENABLED = 'auto-updater.enabled';
 	public const AUTO_UPDATER_ON_UPDATE = 'auto-updater.on-update';
 	public const AUTO_UPDATER_ON_UPDATE_WARN_CONSOLE = 'auto-updater.on-update.warn-console';
-	public const AUTO_UPDATER_PREFERRED_CHANNEL = 'auto-updater.preferred-channel';
+	public const AUTO_UPDATER_BRANCH = 'auto-updater.branch';
 	public const AUTO_UPDATER_SUGGEST_CHANNELS = 'auto-updater.suggest-channels';
 	public const CHUNK_GENERATION = 'chunk-generation';
 	public const CHUNK_GENERATION_POPULATION_QUEUE_SIZE = 'chunk-generation.population-queue-size';

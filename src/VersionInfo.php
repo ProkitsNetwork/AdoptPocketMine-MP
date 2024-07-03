@@ -25,8 +25,6 @@ namespace pocketmine;
 
 use pocketmine\utils\Git;
 use pocketmine\utils\VersionString;
-use function is_array;
-use function is_int;
 use function str_repeat;
 
 final class VersionInfo{
@@ -77,22 +75,39 @@ final class VersionInfo{
 		return self::$gitHash;
 	}
 
-	private static ?int $buildNumber = null;
+	private static ?int $gitCommitDate = null;
 
-	public static function BUILD_NUMBER() : int{
-		if(self::$buildNumber === null){
-			self::$buildNumber = 0;
-			if(\Phar::running(true) !== ""){
+	public static function GIT_COMMIT_DATE() : int{
+		if(self::$gitCommitDate === null){
+			$commitDate = 0;
+
+			if(\Phar::running(true) === ""){
+				$dirty = false;
+				$gitHash = Git::getRepositoryState(\pocketmine\PATH, $dirty);
+				if($dirty){
+					$commitDate = time();
+				}else{
+					$commitDate = Git::getRepositoryCommitDate(\pocketmine\PATH, $gitHash);
+				}
+			}else{
 				$pharPath = \Phar::running(false);
 				$phar = \Phar::isValidPharFilename($pharPath) ? new \Phar($pharPath) : new \PharData($pharPath);
 				$meta = $phar->getMetadata();
-				if(is_array($meta) && isset($meta["build"]) && is_int($meta["build"])){
-					self::$buildNumber = $meta["build"];
+				if(isset($meta["git_commit_date"])){
+					$commitDate = $meta["git_commit_date"];
 				}
 			}
+
+			self::$gitCommitDate = $commitDate;
 		}
 
-		return self::$buildNumber;
+		return self::$gitCommitDate;
+	}
+
+	private static ?int $buildNumber = null;
+
+	public static function BUILD_NUMBER() : int{
+		return self::GIT_COMMIT_DATE();
 	}
 
 	private static ?VersionString $fullVersion = null;

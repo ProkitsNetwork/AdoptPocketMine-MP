@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\command\defaults;
 
 use pocketmine\command\CommandSender;
+use pocketmine\console\ConsoleCommandSender;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\permission\DefaultPermissionNames;
@@ -58,7 +59,7 @@ class VersionCommand extends VanillaCommand{
 			$versionColor = VersionInfo::IS_DEVELOPMENT_BUILD ? TextFormat::YELLOW : TextFormat::GREEN;
 			$sender->sendMessage(KnownTranslationFactory::pocketmine_command_version_serverSoftwareVersion(
 				$versionColor . VersionInfo::VERSION()->getFullVersion() . TextFormat::RESET,
-				TextFormat::GREEN . "Unknown" . TextFormat::RESET
+				TextFormat::GREEN . ($sender instanceof ConsoleCommandSender ? VersionInfo::GIT_HASH() : "Unknown") . TextFormat::RESET
 			));
 			$sender->sendMessage(KnownTranslationFactory::pocketmine_command_version_minecraftVersion(
 				TextFormat::GREEN . ProtocolInfo::MINECRAFT_VERSION_NETWORK . TextFormat::RESET,

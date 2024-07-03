@@ -60,6 +60,7 @@ function preg_quote_array(array $strings, string $delim) : array{
 /**
  * @param string[] $includedPaths
  * @param mixed[]  $metadata
+ *
  * @phpstan-param array<string, mixed> $metadata
  *
  * @return \Generator|string[]
@@ -106,9 +107,9 @@ function buildPhar(string $pharPath, string $basePath, array $includedPaths, arr
 	}
 
 	$regex = sprintf('/^(?!.*(%s))^%s(%s).*/i',
-		 implode('|', $excludedSubstrings), //String may not contain any of these substrings
-		 preg_quote($basePath, '/'), //String must start with this path...
-		 implode('|', preg_quote_array($includedPaths, '/')) //... and must be followed by one of these relative paths, if any were specified. If none, this will produce a null capturing group which will allow anything.
+		implode('|', $excludedSubstrings), //String may not contain any of these substrings
+		preg_quote($basePath, '/'), //String must start with this path...
+		implode('|', preg_quote_array($includedPaths, '/')) //... and must be followed by one of these relative paths, if any were specified. If none, this will produce a null capturing group which will allow anything.
 	);
 
 	$directory = new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS | \FilesystemIterator::CURRENT_AS_PATHNAME); //can't use fileinfo because of symlinks
@@ -138,18 +139,14 @@ function main() : void{
 		exit(1);
 	}
 
-	$opts = getopt("", ["out:", "git:", "build:"]);
+	$opts = getopt("", ["out:", "git:"]);
 	if(isset($opts["git"])){
 		$gitHash = $opts["git"];
 	}else{
 		$gitHash = Git::getRepositoryStatePretty(dirname(__DIR__));
 		echo "Git hash detected as $gitHash" . PHP_EOL;
 	}
-	if(isset($opts["build"])){
-		$build = (int) $opts["build"];
-	}else{
-		$build = 0;
-	}
+	$gitCommitTime = Git::getRepositoryCommitDate(dirname(__DIR__), $gitHash);
 	if(isset($opts["out"])){
 		if(!is_string($opts["out"])){
 			echo "--out cannot be specified multiple times" . PHP_EOL;
@@ -169,7 +166,7 @@ function main() : void{
 		],
 		[
 			'git' => $gitHash,
-			'build' => $build
+			'git_commit_date' => $gitCommitTime,
 		],
 		Filesystem::fileGetContents(Path::join(__DIR__, 'server-phar-stub.php')) . "\n__HALT_COMPILER();",
 		\Phar::SHA1,

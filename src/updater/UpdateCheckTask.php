@@ -39,7 +39,7 @@ class UpdateCheckTask extends AsyncTask{
 
 	public function onRun() : void{
 		try{
-			$this->setResult(UpdaterApi::retrieve($this->channel));
+			$this->setResult(UpdaterApi::retrieve(channel: $this->channel));
 		}catch(\RuntimeException $e){
 			$this->error = $e->getMessage();
 		}

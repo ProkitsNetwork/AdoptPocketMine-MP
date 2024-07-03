@@ -48,6 +48,14 @@ final class Git{
 		return null;
 	}
 
+	public static function getRepositoryCommitDate(string $dir, string $commit) : ?int{
+		$exitCode = Process::execute("git -C \"$dir\" log -1 --format=\"%ct\" \"$commit\"", $out);
+		if($exitCode !== 0 || ($out = trim($out)) === ''){
+			return null;
+		}
+		return (int) $out;
+	}
+
 	/**
 	 * Infallible, returns a string representing git state, or a string of zeros on failure.
 	 * If the repo is dirty, a "-dirty" suffix is added.
