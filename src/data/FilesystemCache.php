@@ -153,7 +153,7 @@ class FilesystemCache{
 				$this->putValInternal($path, $v);
 				return $v;
 			}
-			$val = $this->getValInternal($path);
+			$val = $this->getValInternal($key);
 			if($validator !== null && !$validator($val)){
 				goto write_default;
 			}
