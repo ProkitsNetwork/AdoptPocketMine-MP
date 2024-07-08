@@ -58,7 +58,7 @@ interface ResourcePack{
 	 * A folder resource loader may need to perform on-the-fly compression for this purpose.
 	 *
 	 * @param int $start  Offset to start reading the chunk from
-	 * @param int $length Maximum length of data to return.
+	 * @param int<1,max> $length Maximum length of data to return.
 	 *
 	 * @return string byte-array
 	 * @throws \InvalidArgumentException if the chunk does not exist

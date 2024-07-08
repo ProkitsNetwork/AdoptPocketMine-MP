@@ -148,6 +148,9 @@ class RegionLoader{
 		 * this relies on the assumption that the end of the file is always padded to a multiple of 4096 bytes.
 		 */
 		$bytesToRead = $this->locationTable[$index]->getSectorCount() << 12;
+		if($bytesToRead < 1){
+			throw new CorruptedChunkException("Corrupted chunk detected (invalid sector count)");
+		}
 		$payload = fread($this->filePointer, $bytesToRead);
 
 		if($payload === false || strlen($payload) !== $bytesToRead){

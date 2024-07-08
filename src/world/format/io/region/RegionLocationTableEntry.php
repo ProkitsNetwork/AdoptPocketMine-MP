@@ -27,6 +27,7 @@ use function range;
 
 class RegionLocationTableEntry{
 	private int $firstSector;
+	/** @var int<1,max> */
 	private int $sectorCount;
 	private int $timestamp;
 
@@ -61,6 +62,9 @@ class RegionLocationTableEntry{
 		return range($this->getFirstSector(), $this->getLastSector());
 	}
 
+	/**
+	 * @return int<1, max>
+	 */
 	public function getSectorCount() : int{
 		return $this->sectorCount;
 	}
