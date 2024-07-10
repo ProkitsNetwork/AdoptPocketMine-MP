@@ -10,6 +10,7 @@ $finder = PhpCsFixer\Finder::create()
 
 return (new PhpCsFixer\Config)
 	->setRiskyAllowed(true)
+	->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
 	->setRules([
 		'align_multiline_comment' => [
 			'comment_type' => 'phpdocs_only'

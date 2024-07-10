@@ -107,6 +107,7 @@ use pocketmine\utils\NotCloneable;
 use pocketmine\utils\NotSerializable;
 use pocketmine\utils\ObjectSet;
 use pocketmine\utils\Process;
+use pocketmine\utils\ServerKiller;
 use pocketmine\utils\SignalHandler;
 use pocketmine\utils\Terminal;
 use pocketmine\utils\TextFormat;
@@ -1501,6 +1502,10 @@ class Server{
 			$this->logger->emergency($this->language->translate(KnownTranslationFactory::pocketmine_server_forcingShutdown()));
 			$this->hasForceShutdown = true;
 		}
+
+		$killer = new ServerKiller(30);
+		$killer->start();
+
 		try{
 			if(!$this->isRunning()){
 				$this->sendUsage(SendUsageTask::TYPE_CLOSE);
@@ -1569,7 +1574,6 @@ class Server{
 	 */
 	public function exceptionHandler(\Throwable $e, ?array $trace = null) : void{
 		while(@ob_end_flush()){}
-		global $lastError;
 
 		if($trace === null){
 			$trace = $e->getTrace();
@@ -1580,6 +1584,16 @@ class Server{
 		//Assume that the thread already logged the original exception with the correct stack trace
 		$this->logger->logException($e, $trace);
 
+		$this->setCrashData($e, $trace);
+		$this->crashDump();
+	}
+
+	/**
+	 * @param mixed[][] $trace
+	 * @phpstan-param list<array<string, mixed>> $trace
+	 */
+	private function setCrashData(\Throwable $e, array $trace) : void{
+		global $lastError;
 		if($e instanceof ThreadCrashException){
 			$info = $e->getCrashInfo();
 			$type = $info->getType();
@@ -1611,7 +1625,6 @@ class Server{
 
 		global $lastExceptionError, $lastError;
 		$lastExceptionError = $lastError;
-		$this->crashDump();
 	}
 
 	private function writeCrashDumpFile(CrashDump $dump) : string{
@@ -1643,6 +1656,16 @@ class Server{
 		}
 		$this->hasStopped = false;
 
+		$this->writeCrashDump();
+
+		$this->forceShutdown();
+		$this->isRunning = false;
+
+		@Process::kill(Process::pid());
+		exit(1);
+	}
+
+	private function writeCrashDump() : void{
 		ini_set("error_reporting", '0');
 		ini_set("memory_limit", '-1'); //Fix error dump not dumped on memory problems
 		try{
@@ -1702,14 +1725,9 @@ class Server{
 			$this->logger->logException($e);
 			try{
 				$this->logger->critical($this->language->translate(KnownTranslationFactory::pocketmine_crash_error($e->getMessage())));
-			}catch(\Throwable $e){}
+			}catch(\Throwable $e){
+			}
 		}
-
-		$this->forceShutdown();
-		$this->isRunning = false;
-
-		@Process::kill(Process::pid());
-		exit(1);
 	}
 
 	/**
@@ -1726,8 +1744,16 @@ class Server{
 	private function tickProcessor() : void{
 		$this->nextTick = microtime(true);
 
+		// Dangerous but for production servers we catch errors thrown in a tick and log them instead
+		// This is so the servers will not crash and kick everyone as that is not acceptable
 		while($this->isRunning){
-			$this->tick();
+			try{
+				$this->tick();
+			}catch(\Throwable $error){
+				$this->getLogger()->logException($error);
+				$this->setCrashData($error, $error->getTrace());
+				$this->writeCrashDump();
+			}
 
 			//sleeps are self-correcting - if we undersleep 1ms on this tick, we'll sleep an extra ms on the next tick
 			$this->tickSleeper->sleepUntil($this->nextTick);
