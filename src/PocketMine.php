@@ -361,10 +361,6 @@ JIT_WARNING
 
 			$logger->info("Stopping other threads");
 
-			$killer = new ServerKiller(8);
-			$killer->start();
-			usleep(10000); //Fixes ServerKiller not being able to start on single-core machines
-
 			if(ThreadManager::getInstance()->stopAll() > 0){
 				$logger->debug("Some threads could not be stopped, performing a force-kill");
 				Process::kill(Process::pid());
