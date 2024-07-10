@@ -173,7 +173,6 @@ use function touch;
 use function trim;
 use function yaml_parse;
 use const DIRECTORY_SEPARATOR;
-use const PHP_EOL;
 use const PHP_INT_MAX;
 
 /**
@@ -1655,7 +1654,6 @@ class Server{
 		$this->hasStopped = false;
 
 		$this->writeCrashDump();
-
 
 		$this->forceShutdown();
 		$this->isRunning = false;
