@@ -56,6 +56,7 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\world\ChunkLoadEvent;
 use pocketmine\event\world\ChunkPopulateEvent;
 use pocketmine\event\world\ChunkUnloadEvent;
+use pocketmine\event\world\RequestChunkLoadEvent;
 use pocketmine\event\world\RequestChunkPopulationEvent;
 use pocketmine\event\world\SpawnChangeEvent;
 use pocketmine\event\world\WorldDifficultyChangeEvent;
@@ -2923,10 +2924,20 @@ class World implements ChunkManager{
 
 		$loadedChunkData = null;
 
-		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z);
-		}catch(CorruptedChunkException $e){
-			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
+		if(RequestChunkLoadEvent::hasHandlers()){
+			$ev = (new RequestChunkLoadEvent($this, $x, $z));
+			$ev->call();
+			if($ev->getChunkData() !== null){
+				$loadedChunkData = $ev->getChunkData();
+			}
+		}
+
+		if($loadedChunkData===null){
+			try{
+				$loadedChunkData = $this->provider->loadChunk($x, $z);
+			}catch(CorruptedChunkException $e){
+				$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
+			}
 		}
 
 		$this->timings->syncChunkLoadData->stopTiming();
