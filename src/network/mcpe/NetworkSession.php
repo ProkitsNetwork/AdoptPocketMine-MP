@@ -594,9 +594,7 @@ class NetworkSession{
 	}
 
 	public function sendDataPacket(ClientboundPacket $packet, bool $immediate = false) : bool{
-		$ret = $this->sendDataPacketInternal($packet, $immediate, null);
-		$this->flushSendBuffer($immediate);
-		return $ret;
+		return $this->sendDataPacketInternal($packet, $immediate, null);
 	}
 
 	/**
@@ -608,8 +606,6 @@ class NetworkSession{
 		if(!$this->sendDataPacketInternal($packet, $immediate, $resolver)){
 			$resolver->reject();
 		}
-
-		$this->flushSendBuffer($immediate);
 
 		return $resolver->getPromise();
 	}
