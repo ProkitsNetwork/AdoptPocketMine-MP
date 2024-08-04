@@ -1501,7 +1501,11 @@ class World implements ChunkManager{
 			return false;
 		}
 
-		(new WorldSaveEvent($this))->call();
+		$event = new WorldSaveEvent($this);
+		$event->call();
+		if($event->isCancelled()){
+			return false;
+		}
 
 		$timings = $this->timings->syncDataSave;
 		$timings->startTiming();

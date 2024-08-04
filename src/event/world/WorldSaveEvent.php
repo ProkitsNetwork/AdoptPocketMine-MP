@@ -23,9 +23,12 @@ declare(strict_types=1);
 
 namespace pocketmine\event\world;
 
+use pocketmine\event\Cancellable;
+use pocketmine\event\CancellableTrait;
+
 /**
  * Called when a world is saved. Saving may be triggered manually (e.g. via commands) or automatically (autosave).
  */
-class WorldSaveEvent extends WorldEvent{
-
+class WorldSaveEvent extends WorldEvent implements Cancellable{
+	use CancellableTrait;
 }
