@@ -21,27 +21,17 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\event\world;
+namespace pocketmine\event;
 
-use pocketmine\world\format\io\LoadedChunkData;
-use pocketmine\world\World;
-
-class RequestChunkLoadEvent extends WorldEvent{
-	private ?LoadedChunkData $chunk = null;
-
-	public function __construct(World $world, private int $chunkX, private int $chunkZ,){
-		parent::__construct($world);
+#[\Attribute(\Attribute::TARGET_METHOD)]
+class EventHandler{
+	public function __construct(
+		private int $priority,
+		private bool $handleCancelled
+	){
 	}
 
-	public function getChunkX() : int{ return $this->chunkX; }
+	public function getPriority() : int{ return $this->priority; }
 
-	public function getChunkZ() : int{ return $this->chunkZ; }
-
-	public function getChunkData() : ?LoadedChunkData{
-		return $this->chunk;
-	}
-
-	public function setChunkData(?LoadedChunkData $chunk) : void{
-		$this->chunk = $chunk;
-	}
+	public function handleCancelled() : bool{ return $this->handleCancelled; }
 }

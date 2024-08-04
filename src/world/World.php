@@ -2936,7 +2936,7 @@ class World implements ChunkManager{
 			}
 		}
 
-		if($loadedChunkData===null){
+		if($loadedChunkData === null){
 			try{
 				$loadedChunkData = $this->provider->loadChunk($x, $z);
 			}catch(CorruptedChunkException $e){
