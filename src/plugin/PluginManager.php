@@ -25,6 +25,7 @@ namespace pocketmine\plugin;
 
 use pocketmine\event\Cancellable;
 use pocketmine\event\Event;
+use pocketmine\event\EventHandler;
 use pocketmine\event\EventPriority;
 use pocketmine\event\HandlerListManager;
 use pocketmine\event\Listener;
@@ -609,31 +610,39 @@ class PluginManager{
 			$handlerClosure = $method->getClosure($listener);
 			if($handlerClosure === null) throw new AssumptionFailedError("This should never happen");
 
-			try{
-				$priority = isset($tags[ListenerMethodTags::PRIORITY]) ? EventPriority::fromString($tags[ListenerMethodTags::PRIORITY]) : EventPriority::NORMAL;
-			}catch(\InvalidArgumentException $e){
-				throw new PluginException("Event handler " . Utils::getNiceClosureName($handlerClosure) . "() declares invalid/unknown priority \"" . $tags[ListenerMethodTags::PRIORITY] . "\"");
-			}
-
-			$handleCancelled = false;
-			if(isset($tags[ListenerMethodTags::HANDLE_CANCELLED])){
-				if(!is_a($eventClass, Cancellable::class, true)){
-					throw new PluginException(sprintf(
-						"Event handler %s() declares @%s for non-cancellable event of type %s",
-						Utils::getNiceClosureName($handlerClosure),
-						ListenerMethodTags::HANDLE_CANCELLED,
-						$eventClass
-					));
+			$attributes = $method->getAttributes(EventHandler::class);
+			if(count($attributes) === 1){
+				/** @var EventHandler $attribute */
+				$attribute = $attributes[0]->newInstance();
+				$priority = $attribute->getPriority();
+				$handleCancelled = $attribute->handleCancelled();
+			}else{
+				try{
+					$priority = isset($tags[ListenerMethodTags::PRIORITY]) ? EventPriority::fromString($tags[ListenerMethodTags::PRIORITY]) : EventPriority::NORMAL;
+				}catch(\InvalidArgumentException $e){
+					throw new PluginException("Event handler " . Utils::getNiceClosureName($handlerClosure) . "() declares invalid/unknown priority \"" . $tags[ListenerMethodTags::PRIORITY] . "\"");
 				}
-				switch(strtolower($tags[ListenerMethodTags::HANDLE_CANCELLED])){
-					case "true":
-					case "":
-						$handleCancelled = true;
-						break;
-					case "false":
-						break;
-					default:
-						throw new PluginException("Event handler " . Utils::getNiceClosureName($handlerClosure) . "() declares invalid @" . ListenerMethodTags::HANDLE_CANCELLED . " value \"" . $tags[ListenerMethodTags::HANDLE_CANCELLED] . "\"");
+
+				$handleCancelled = false;
+				if(isset($tags[ListenerMethodTags::HANDLE_CANCELLED])){
+					if(!is_a($eventClass, Cancellable::class, true)){
+						throw new PluginException(sprintf(
+							"Event handler %s() declares @%s for non-cancellable event of type %s",
+							Utils::getNiceClosureName($handlerClosure),
+							ListenerMethodTags::HANDLE_CANCELLED,
+							$eventClass
+						));
+					}
+					switch(strtolower($tags[ListenerMethodTags::HANDLE_CANCELLED])){
+						case "true":
+						case "":
+							$handleCancelled = true;
+							break;
+						case "false":
+							break;
+						default:
+							throw new PluginException("Event handler " . Utils::getNiceClosureName($handlerClosure) . "() declares invalid @" . ListenerMethodTags::HANDLE_CANCELLED . " value \"" . $tags[ListenerMethodTags::HANDLE_CANCELLED] . "\"");
+					}
 				}
 			}
 
