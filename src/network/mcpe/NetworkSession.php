@@ -163,6 +163,8 @@ class NetworkSession{
 
 	private ?EncryptionContext $cipher = null;
 
+	private bool $bufferEnabled = true;
+
 	/**
 	 * @var string[]
 	 * @phpstan-var list<string>
@@ -350,6 +352,18 @@ class NetworkSession{
 		}
 	}
 
+	public function setPacketBuffered(bool $bufferEnabled) : void{ $this->bufferEnabled = $bufferEnabled; }
+
+	public function isPacketBuffered() : bool{ return $this->bufferEnabled; }
+
+	/**
+	 * @return \Closure[]|ObjectSet
+	 * @phpstan-return ObjectSet<\Closure() : void>
+	 */
+	public function getDisposeHooks() : ObjectSet{
+		return $this->disposeHooks;
+	}
+
 	/**
 	 * @throws PacketHandlingException
 	 */
@@ -528,7 +542,7 @@ class NetworkSession{
 			foreach($packets as $evPacket){
 				$this->addToSendBuffer(self::encodePacketTimed(PacketSerializer::encoder(), $evPacket));
 			}
-			if($immediate){
+			if($immediate || !$this->bufferEnabled){
 				$this->flushSendBuffer(true);
 			}
 
