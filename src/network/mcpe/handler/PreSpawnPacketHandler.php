@@ -82,6 +82,11 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 			$levelSettings->lightningLevel = 0;
 			$levelSettings->commandsEnabled = true;
 			$levelSettings->disablePersona = true;
+			$levelSettings->disableCustomSkins = true;
+			$levelSettings->useMsaGamertagsOnly = true;
+			$levelSettings->muteEmoteAnnouncements = true;
+			$levelSettings->onlySpawnV1Villagers = true;
+			$levelSettings->isNewNether = false;
 			$levelSettings->gameRules = [
 				"naturalregeneration" => new BoolGameRule(false, false) //Hack for client side regeneration
 			];
@@ -100,7 +105,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				$this->server->getMotd(),
 				"",
 				false,
-				new PlayerMovementSettings(PlayerMovementType::SERVER_AUTHORITATIVE_V1, 0, false),
+				new PlayerMovementSettings(PlayerMovementType::LEGACY, 0, false),
 				0,
 				0,
 				"",
@@ -109,7 +114,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				Uuid::fromString(Uuid::NIL),
 				false,
 				false,
-				new NetworkPermissions(disableClientSounds: true),
+				new NetworkPermissions(disableClientSounds: false),
 				[],
 				0,
 				$typeConverter->getItemTypeDictionary()->getEntries(),

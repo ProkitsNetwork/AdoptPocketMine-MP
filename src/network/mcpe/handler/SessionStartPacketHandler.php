@@ -52,9 +52,9 @@ final class SessionStartPacketHandler extends PacketHandler{
 		$this->session->sendDataPacket(NetworkSettingsPacket::create(
 			NetworkSettingsPacket::COMPRESS_EVERYTHING,
 			$this->session->getCompressor()->getNetworkId(),
-			true,
-			4,
-			4
+			false,
+			0,
+			0
 		));
 		($this->onSuccess)();
 

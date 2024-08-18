@@ -136,7 +136,6 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	protected ?Vector3 $lastPlayerAuthInputPosition = null;
 	protected ?float $lastPlayerAuthInputYaw = null;
 	protected ?float $lastPlayerAuthInputPitch = null;
-	protected ?int $lastPlayerAuthInputFlags = null;
 
 	public bool $forceMoveSync = false;
 
@@ -159,26 +158,10 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	}
 
 	public function handleMovePlayer(MovePlayerPacket $packet) : bool{
-		//The client sends this every time it lands on the ground, even when using PlayerAuthInputPacket.
-		//Silence the debug spam that this causes.
-		return true;
-	}
-
-	private function resolveOnOffInputFlags(int $inputFlags, int $startFlag, int $stopFlag) : ?bool{
-		$enabled = ($inputFlags & (1 << $startFlag)) !== 0;
-		$disabled = ($inputFlags & (1 << $stopFlag)) !== 0;
-		if($enabled !== $disabled){
-			return $enabled;
-		}
-		//neither flag was set, or both were set
-		return null;
-	}
-
-	public function handlePlayerAuthInput(PlayerAuthInputPacket $packet) : bool{
-		$rawPos = $packet->getPosition();
-		$rawYaw = $packet->getYaw();
-		$rawPitch = $packet->getPitch();
-		foreach([$rawPos->x, $rawPos->y, $rawPos->z, $rawYaw, $packet->getHeadYaw(), $rawPitch] as $float){
+		$rawPos = $packet->position;
+		$rawYaw = $packet->yaw;
+		$rawPitch = $packet->pitch;
+		foreach([$rawPos->x, $rawPos->y, $rawPos->z, $rawYaw, $packet->headYaw, $rawPitch] as $float){
 			if(is_infinite($float) || is_nan($float)){
 				$this->session->getLogger()->debug("Invalid movement received, contains NAN/INF components");
 				return false;
@@ -205,96 +188,17 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			$curPos = $this->player->getLocation();
 
 			if($newPos->distanceSquared($curPos) > 1){  //Tolerate up to 1 block to avoid problems with client-sided physics when spawning in blocks
-				//$this->session->getLogger()->debug("Got outdated pre-teleport movement, received " . $newPos . ", expected " . $curPos);
+				$this->session->getLogger()->debug("Got outdated pre-teleport movement, received " . $newPos . ", expected " . $curPos);
 				//Still getting movements from before teleport, ignore them
 				return true;
-			}
-
-			// Once we get a movement within a reasonable distance, treat it as a teleport ACK and remove position lock
-			$this->forceMoveSync = false;
-		}
-
-		$inputFlags = $packet->getInputFlags();
-		if($inputFlags !== $this->lastPlayerAuthInputFlags){
-			$this->lastPlayerAuthInputFlags = $inputFlags;
-
-			$sneaking = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SNEAKING, PlayerAuthInputFlags::STOP_SNEAKING);
-			$sprinting = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SPRINTING, PlayerAuthInputFlags::STOP_SPRINTING);
-			$swimming = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SWIMMING, PlayerAuthInputFlags::STOP_SWIMMING);
-			$gliding = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_GLIDING, PlayerAuthInputFlags::STOP_GLIDING);
-			$flying = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_FLYING, PlayerAuthInputFlags::STOP_FLYING);
-			$crawling = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_CRAWLING, PlayerAuthInputFlags::STOP_CRAWLING);
-			$mismatch =
-				($sneaking !== null && !$this->player->toggleSneak($sneaking)) |
-				($sprinting !== null && !$this->player->toggleSprint($sprinting)) |
-				($swimming !== null && !$this->player->toggleSwim($swimming)) |
-				($gliding !== null && !$this->player->toggleGlide($gliding)) |
-				($flying !== null && !$this->player->toggleFlight($flying)) |
-				($crawling !== null && !$this->player->toggleCrawl($crawling));
-			if((bool) $mismatch){
-				$this->player->sendData([$this->player]);
-			}
-
-			if($packet->hasFlag(PlayerAuthInputFlags::START_JUMPING)){
-				$this->player->jump();
-			}
-			if($packet->hasFlag(PlayerAuthInputFlags::MISSED_SWING)){
-				$this->player->missSwing();
-			}
-		}
+			}}
 
 		if(!$this->forceMoveSync && $hasMoved){
 			$this->lastPlayerAuthInputPosition = $rawPos;
 			//TODO: this packet has WAYYYYY more useful information that we're not using
 			$this->player->handleMovement($newPos);
 		}
-
-		$packetHandled = true;
-
-		$blockActions = $packet->getBlockActions();
-		if($blockActions !== null){
-			if(count($blockActions) > 100){
-				throw new PacketHandlingException("Too many block actions in PlayerAuthInputPacket");
-			}
-			foreach($blockActions as $k => $blockAction){
-				$actionHandled = false;
-				if($blockAction instanceof PlayerBlockActionStopBreak){
-					$actionHandled = $this->handlePlayerActionFromData($blockAction->getActionType(), new BlockPosition(0, 0, 0), Facing::DOWN);
-				}elseif($blockAction instanceof PlayerBlockActionWithBlockInfo){
-					$actionHandled = $this->handlePlayerActionFromData($blockAction->getActionType(), $blockAction->getBlockPosition(), $blockAction->getFace());
-				}
-
-				if(!$actionHandled){
-					$packetHandled = false;
-					$this->session->getLogger()->debug("Unhandled player block action at offset $k in PlayerAuthInputPacket");
-				}
-			}
-		}
-
-		$useItemTransaction = $packet->getItemInteractionData();
-		if($useItemTransaction !== null){
-			if(count($useItemTransaction->getTransactionData()->getActions()) > 100){
-				throw new PacketHandlingException("Too many actions in item use transaction");
-			}
-
-			$this->inventoryManager->setCurrentItemStackRequestId($useItemTransaction->getRequestId());
-			$this->inventoryManager->addRawPredictedSlotChanges($useItemTransaction->getTransactionData()->getActions());
-			if(!$this->handleUseItemTransaction($useItemTransaction->getTransactionData())){
-				$packetHandled = false;
-				$this->session->getLogger()->debug("Unhandled transaction in PlayerAuthInputPacket (type " . $useItemTransaction->getTransactionData()->getActionType() . ")");
-			}else{
-				$this->inventoryManager->syncMismatchedPredictedSlotChanges();
-			}
-			$this->inventoryManager->setCurrentItemStackRequestId(null);
-		}
-
-		$itemStackRequest = $packet->getItemStackRequest();
-		if($itemStackRequest !== null){
-			$result = $this->handleSingleItemStackRequest($itemStackRequest);
-			$this->session->sendDataPacket(ItemStackResponsePacket::create([$result]));
-		}
-
-		return $packetHandled;
+		return true;
 	}
 
 	public function handleLevelSoundEventPacketV1(LevelSoundEventPacketV1 $packet) : bool{
@@ -702,18 +606,86 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			case PlayerAction::STOP_SLEEPING:
 				$this->player->stopSleep();
 				break;
+			case PlayerAction::JUMP:
+				$this->player->jump();
+				return true;
+			case PlayerAction::START_SPRINT:
+				if(!$this->player->toggleSprint(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_SPRINT:
+				if(!$this->player->toggleSprint(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::START_SNEAK:
+				if(!$this->player->toggleSneak(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_SNEAK:
+				if(!$this->player->toggleSneak(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::START_GLIDE:
+				if(!$this->player->toggleGlide(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_GLIDE:
+				if(!$this->player->toggleGlide(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::START_CRAWLING:
+				if(!$this->player->toggleCrawl(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_CRAWLING:
+				if(!$this->player->toggleCrawl(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
 			case PlayerAction::CRACK_BREAK:
 				self::validateFacing($face);
 				$this->player->continueBreakBlock($pos, $face);
 				break;
+			case PlayerAction::MISSED_SWING:
+				$this->player->missSwing();
+				return true;
+			case PlayerAction::START_SWIMMING:
+				if(!$this->player->toggleSwim(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_SWIMMING:
+				if(!$this->player->toggleSwim(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::START_FLYING:
+				if(!$this->player->toggleFlight(true)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
+			case PlayerAction::STOP_FLYING:
+				if(!$this->player->toggleFlight(false)){
+					$this->player->sendData([$this->player]);
+				}
+				return true;
 			case PlayerAction::INTERACT_BLOCK: //TODO: ignored (for now)
 				break;
 			case PlayerAction::CREATIVE_PLAYER_DESTROY_BLOCK:
 				//TODO: do we need to handle this?
 				break;
-			case PlayerAction::START_ITEM_USE_ON:
-			case PlayerAction::STOP_ITEM_USE_ON:
-				//TODO: this has no obvious use and seems only used for analytics in vanilla - ignore it
+			case PlayerAction::HANDLED_TELEPORT:
+				if($this->forceMoveSync){
+					$this->session->getLogger()->debug("Teleport handled");
+					$this->forceMoveSync = false;
+				}
 				break;
 			default:
 				$this->session->getLogger()->debug("Unhandled/unknown player action type " . $action);
