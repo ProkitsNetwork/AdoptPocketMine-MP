@@ -73,7 +73,6 @@ use pocketmine\network\mcpe\protocol\ModalFormResponsePacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\NetworkStackLatencyPacket;
 use pocketmine\network\mcpe\protocol\PlayerActionPacket;
-use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerHotbarPacket;
 use pocketmine\network\mcpe\protocol\PlayerInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
@@ -97,9 +96,6 @@ use pocketmine\network\mcpe\protocol\types\inventory\stackresponse\ItemStackResp
 use pocketmine\network\mcpe\protocol\types\inventory\UseItemOnEntityTransactionData;
 use pocketmine\network\mcpe\protocol\types\inventory\UseItemTransactionData;
 use pocketmine\network\mcpe\protocol\types\PlayerAction;
-use pocketmine\network\mcpe\protocol\types\PlayerAuthInputFlags;
-use pocketmine\network\mcpe\protocol\types\PlayerBlockActionStopBreak;
-use pocketmine\network\mcpe\protocol\types\PlayerBlockActionWithBlockInfo;
 use pocketmine\network\PacketHandlingException;
 use pocketmine\player\Player;
 use pocketmine\utils\AssumptionFailedError;
