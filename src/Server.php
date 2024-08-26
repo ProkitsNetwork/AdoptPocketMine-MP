@@ -237,6 +237,7 @@ class Server{
 	private UpdateChecker $updater;
 
 	private AsyncPool $asyncPool;
+	private AsyncPool $compressorAsyncPool;
 
 	/** Counts the ticks since the server start */
 	private int $tickCounter = 0;
@@ -928,6 +929,34 @@ class Server{
 
 				return $promises;
 			});
+			$this->compressorAsyncPool = new AsyncPool($poolSize, max(-1, $this->configGroup->getPropertyInt(Yml::MEMORY_ASYNC_WORKER_HARD_LIMIT, 256)), $this->autoloader, $this->logger, $this->tickSleeper);
+			$this->compressorAsyncPool->addWorkerStartHook(function(int $i) : void{
+				if(TimingsHandler::isEnabled()){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::setEnabled(true), $i);
+				}
+			});
+			TimingsHandler::getToggleCallbacks()->add(function(bool $enable) : void{
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::setEnabled($enable), $workerId);
+				}
+			});
+			TimingsHandler::getReloadCallbacks()->add(function() : void{
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::reload(), $workerId);
+				}
+			});
+			TimingsHandler::getCollectCallbacks()->add(function() : array{
+				$promises = [];
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					/** @phpstan-var PromiseResolver<list<string>> $resolver */
+					$resolver = new PromiseResolver();
+					$this->compressorAsyncPool->submitTaskToWorker(new TimingsCollectionTask($resolver), $workerId);
+
+					$promises[] = $resolver->getPromise();
+				}
+
+				return $promises;
+			});
 
 			$netCompressionThreshold = -1;
 			if($this->configGroup->getPropertyInt(Yml::NETWORK_BATCH_THRESHOLD, 256) >= 0){
@@ -1424,7 +1453,7 @@ class Server{
 				if(!$sync && strlen($buffer) >= $this->networkCompressionAsyncThreshold){
 					$promise = new CompressBatchPromise();
 					$task = new CompressBatchTask($buffer, $promise, $compressor);
-					$this->asyncPool->submitTask($task);
+					$this->compressorAsyncPool->submitTask($task);
 					return $promise;
 				}
 
@@ -1534,6 +1563,11 @@ class Server{
 			if(isset($this->asyncPool)){
 				$this->logger->debug("Shutting down async task worker pool");
 				$this->asyncPool->shutdown();
+			}
+
+			if(isset($this->compressorAsyncPool)){
+				$this->logger->debug("Shutting down compressor worker pool");
+				$this->compressorAsyncPool->shutdown();
 			}
 
 			if(isset($this->configGroup)){
@@ -1866,6 +1900,7 @@ class Server{
 
 		Timings::$schedulerAsync->startTiming();
 		$this->asyncPool->collectTasks();
+		$this->compressorAsyncPool->collectTasks();
 		Timings::$schedulerAsync->stopTiming();
 
 		$this->worldManager->tick($this->tickCounter);
