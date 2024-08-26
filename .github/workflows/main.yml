@@ -31,7 +31,7 @@ jobs:
         uses: shivammathur/setup-php@2.32.0
         with:
           php-version: 8.2
-          tools: php-cs-fixer:3.49
+          tools: php-cs-fixer:3.68.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
