@@ -76,6 +76,7 @@ use pocketmine\network\mcpe\protocol\PlayerActionPacket;
 use pocketmine\network\mcpe\protocol\PlayerHotbarPacket;
 use pocketmine\network\mcpe\protocol\PlayerInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\RequestChunkRadiusPacket;
 use pocketmine\network\mcpe\protocol\ServerSettingsRequestPacket;
 use pocketmine\network\mcpe\protocol\SetActorMotionPacket;
@@ -996,7 +997,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	}
 
 	public function handleEmote(EmotePacket $packet) : bool{
-		$this->player->emote($packet->getEmoteId());
+		$this->player->emote($packet->getEmoteId(), $this->session->getProtocolId() >= ProtocolInfo::PROTOCOL_1_21_30 ? $packet->getEmoteLengthTicks() : 0);
 		return true;
 	}
 }
