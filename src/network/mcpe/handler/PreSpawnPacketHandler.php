@@ -39,7 +39,7 @@ use pocketmine\network\mcpe\protocol\types\Experiments;
 use pocketmine\network\mcpe\protocol\types\LevelSettings;
 use pocketmine\network\mcpe\protocol\types\NetworkPermissions;
 use pocketmine\network\mcpe\protocol\types\PlayerMovementSettings;
-use pocketmine\network\mcpe\protocol\types\PlayerMovementType;
+use pocketmine\network\mcpe\protocol\types\ServerAuthMovementMode;
 use pocketmine\network\mcpe\protocol\types\SpawnSettings;
 use pocketmine\player\Player;
 use pocketmine\Server;
@@ -105,7 +105,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				$this->server->getMotd(),
 				"",
 				false,
-				new PlayerMovementSettings(PlayerMovementType::LEGACY, 0, false),
+				new PlayerMovementSettings(ServerAuthMovementMode::LEGACY_CLIENT_AUTHORITATIVE_V1, 0, false),
 				0,
 				0,
 				"",
