@@ -786,11 +786,6 @@ parameters:
 			path: ../../../src/resourcepacks/ZippedResourcePack.php
 
 		-
-			message: "#^Parameter \\#2 \\$length of function fread expects int\\<0, max\\>, int given\\.$#"
-			count: 1
-			path: ../../../src/resourcepacks/ZippedResourcePack.php
-
-		-
 			message: "#^Property pocketmine\\\\resourcepacks\\\\ZippedResourcePack\\:\\:\\$fileResource \\(resource\\) does not accept resource\\|false\\.$#"
 			count: 1
 			path: ../../../src/resourcepacks/ZippedResourcePack.php
@@ -1032,11 +1027,6 @@ parameters:
 
 		-
 			message: "#^Only numeric types are allowed in %%, int\\<0, max\\>\\|false given on the left side\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/RegionLoader.php
-
-		-
-			message: "#^Parameter \\#2 \\$length of function fread expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: ../../../src/world/format/io/region/RegionLoader.php
 

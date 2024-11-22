@@ -285,7 +285,11 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	protected string $locale = "en_US";
 
 	protected int $startAction = -1;
-	/** @var int[] ID => ticks map */
+
+	/**
+	 * @phpstan-var array<int|string, int>
+	 * @var int[] stateId|cooldownTag => ticks map
+	 */
 	protected array $usedItemsCooldown = [];
 
 	private int $lastEmoteTick = 0;
@@ -524,7 +528,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	public function setAutoJump(bool $value) : void{
 		if($this->autoJump !== $value){
 			$this->autoJump = $value;
-			$this->getNetworkSession()->syncAbilities($this);
+			$this->getNetworkSession()->syncAdventureSettings();
 		}
 	}
 
@@ -714,7 +718,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	 */
 	public function getItemCooldownExpiry(Item $item) : int{
 		$this->checkItemCooldowns();
-		return $this->usedItemsCooldown[$item->getStateId()] ?? 0;
+		return $this->usedItemsCooldown[$item->getCooldownTag() ?? $item->getStateId()] ?? 0;
 	}
 
 	/**
@@ -722,7 +726,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	 */
 	public function hasItemCooldown(Item $item) : bool{
 		$this->checkItemCooldowns();
-		return isset($this->usedItemsCooldown[$item->getStateId()]);
+		return isset($this->usedItemsCooldown[$item->getCooldownTag() ?? $item->getStateId()]);
 	}
 
 	/**
@@ -731,7 +735,8 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	public function resetItemCooldown(Item $item, ?int $ticks = null) : void{
 		$ticks = $ticks ?? $item->getCooldownTicks();
 		if($ticks > 0){
-			$this->usedItemsCooldown[$item->getStateId()] = $this->server->getTick() + $ticks;
+			$this->usedItemsCooldown[$item->getCooldownTag() ?? $item->getStateId()] = $this->server->getTick() + $ticks;
+			$this->getNetworkSession()->onItemCooldownChanged($item, $ticks);
 		}
 	}
 
@@ -1637,7 +1642,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			return false;
 		}
 
-		$this->resetItemCooldown($item);
+		$this->resetItemCooldown($oldItem);
 		$this->returnItemsFromAction($oldItem, $item, $returnedItems);
 
 		$this->setUsingItem($item instanceof Releasable && $item->canStartUsingItem($this));
@@ -1666,7 +1671,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			}
 
 			$this->setUsingItem(false);
-			$this->resetItemCooldown($slot);
+			$this->resetItemCooldown($oldItem);
 
 			$slot->pop();
 			$this->returnItemsFromAction($oldItem, $slot, [$slot->getResidue()]);
@@ -1694,7 +1699,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			$returnedItems = [];
 			$result = $item->onReleaseUsing($this, $returnedItems);
 			if($result === ItemUseResult::SUCCESS){
-				$this->resetItemCooldown($item);
+				$this->resetItemCooldown($oldItem);
 				$this->returnItemsFromAction($oldItem, $item, $returnedItems);
 				return true;
 			}
