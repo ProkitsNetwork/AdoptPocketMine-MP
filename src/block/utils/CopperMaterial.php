@@ -21,8 +21,18 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\event;
+namespace pocketmine\block\utils;
 
-class TestConcreteExtendsAllowHandleEvent extends TestAbstractAllowHandleEvent{
+/**
+ * Represents copper blocks that have oxidized and waxed variations.
+ */
+interface CopperMaterial{
 
+	public function getOxidation() : CopperOxidation;
+
+	public function setOxidation(CopperOxidation $oxidation) : CopperMaterial;
+
+	public function isWaxed() : bool;
+
+	public function setWaxed(bool $waxed) : CopperMaterial;
 }

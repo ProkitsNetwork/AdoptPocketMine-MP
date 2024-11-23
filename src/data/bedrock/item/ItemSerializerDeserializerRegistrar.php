@@ -25,20 +25,22 @@ namespace pocketmine\data\bedrock\item;
 
 use pocketmine\block\Bed;
 use pocketmine\block\Block;
-use pocketmine\block\MobHead;
+use pocketmine\block\CopperDoor;
+use pocketmine\block\utils\CopperOxidation;
 use pocketmine\block\utils\DyeColor;
 use pocketmine\block\VanillaBlocks as Blocks;
 use pocketmine\data\bedrock\CompoundTypeIds;
 use pocketmine\data\bedrock\DyeColorIdMap;
+use pocketmine\data\bedrock\GoatHornTypeIdMap;
 use pocketmine\data\bedrock\item\ItemTypeNames as Ids;
 use pocketmine\data\bedrock\item\SavedItemData as Data;
 use pocketmine\data\bedrock\MedicineTypeIdMap;
-use pocketmine\data\bedrock\MobHeadTypeIdMap;
 use pocketmine\data\bedrock\PotionTypeIdMap;
 use pocketmine\data\bedrock\SuspiciousStewTypeIdMap;
 use pocketmine\item\Banner;
 use pocketmine\item\Dye;
 use pocketmine\item\FireworkStar;
+use pocketmine\item\GoatHorn;
 use pocketmine\item\Item;
 use pocketmine\item\Medicine;
 use pocketmine\item\Potion;
@@ -57,6 +59,7 @@ final class ItemSerializerDeserializerRegistrar{
 		$this->register1to1BlockWithMetaMappings();
 		$this->register1to1ItemWithMetaMappings();
 		$this->register1ToNItemMappings();
+		$this->registerMiscBlockMappings();
 		$this->registerMiscItemMappings();
 	}
 
@@ -230,6 +233,7 @@ final class ItemSerializerDeserializerRegistrar{
 		$this->map1to1Item(Ids::EMERALD, Items::EMERALD());
 		$this->map1to1Item(Ids::ENCHANTED_BOOK, Items::ENCHANTED_BOOK());
 		$this->map1to1Item(Ids::ENCHANTED_GOLDEN_APPLE, Items::ENCHANTED_GOLDEN_APPLE());
+		$this->map1to1Item(Ids::END_CRYSTAL, Items::END_CRYSTAL());
 		$this->map1to1Item(Ids::ENDER_PEARL, Items::ENDER_PEARL());
 		$this->map1to1Item(Ids::EXPERIENCE_BOTTLE, Items::EXPERIENCE_BOTTLE());
 		$this->map1to1Item(Ids::EYE_ARMOR_TRIM_SMITHING_TEMPLATE, Items::EYE_ARMOR_TRIM_SMITHING_TEMPLATE());
@@ -468,14 +472,6 @@ final class ItemSerializerDeserializerRegistrar{
 			},
 			fn(Bed $block) => DyeColorIdMap::getInstance()->toId($block->getColor())
 		);
-		$this->map1to1BlockWithMeta(
-			Ids::SKULL,
-			Blocks::MOB_HEAD(),
-			function(MobHead $block, int $meta) : void{
-				$block->setMobHeadType(MobHeadTypeIdMap::getInstance()->fromId($meta) ?? throw new ItemTypeDeserializeException("Unknown mob head type ID $meta"));
-			},
-			fn(MobHead $block) => MobHeadTypeIdMap::getInstance()->toId($block->getMobHeadType())
-		);
 	}
 
 	/**
@@ -499,6 +495,14 @@ final class ItemSerializerDeserializerRegistrar{
 				// Colors will be defined by CompoundTag deserialization.
 			},
 			fn(FireworkStar $item) => DyeColorIdMap::getInstance()->toInvertedId($item->getExplosion()->getFlashColor())
+		);
+		$this->map1to1ItemWithMeta(
+			Ids::GOAT_HORN,
+			Items::GOAT_HORN(),
+			function(GoatHorn $item, int $meta) : void{
+				$item->setHornType(GoatHornTypeIdMap::getInstance()->fromId($meta) ?? throw new ItemTypeDeserializeException("Unknown goat horn type ID $meta"));
+			},
+			fn(GoatHorn $item) => GoatHornTypeIdMap::getInstance()->toId($item->getHornType())
 		);
 		$this->map1to1ItemWithMeta(
 			Ids::MEDICINE,
@@ -547,5 +551,30 @@ final class ItemSerializerDeserializerRegistrar{
 			$this->deserializer?->map($id, fn() => Items::DYE()->setColor($color));
 		}
 		$this->serializer?->map(Items::DYE(), fn(Dye $item) => new Data(DyeColorIdMap::getInstance()->toItemId($item->getColor())));
+	}
+
+	/**
+	 * Registers serializers and deserializers for PocketMine-MP blockitems that don't fit any other pattern.
+	 * Ideally we want to get rid of this completely, if possible.
+	 *
+	 * Most of these are single PocketMine-MP blocks which map to multiple IDs depending on their properties, which is
+	 * complex to implement in a generic way.
+	 */
+	private function registerMiscBlockMappings() : void{
+		$copperDoorStateIdMap = [];
+		foreach ([
+			[Ids::COPPER_DOOR, CopperOxidation::NONE, false],
+			[Ids::EXPOSED_COPPER_DOOR, CopperOxidation::EXPOSED, false],
+			[Ids::WEATHERED_COPPER_DOOR, CopperOxidation::WEATHERED, false],
+			[Ids::OXIDIZED_COPPER_DOOR, CopperOxidation::OXIDIZED, false],
+			[Ids::WAXED_COPPER_DOOR, CopperOxidation::NONE, true],
+			[Ids::WAXED_EXPOSED_COPPER_DOOR, CopperOxidation::EXPOSED, true],
+			[Ids::WAXED_WEATHERED_COPPER_DOOR, CopperOxidation::WEATHERED, true],
+			[Ids::WAXED_OXIDIZED_COPPER_DOOR, CopperOxidation::OXIDIZED, true]
+		] as [$id, $oxidation, $waxed]) {
+			$copperDoorStateIdMap[$oxidation->value][$waxed ? 1 : 0] = $id;
+			$this->deserializer?->mapBlock($id, fn() => Blocks::COPPER_DOOR()->setOxidation($oxidation)->setWaxed($waxed));
+		}
+		$this->serializer?->mapBlock(Blocks::COPPER_DOOR(), fn(CopperDoor $block) => new Data($copperDoorStateIdMap[$block->getOxidation()->value][$block->isWaxed() ? 1 : 0]));
 	}
 }

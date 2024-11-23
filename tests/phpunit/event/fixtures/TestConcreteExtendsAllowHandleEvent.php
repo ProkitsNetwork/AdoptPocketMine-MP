@@ -21,8 +21,8 @@
 
 declare(strict_types=1);
 
-namespace pmmp\TesterPlugin\event;
+namespace pocketmine\event\fixtures;
 
-class GrandchildEvent extends ChildEvent{
+class TestConcreteExtendsAllowHandleEvent extends TestAbstractAllowHandleEvent{
 
 }

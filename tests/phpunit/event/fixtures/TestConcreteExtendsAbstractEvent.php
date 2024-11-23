@@ -21,18 +21,8 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\block\utils;
+namespace pocketmine\event\fixtures;
 
-/**
- * Represents copper blocks that have oxidized and waxed variations.
- */
-interface ICopper{
+class TestConcreteExtendsAbstractEvent extends TestAbstractEvent{
 
-	public function getOxidation() : CopperOxidation;
-
-	public function setOxidation(CopperOxidation $oxidation) : ICopper;
-
-	public function isWaxed() : bool;
-
-	public function setWaxed(bool $waxed) : ICopper;
 }

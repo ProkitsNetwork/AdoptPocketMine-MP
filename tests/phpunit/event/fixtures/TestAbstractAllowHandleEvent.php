@@ -21,8 +21,13 @@
 
 declare(strict_types=1);
 
-namespace pmmp\TesterPlugin\event;
+namespace pocketmine\event\fixtures;
 
-class ParentEvent extends \pocketmine\event\Event{
+use pocketmine\event\Event;
+
+/**
+ * @allowHandle
+ */
+abstract class TestAbstractAllowHandleEvent extends Event{
 
 }
