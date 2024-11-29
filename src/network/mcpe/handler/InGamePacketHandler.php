@@ -676,6 +676,12 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 					$this->player->sendData([$this->player]);
 				}
 				return true;
+			case PlayerAction::START_ITEM_USE_ON: //TODO
+				break;
+			case PlayerAction::STOP_ITEM_USE_ON: //TODO
+				break;
+			case PlayerAction::HANDLED_TELEPORT: //TODO
+				break;
 			case PlayerAction::INTERACT_BLOCK: //TODO: ignored (for now)
 				break;
 			case PlayerAction::CREATIVE_PLAYER_DESTROY_BLOCK:

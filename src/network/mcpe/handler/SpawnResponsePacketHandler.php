@@ -24,11 +24,15 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe\handler;
 
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\protocol\EmoteListPacket;
+use pocketmine\network\mcpe\protocol\InteractPacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\PlayerActionPacket;
 use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
 use pocketmine\network\mcpe\protocol\SetLocalPlayerAsInitializedPacket;
+use pocketmine\network\mcpe\protocol\TickSyncPacket;
+use pocketmine\Server;
 
 final class SpawnResponsePacketHandler extends ChunkRequestPacketHandler{
 	/**
@@ -61,6 +65,15 @@ final class SpawnResponsePacketHandler extends ChunkRequestPacketHandler{
 	}
 
 	public function handlePlayerAction(PlayerActionPacket $packet) : bool{
+		return true;
+	}
+
+
+	public function handleInteract(InteractPacket $packet) : bool{
+		return true;
+	}
+
+	public function handleEmoteList(EmoteListPacket $packet) : bool{
 		return true;
 	}
 }
