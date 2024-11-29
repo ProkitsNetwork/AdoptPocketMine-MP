@@ -67,7 +67,10 @@ class RegionLoader{
 	/** @var resource */
 	protected $filePointer;
 	protected int $nextSector = self::FIRST_SECTOR;
-	/** @var RegionLocationTableEntry[]|null[] */
+	/**
+	 * @var RegionLocationTableEntry[]|null[]
+	 * @phpstan-var list<RegionLocationTableEntry|null>
+	 */
 	protected array $locationTable = [];
 	protected RegionGarbageMap $garbageTable;
 	public int $lastUsed;
@@ -330,7 +333,6 @@ class RegionLoader{
 	 * @throws CorruptedRegionException
 	 */
 	private function checkLocationTableValidity() : void{
-		/** @var int[] $usedOffsets */
 		$usedOffsets = [];
 
 		$fileSize = filesize($this->filePath);
@@ -358,7 +360,7 @@ class RegionLoader{
 		}
 		ksort($usedOffsets, SORT_NUMERIC);
 		$prevLocationIndex = null;
-		foreach($usedOffsets as $startOffset => $locationTableIndex){
+		foreach($usedOffsets as $locationTableIndex){
 			if($this->locationTable[$locationTableIndex] === null){
 				continue;
 			}

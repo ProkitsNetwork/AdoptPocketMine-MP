@@ -64,3 +64,8 @@ parameters:
 			message: "#^Parameter \\#1 \\$objectOrClass of class ReflectionClass constructor expects class\\-string\\<T of object\\>\\|T of object, pmmp\\\\thread\\\\Thread\\|null given\\.$#"
 			count: 1
 			path: ../../../src/scheduler/DumpWorkerMemoryRunnable.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between 0 and 0 will always evaluate to true\\.$#"
+			count: 1
+			path: ../rules/UnsafeForeachArrayOfStringRule.php

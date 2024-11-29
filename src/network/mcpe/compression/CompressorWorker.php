@@ -29,6 +29,7 @@ use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\snooze\SleeperNotifier;
 use pocketmine\thread\Thread;
 use pocketmine\utils\AssumptionFailedError;
+use pocketmine\utils\Utils;
 use function count;
 use function serialize;
 use function unserialize;
@@ -166,7 +167,7 @@ final class CompressorWorker{
 			$this->inChannel->notify();
 		});
 		$promises = [];
-		foreach($buffers as $k => $buffer){
+		foreach(Utils::promoteKeys($buffers) as $k => $buffer){
 			$promise = new CompressBatchPromise();
 			$this->promises->enqueue($promise);
 			$promises[$k] = $promise;

@@ -321,7 +321,7 @@ class TypeConverter{
 
 		[$typeConverters, $converterRecipients] = self::sortByConverter($players);
 
-		foreach($typeConverters as $key => $typeConverter){
+		foreach(Utils::promoteKeys($typeConverters) as $key => $typeConverter){
 			$packets = $closure($typeConverter);
 			if(count($packets) > 0){
 				NetworkBroadcastUtils::broadcastPackets($converterRecipients[$key], $packets);
