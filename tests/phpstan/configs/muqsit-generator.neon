@@ -1,0 +1,651 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Call to an undefined static method pocketmine\\\\world\\\\generator\\\\object\\\\TallGrass\\:\\:growGrass\\(\\)\\.$#"
+			count: 1
+			path: ../../../src/block/Grass.php
+
+		-
+			message: "#^Call to static method get\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\object\\\\TreeFactory\\.$#"
+			count: 1
+			path: ../../../src/block/Sapling.php
+
+		-
+			message: "#^Class pocketmine\\\\world\\\\generator\\\\normal\\\\Normal not found\\.$#"
+			count: 1
+			path: ../../../src/world/WorldCreationOptions.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\WorldCreationOptions\\:\\:\\$generatorClass \\(class\\-string\\<pocketmine\\\\world\\\\generator\\\\Generator\\>\\) does not accept default value of type string\\.$#"
+			count: 1
+			path: ../../../src/world/WorldCreationOptions.php
+
+		-
+			message: "#^Call to method populate\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\.$#"
+			count: 1
+			path: ../../../src/world/biome/Biome.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:getPopulators\\(\\) has invalid return type pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\.$#"
+			count: 1
+			path: ../../../src/world/biome/Biome.php
+
+		-
+			message: "#^Parameter \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) has invalid type pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\.$#"
+			count: 1
+			path: ../../../src/world/biome/Biome.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\biome\\\\Biome\\:\\:\\$populators has unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Populator as its type\\.$#"
+			count: 1
+			path: ../../../src/world/biome/Biome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\Tree given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/ForestBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/IcePlainsBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/IcePlainsBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/IcePlainsBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Call to method setOreTypes\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Ore\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Class pocketmine\\\\world\\\\generator\\\\object\\\\OreType constructor invoked with 6 parameters, 4\\-5 required\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\Ore not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\Ore given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\Tree given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Parameter \\#2 \\$min_y of class pocketmine\\\\world\\\\generator\\\\object\\\\OreType constructor expects int, pocketmine\\\\block\\\\Opaque given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/MountainsBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/OceanBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/OceanBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/OceanBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/PlainBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/PlainBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/PlainBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/RiverBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/RiverBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/RiverBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Call to method setBaseAmount\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\Tree not found\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\TallGrass given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Parameter \\#1 \\$populator of method pocketmine\\\\world\\\\biome\\\\Biome\\:\\:addPopulator\\(\\) expects pocketmine\\\\world\\\\generator\\\\populator\\\\Populator, pocketmine\\\\world\\\\generator\\\\populator\\\\Tree given\\.$#"
+			count: 1
+			path: ../../../src/world/biome/TaigaBiome.php
+
+		-
+			message: "#^Class pocketmine\\\\world\\\\generator\\\\normal\\\\Normal not found\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FormatConverter.php
+
+		-
+			message: "#^Parameter \\#1 \\$generatorClass of method pocketmine\\\\world\\\\WorldCreationOptions\\:\\:setGeneratorClass\\(\\) expects class\\-string\\<pocketmine\\\\world\\\\generator\\\\Generator\\>, string given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FormatConverter.php
+
+		-
+			message: "#^Call to method populate\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\.$#"
+			count: 1
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Call to method setOreTypes\\(\\) on an unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Ore\\.$#"
+			count: 1
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Class pocketmine\\\\world\\\\generator\\\\object\\\\OreType constructor invoked with 6 parameters, 4\\-5 required\\.$#"
+			count: 8
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Instantiated class pocketmine\\\\world\\\\generator\\\\populator\\\\Ore not found\\.$#"
+			count: 1
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Parameter \\#2 \\$min_y of class pocketmine\\\\world\\\\generator\\\\object\\\\OreType constructor expects int, pocketmine\\\\block\\\\Opaque given\\.$#"
+			count: 8
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\generator\\\\Flat\\:\\:\\$populators \\(array\\<pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\>\\) does not accept array\\<pocketmine\\\\world\\\\generator\\\\populator\\\\Ore\\|pocketmine\\\\world\\\\generator\\\\populator\\\\Populator\\>\\.$#"
+			count: 1
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\generator\\\\Flat\\:\\:\\$populators has unknown class pocketmine\\\\world\\\\generator\\\\populator\\\\Populator as its type\\.$#"
+			count: 1
+			path: ../../../src/world/generator/Flat.php
+
+		-
+			message: "#^Cannot call method generateValues\\(\\) on pocketmine\\\\world\\\\generator\\\\biomegrid\\\\MapLayer\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/generator/VanillaGenerator.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\generator\\\\VanillaGenerator\\:\\:createWorldOctaves\\(\\) return type with generic class pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves does not specify its types\\: T, U, V, W$#"
+			count: 1
+			path: ../../../src/world/generator/VanillaGenerator.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\generator\\\\VanillaGenerator\\:\\:getWorldOctaves\\(\\) return type with generic class pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves does not specify its types\\: T, U, V, W$#"
+			count: 1
+			path: ../../../src/world/generator/VanillaGenerator.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\generator\\\\VanillaGenerator\\:\\:\\$octave_cache with generic class pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves does not specify its types\\: T, U, V, W$#"
+			count: 1
+			path: ../../../src/world/generator/VanillaGenerator.php
+
+		-
+			message: "#^Cannot call method generateValues\\(\\) on pocketmine\\\\world\\\\generator\\\\biomegrid\\\\MapLayer\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/generator/biomegrid/BiomeVariationMapLayer.php
+
+		-
+			message: "#^Unsafe foreach on array with key type string \\(they might be casted to int\\)\\.$#"
+			count: 1
+			path: ../../../src/world/generator/biomegrid/BiomeVariationMapLayer.php
+
+		-
+			message: "#^Cannot call method generateValues\\(\\) on pocketmine\\\\world\\\\generator\\\\biomegrid\\\\MapLayer\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/generator/biomegrid/RiverMapLayer.php
+
+		-
+			message: "#^Cannot call method noise\\(\\) on pocketmine\\\\world\\\\generator\\\\noise\\\\glowstone\\\\SimplexOctaveGenerator\\|null\\.$#"
+			count: 4
+			path: ../../../src/world/generator/ground/MesaGroundGenerator.php
+
+		-
+			message: "#^Comparison operation \"\\<\" between int\\<68, 255\\> and 64 is always false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/ground/MesaGroundGenerator.php
+
+		-
+			message: "#^For loop initial assignment overwrites variable \\$i\\.$#"
+			count: 1
+			path: ../../../src/world/generator/ground/MesaGroundGenerator.php
+
+		-
+			message: "#^Result of && is always false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/ground/MesaGroundGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int\\<min, \\-1\\>\\|int\\<1, max\\> and 0 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/ground/MesaGroundGenerator.php
+
+		-
+			message: "#^Access to an undefined property pocketmine\\\\world\\\\generator\\\\noise\\\\bukkit\\\\OctaveGenerator\\:\\:\\$size_y\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Access to an undefined property pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves\\:\\:\\$gravel\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Access to an undefined property pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves\\:\\:\\$soul_sand\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Call to an undefined method pocketmine\\\\world\\\\generator\\\\noise\\\\bukkit\\\\OctaveGenerator\\:\\:getFractalBrownianMotion\\(\\)\\.$#"
+			count: 5
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\generator\\\\nether\\\\NetherGenerator\\:\\:createWorldOctaves\\(\\) return type with generic class pocketmine\\\\world\\\\generator\\\\utils\\\\NetherWorldOctaves does not specify its types\\: T, U, V, W, X, Y$#"
+			count: 1
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Parameter \\#4 \\$biomeId of method pocketmine\\\\world\\\\format\\\\Chunk\\:\\:setBiomeId\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/NetherGenerator.php
+
+		-
+			message: "#^Parameter \\#1 \\$x of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/decorator/GlowstoneDecorator.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/decorator/GlowstoneDecorator.php
+
+		-
+			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/decorator/GlowstoneDecorator.php
+
+		-
+			message: "#^pocketmine\\\\world\\\\generator\\\\nether\\\\populator\\\\OrePopulator\\:\\:__construct\\(\\) does not call parent constructor from pocketmine\\\\world\\\\generator\\\\overworld\\\\populator\\\\biome\\\\OrePopulator\\.$#"
+			count: 1
+			path: ../../../src/world/generator/nether/populator/OrePopulator.php
+
+		-
+			message: "#^Unsafe foreach on array with key type \\(int\\|string\\) \\(they might be casted to int\\)\\.$#"
+			count: 1
+			path: ../../../src/world/generator/noise/bukkit/BaseOctaveGenerator.php
+
+		-
+			message: "#^Variable variables are not allowed\\.$#"
+			count: 1
+			path: ../../../src/world/generator/noise/bukkit/SimplexNoiseGenerator.php
+
+		-
+			message: "#^pocketmine\\\\world\\\\generator\\\\noise\\\\glowstone\\\\PerlinNoise\\:\\:__construct\\(\\) does not call parent constructor from pocketmine\\\\world\\\\generator\\\\noise\\\\bukkit\\\\BasePerlinNoiseGenerator\\.$#"
+			count: 1
+			path: ../../../src/world/generator/noise/glowstone/PerlinNoise.php
+
+		-
+			message: "#^Parameter \\#1 \\$x of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/Cactus.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/Cactus.php
+
+		-
+			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/Cactus.php
+
+		-
+			message: "#^Parameter \\#1 \\$x of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/SugarCane.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/SugarCane.php
+
+		-
+			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/SugarCane.php
+
+		-
+			message: "#^Casting to float something that's already float\\.$#"
+			count: 2
+			path: ../../../src/world/generator/object/tree/BigOakTree.php
+
+		-
+			message: "#^Unsafe access to private constant pocketmine\\\\world\\\\generator\\\\object\\\\tree\\\\BigOakTree\\:\\:LEAF_DENSITY through static\\:\\:\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/tree/BigOakTree.php
+
+		-
+			message: "#^Parameter \\#1 \\$x of method pocketmine\\\\world\\\\BlockTransaction\\:\\:addBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/tree/CocoaTree.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\BlockTransaction\\:\\:addBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/tree/CocoaTree.php
+
+		-
+			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\BlockTransaction\\:\\:addBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/tree/CocoaTree.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\generator\\\\object\\\\tree\\\\GenericTree\\:\\:\\$overridables \\(array\\<int\\>\\) does not accept array\\<int, int\\|string\\>\\.$#"
+			count: 1
+			path: ../../../src/world/generator/object/tree/GenericTree.php
+
+		-
+			message: "#^Call to an undefined method pocketmine\\\\world\\\\generator\\\\noise\\\\bukkit\\\\OctaveGenerator\\:\\:getFractalBrownianMotion\\(\\)\\.$#"
+			count: 4
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Comparison operation \"\\<\" between 0 and 0 is always false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between 0 and \\-1 is always true\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\generator\\\\overworld\\\\OverworldGenerator\\:\\:createWorldOctaves\\(\\) return type with generic class pocketmine\\\\world\\\\generator\\\\utils\\\\WorldOctaves does not specify its types\\: T, U, V, W$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Parameter \\#4 \\$biomeId of method pocketmine\\\\world\\\\format\\\\Chunk\\:\\:setBiomeId\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Parameter \\#5 \\$biome of method pocketmine\\\\world\\\\generator\\\\ground\\\\GroundGenerator\\:\\:generateTerrainColumn\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Result of && is always false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Result of \\|\\| is always false\\.$#"
+			count: 6
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 1 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 10 will always evaluate to false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 12 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 13 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 15 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 16 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 2 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 3 will always evaluate to false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 6 will always evaluate to false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 7 will always evaluate to false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between \\*NEVER\\* and 9 will always evaluate to false\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between 0 and 0 will always evaluate to true\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between 0 and 1 will always evaluate to false\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/OverworldGenerator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/DoublePlantDecorator.php
+
+		-
+			message: "#^Parameter \\#1 \\$species of class pocketmine\\\\world\\\\generator\\\\object\\\\DoubleTallPlant constructor expects pocketmine\\\\block\\\\DoublePlant, pocketmine\\\\block\\\\DoublePlant\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/DoublePlantDecorator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/FlowerDecorator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\-, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/IceDecorator.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\ChunkManager\\:\\:getBlockAt\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/IceDecorator.php
+
+		-
+			message: "#^Parameter \\#4 \\$source_y of method pocketmine\\\\world\\\\generator\\\\object\\\\IceSpike\\:\\:generate\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/IceDecorator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/MushroomDecorator.php
+
+		-
+			message: "#^Parameter \\#4 \\$source_y of method pocketmine\\\\world\\\\generator\\\\object\\\\StoneBoulder\\:\\:generate\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/StoneBoulderDecorator.php
+
+		-
+			message: "#^Implicit array creation is not allowed \\- variable \\$node might not exist\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/SurfaceCaveDecorator.php
+
+		-
+			message: "#^Parameter \\#1 \\$x of method pocketmine\\\\world\\\\ChunkManager\\:\\:setBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/SurfaceCaveDecorator.php
+
+		-
+			message: "#^Parameter \\#2 \\$y of method pocketmine\\\\world\\\\ChunkManager\\:\\:setBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/SurfaceCaveDecorator.php
+
+		-
+			message: "#^Parameter \\#3 \\$z of method pocketmine\\\\world\\\\ChunkManager\\:\\:setBlockAt\\(\\) expects int, float\\|int given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/SurfaceCaveDecorator.php
+
+		-
+			message: "#^Parameter \\#4 \\$source_y of method pocketmine\\\\world\\\\generator\\\\object\\\\tree\\\\GenericTree\\:\\:generate\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/TreeDecorator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\-, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/decorator/UnderwaterDecorator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/populator/biome/FlowerForestPopulator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/populator/biome/ForestPopulator.php
+
+		-
+			message: "#^Parameter \\#4 \\$source_y of method pocketmine\\\\world\\\\generator\\\\object\\\\tree\\\\JungleBush\\:\\:generate\\(\\) expects int, int\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/generator/overworld/populator/biome/JunglePopulator.php
+
+		-
+			message: "#^Only numeric types are allowed in \\+, int\\|null given on the left side\\.$#"
+			count: 2
+			path: ../../../src/world/generator/overworld/populator/biome/PlainsPopulator.php
+
+		-
+			message: "#^Part \\$value \\(mixed\\) of encapsed string cannot be cast to string\\.$#"
+			count: 1
+			path: ../../../src/world/generator/utils/preset/SimpleGeneratorPreset.php
+
+		-
+			message: "#^Unsafe foreach on array with key type string \\(they might be casted to int\\)\\.$#"
+			count: 1
+			path: ../../../src/world/generator/utils/preset/SimpleGeneratorPreset.php

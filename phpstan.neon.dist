@@ -2,6 +2,7 @@ includes:
 	- tests/phpstan/analyse-for-current-php-version.neon.php
 	- tests/phpstan/configs/actual-problems.neon
 	- tests/phpstan/configs/impossible-generics.neon
+	- tests/phpstan/configs/muqsit-generator.neon
 	- tests/phpstan/configs/php-bugs.neon
 	- tests/phpstan/configs/phpstan-bugs.neon
 	- tests/phpstan/configs/spl-fixed-array-sucks.neon
