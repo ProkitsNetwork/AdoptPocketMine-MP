@@ -268,6 +268,7 @@ final class ItemSerializerDeserializerRegistrar{
 		$this->map1to1Item(Ids::HONEY_BOTTLE, Items::HONEY_BOTTLE());
 		$this->map1to1Item(Ids::HONEYCOMB, Items::HONEYCOMB());
 		$this->map1to1Item(Ids::HOST_ARMOR_TRIM_SMITHING_TEMPLATE, Items::HOST_ARMOR_TRIM_SMITHING_TEMPLATE());
+		$this->map1to1Item(Ids::ICE_BOMB, Items::ICE_BOMB());
 		$this->map1to1Item(Ids::INK_SAC, Items::INK_SAC());
 		$this->map1to1Item(Ids::IRON_AXE, Items::IRON_AXE());
 		$this->map1to1Item(Ids::IRON_BOOTS, Items::IRON_BOOTS());
@@ -353,6 +354,7 @@ final class ItemSerializerDeserializerRegistrar{
 		$this->map1to1Item(Ids::RAW_COPPER, Items::RAW_COPPER());
 		$this->map1to1Item(Ids::RAW_GOLD, Items::RAW_GOLD());
 		$this->map1to1Item(Ids::RAW_IRON, Items::RAW_IRON());
+		$this->map1to1Item(Ids::RECOVERY_COMPASS, Items::RECOVERY_COMPASS());
 		$this->map1to1Item(Ids::REDSTONE, Items::REDSTONE_DUST());
 		$this->map1to1Item(Ids::RIB_ARMOR_TRIM_SMITHING_TEMPLATE, Items::RIB_ARMOR_TRIM_SMITHING_TEMPLATE());
 		$this->map1to1Item(Ids::ROTTEN_FLESH, Items::ROTTEN_FLESH());

@@ -21,20 +21,28 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\entity;
+namespace pocketmine\item;
 
-/**
- * Interface implemented by objects that can be consumed by players, giving them food and saturation.
- */
-interface FoodSource extends Consumable{
+use pocketmine\entity\Location;
+use pocketmine\entity\projectile\IceBomb as IceBombEntity;
+use pocketmine\entity\projectile\Throwable;
+use pocketmine\player\Player;
 
-	public function getFoodRestore() : int;
+class IceBomb extends ProjectileItem{
 
-	public function getSaturationRestore() : float;
+	public function getMaxStackSize() : int{
+		return 16;
+	}
 
-	/**
-	 * Returns whether a Human eating this FoodSource must have a non-full hunger bar.
-	 * This is ignored in creative mode and in peaceful difficulty.
-	 */
-	public function requiresHunger() : bool;
+	protected function createEntity(Location $location, Player $thrower) : Throwable{
+		return new IceBombEntity($location, $thrower);
+	}
+
+	public function getThrowForce() : float{
+		return 1.5;
+	}
+
+	public function getCooldownTicks() : int{
+		return 10;
+	}
 }
