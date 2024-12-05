@@ -69,7 +69,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 
 			$typeConverter = $this->session->getTypeConverter();
 
-			//$this->session->getLogger()->debug("Preparing StartGamePacket");
+			$this->session->getLogger()->debug("Preparing StartGamePacket");
 			$levelSettings = new LevelSettings();
 			$levelSettings->seed = -1;
 			$levelSettings->spawnSettings = new SpawnSettings(SpawnSettings::BIOME_TYPE_DEFAULT, "", DimensionIds::OVERWORLD); //TODO: implement this properly
@@ -83,7 +83,6 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 			$levelSettings->lightningLevel = 0;
 			$levelSettings->commandsEnabled = true;
 			$levelSettings->disablePersona = true;
-			$levelSettings->disableCustomSkins = true;
 			$levelSettings->useMsaGamertagsOnly = true;
 			$levelSettings->muteEmoteAnnouncements = true;
 			$levelSettings->onlySpawnV1Villagers = true;
@@ -106,7 +105,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				$this->server->getMotd(),
 				"",
 				false,
-				new PlayerMovementSettings(ServerAuthMovementMode::LEGACY_CLIENT_AUTHORITATIVE_V1, 0, false),
+				new PlayerMovementSettings(ServerAuthMovementMode::SERVER_AUTHORITATIVE_V2, 0, false),
 				0,
 				0,
 				"",
@@ -128,7 +127,8 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 			$this->session->sendDataPacket(StaticPacketCache::getInstance()->getBiomeDefs());
 
 			//$this->session->getLogger()->debug("Sending attributes");
-			$this->session->getEntityEventBroadcaster()->syncAttributes([$this->session], $this->player, $this->player->getAttributeMap()->getAll());
+			$broadcaster = $this->session->getEntityEventBroadcaster();
+			$broadcaster->syncAttributes([$this->session], $this->player, $this->player->getAttributeMap()->getAll());
 
 			//$this->session->getLogger()->debug("Sending available commands");
 			$this->session->syncAvailableCommands();
@@ -139,7 +139,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 
 			//$this->session->getLogger()->debug("Sending effects");
 			foreach($this->player->getEffects()->all() as $effect){
-				$this->session->getEntityEventBroadcaster()->onEntityEffectAdded([$this->session], $this->player, $effect, false);
+				$broadcaster->onEntityEffectAdded([$this->session], $this->player, $effect, false);
 			}
 
 			//$this->session->getLogger()->debug("Sending actor metadata");
