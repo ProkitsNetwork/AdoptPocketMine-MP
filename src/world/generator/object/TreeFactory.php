@@ -23,15 +23,21 @@ declare(strict_types=1);
 
 namespace pocketmine\world\generator\object;
 
-use pocketmine\block\Block;
+use pocketmine\utils\Random;
 
-class OreType{
-	public function __construct(
-		public Block $material,
-		public Block $replaces,
-		public int $clusterCount,
-		public int $clusterSize,
-		public int $minHeight,
-		public int $maxHeight
-	){}
+final class TreeFactory{
+
+	/**
+	 * @param TreeType|null $type default oak
+	 */
+	public static function get(Random $random, ?TreeType $type = null) : ?Tree{
+		return match($type){
+			null, TreeType::OAK => new OakTree(), //TODO: big oak has a 1/10 chance
+			TreeType::SPRUCE => new SpruceTree(),
+			TreeType::JUNGLE => new JungleTree(),
+			TreeType::ACACIA => new AcaciaTree(),
+			TreeType::BIRCH => new BirchTree($random->nextBoundedInt(39) === 0),
+			default => null,
+		};
+	}
 }

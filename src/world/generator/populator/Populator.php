@@ -21,17 +21,16 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\world\generator\object;
+/**
+ * All the Object populator classes
+ */
 
-use pocketmine\block\Block;
+namespace pocketmine\world\generator\populator;
 
-class OreType{
-	public function __construct(
-		public Block $material,
-		public Block $replaces,
-		public int $clusterCount,
-		public int $clusterSize,
-		public int $minHeight,
-		public int $maxHeight
-	){}
+use pocketmine\utils\Random;
+use pocketmine\world\ChunkManager;
+
+interface Populator{
+
+	public function populate(ChunkManager $world, int $chunkX, int $chunkZ, Random $random) : void;
 }

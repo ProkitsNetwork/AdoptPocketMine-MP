@@ -23,15 +23,23 @@ declare(strict_types=1);
 
 namespace pocketmine\world\generator\object;
 
-use pocketmine\block\Block;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\utils\Random;
+use pocketmine\world\BlockTransaction;
+use pocketmine\world\ChunkManager;
 
-class OreType{
+class BirchTree extends Tree{
 	public function __construct(
-		public Block $material,
-		public Block $replaces,
-		public int $clusterCount,
-		public int $clusterSize,
-		public int $minHeight,
-		public int $maxHeight
-	){}
+		protected bool $superBirch = false
+	){
+		parent::__construct(VanillaBlocks::BIRCH_LOG(), VanillaBlocks::BIRCH_LEAVES());
+	}
+
+	public function getBlockTransaction(ChunkManager $world, int $x, int $y, int $z, Random $random) : ?BlockTransaction{
+		$this->treeHeight = $random->nextBoundedInt(3) + 5;
+		if($this->superBirch){
+			$this->treeHeight += 5;
+		}
+		return parent::getBlockTransaction($world, $x, $y, $z, $random);
+	}
 }

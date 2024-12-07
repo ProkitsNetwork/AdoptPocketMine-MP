@@ -25,36 +25,31 @@ namespace pocketmine\world\generator\object;
 
 use pocketmine\block\Block;
 use pocketmine\block\BlockTypeIds;
-use pocketmine\block\Leaves;
+use pocketmine\block\VanillaBlocks;
+use pocketmine\math\Vector3;
 use pocketmine\utils\Random;
 use pocketmine\world\ChunkManager;
+use function count;
 
-class TallGrass extends TerrainObject{
+class TallGrass{
 
-	public function __construct(
-		private Block $grass_type
-	){}
-
-	public function generate(ChunkManager $world, Random $random, int $source_x, int $source_y, int $source_z) : bool{
-		do{
-			$this_block = $world->getBlockAt($source_x, $source_y, $source_z);
-			--$source_y;
-		}while(($this_block->getTypeId() === BlockTypeIds::AIR || $this_block instanceof Leaves) && $source_y > 0);
-		++$source_y;
-		$succeeded = false;
-		$height = $world->getMaxY();
-		for($i = 0; $i < 128; ++$i){
-			$x = $source_x + $random->nextBoundedInt(8) - $random->nextBoundedInt(8);
-			$z = $source_z + $random->nextBoundedInt(8) - $random->nextBoundedInt(8);
-			$y = $source_y + $random->nextBoundedInt(4) - $random->nextBoundedInt(4);
-
-			$block_type = $world->getBlockAt($x, $y, $z)->getTypeId();
-			$block_type_below = $world->getBlockAt($x, $y - 1, $z)->getTypeId();
-			if($y < $height && $block_type === BlockTypeIds::AIR && ($block_type_below === BlockTypeIds::GRASS || $block_type_below === BlockTypeIds::DIRT)){
-				$world->setBlockAt($x, $y, $z, $this->grass_type);
-				$succeeded = true;
+	public static function growGrass(ChunkManager $world, Vector3 $pos, Random $random, int $count = 15, int $radius = 10) : void{
+		/** @var Block[] $arr */
+		$arr = [
+			VanillaBlocks::DANDELION(),
+			VanillaBlocks::POPPY(),
+			$tallGrass = VanillaBlocks::TALL_GRASS(),
+			$tallGrass,
+			$tallGrass,
+			$tallGrass
+		];
+		$arrC = count($arr) - 1;
+		for($c = 0; $c < $count; ++$c){
+			$x = $random->nextRange($pos->x - $radius, $pos->x + $radius);
+			$z = $random->nextRange($pos->z - $radius, $pos->z + $radius);
+			if($world->getBlockAt($x, $pos->y + 1, $z)->getTypeId() === BlockTypeIds::AIR && $world->getBlockAt($x, $pos->y, $z)->getTypeId() === BlockTypeIds::GRASS){
+				$world->setBlockAt($x, $pos->y + 1, $z, $arr[$random->nextRange(0, $arrC)]);
 			}
 		}
-		return $succeeded;
 	}
 }

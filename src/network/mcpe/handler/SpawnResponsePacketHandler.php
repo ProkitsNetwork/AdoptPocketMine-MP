@@ -31,6 +31,8 @@ use pocketmine\network\mcpe\protocol\PlayerActionPacket;
 use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
 use pocketmine\network\mcpe\protocol\SetLocalPlayerAsInitializedPacket;
+use pocketmine\network\mcpe\protocol\TickSyncPacket;
+use pocketmine\Server;
 
 final class SpawnResponsePacketHandler extends ChunkRequestPacketHandler{
 	/**
@@ -65,6 +67,7 @@ final class SpawnResponsePacketHandler extends ChunkRequestPacketHandler{
 	public function handlePlayerAction(PlayerActionPacket $packet) : bool{
 		return true;
 	}
+
 
 	public function handleInteract(InteractPacket $packet) : bool{
 		return true;

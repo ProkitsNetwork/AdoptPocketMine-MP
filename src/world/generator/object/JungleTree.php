@@ -23,15 +23,11 @@ declare(strict_types=1);
 
 namespace pocketmine\world\generator\object;
 
-use pocketmine\block\Block;
+use pocketmine\block\VanillaBlocks;
 
-class OreType{
-	public function __construct(
-		public Block $material,
-		public Block $replaces,
-		public int $clusterCount,
-		public int $clusterSize,
-		public int $minHeight,
-		public int $maxHeight
-	){}
+class JungleTree extends Tree{
+
+	public function __construct(){
+		parent::__construct(VanillaBlocks::JUNGLE_LOG(), VanillaBlocks::JUNGLE_LEAVES(), 8);
+	}
 }

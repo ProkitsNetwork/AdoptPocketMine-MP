@@ -21,17 +21,26 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\world\generator\object;
+namespace pocketmine\world\generator;
 
-use pocketmine\block\Block;
+use function exp;
 
-class OreType{
-	public function __construct(
-		public Block $material,
-		public Block $replaces,
-		public int $clusterCount,
-		public int $clusterSize,
-		public int $minHeight,
-		public int $maxHeight
-	){}
+final class Gaussian{
+	/** @var float[][] */
+	public array $kernel = [];
+
+	public function __construct(public int $smoothSize){
+		$bellSize = 1 / $this->smoothSize;
+		$bellHeight = 2 * $this->smoothSize;
+
+		for($sx = -$this->smoothSize; $sx <= $this->smoothSize; ++$sx){
+			$this->kernel[$sx + $this->smoothSize] = [];
+
+			for($sz = -$this->smoothSize; $sz <= $this->smoothSize; ++$sz){
+				$bx = $bellSize * $sx;
+				$bz = $bellSize * $sz;
+				$this->kernel[$sx + $this->smoothSize][$sz + $this->smoothSize] = $bellHeight * exp(-($bx * $bx + $bz * $bz) / 2);
+			}
+		}
+	}
 }
