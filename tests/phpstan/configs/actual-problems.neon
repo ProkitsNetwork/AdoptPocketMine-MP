@@ -801,7 +801,7 @@ parameters:
 			path: ../../../src/scheduler/BulkCurlTask.php
 
 		-
-			message: "#^Cannot call method getNextRun\\(\\) on array\\<string, int\\|pocketmine\\\\scheduler\\\\TaskHandler\\>\\|int\\|pocketmine\\\\scheduler\\\\TaskHandler\\.$#"
+			message: "#^Cannot call method getNextRun\\(\\) on array\\<string, int\\|pocketmine\\\\scheduler\\\\TaskHandler\\<covariant pocketmine\\\\scheduler\\\\Task\\>\\>\\|int\\|pocketmine\\\\scheduler\\\\TaskHandler\\<covariant pocketmine\\\\scheduler\\\\Task\\>\\.$#"
 			count: 1
 			path: ../../../src/scheduler/TaskScheduler.php
 

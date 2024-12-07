@@ -32,6 +32,7 @@ use pocketmine\data\bedrock\PotionTypeIdMap;
 use pocketmine\data\bedrock\PotionTypeIds;
 use pocketmine\data\SavedDataLoadingException;
 use pocketmine\entity\EntityDataHelper as Helper;
+use pocketmine\entity\object\EndCrystal;
 use pocketmine\entity\object\ExperienceOrb;
 use pocketmine\entity\object\FallingBlock;
 use pocketmine\entity\object\ItemEntity;
@@ -43,6 +44,7 @@ use pocketmine\entity\projectile\Egg;
 use pocketmine\entity\projectile\EnderPearl;
 use pocketmine\entity\projectile\ExperienceBottle;
 use pocketmine\entity\projectile\FishingHook;
+use pocketmine\entity\projectile\IceBomb;
 use pocketmine\entity\projectile\Snowball;
 use pocketmine\entity\projectile\SplashPotion;
 use pocketmine\item\Item;
@@ -93,6 +95,10 @@ final class EntityFactory{
 			return new Egg(Helper::parseLocation($nbt, $world), null, $nbt);
 		}, ['Egg', 'minecraft:egg']);
 
+		$this->register(EndCrystal::class, function(World $world, CompoundTag $nbt) : EndCrystal{
+			return new EndCrystal(Helper::parseLocation($nbt, $world), $nbt);
+		}, ['EnderCrystal', 'minecraft:ender_crystal']);
+
 		$this->register(EnderPearl::class, function(World $world, CompoundTag $nbt) : EnderPearl{
 			return new EnderPearl(Helper::parseLocation($nbt, $world), null, $nbt);
 		}, ['ThrownEnderpearl', 'minecraft:ender_pearl']);
@@ -119,6 +125,10 @@ final class EntityFactory{
 		$this->register(FishingHook::class, function(World $world, CompoundTag $nbt) : FishingHook{
 			return new FishingHook(Helper::parseLocation($nbt, $world), null, $nbt);
 		}, ['FishingHook', 'minecraft:fishing_hook']);
+
+		$this->register(IceBomb::class, function(World $world, CompoundTag $nbt) : IceBomb{
+			return new IceBomb(Helper::parseLocation($nbt, $world), null, $nbt);
+		}, ['minecraft:ice_bomb']);
 
 		$this->register(ItemEntity::class, function(World $world, CompoundTag $nbt) : ItemEntity{
 			$itemTag = $nbt->getCompoundTag(ItemEntity::TAG_ITEM);
