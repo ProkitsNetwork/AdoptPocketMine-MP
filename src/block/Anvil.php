@@ -40,6 +40,8 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\AnvilBreakSound;
 use pocketmine\world\sound\AnvilFallSound;
 use pocketmine\world\sound\Sound;
+use function assert;
+use function mt_rand;
 use function round;
 
 class Anvil extends Transparent implements Fallable{
