@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8ed9dff0794e6fbbd75f7a2ebde97f5f",
+    "content-hash": "cd9440b08432e5d935a68205f4aa2f2c",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -626,16 +626,16 @@
         },
         {
             "name": "pocketmine/raklib",
-            "version": "1.1.1",
+            "version": "dev-stable",
             "source": {
                 "type": "git",
-                "url": "https://github.com/pmmp/RakLib.git",
-                "reference": "be2783be516bf6e2872ff5c81fb9048596617b97"
+                "url": "https://github.com/ProkitsNetwork/RakLib.git",
+                "reference": "4be3e7ff23bcda5ac8227ebd12d71dee381f6e8e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/RakLib/zipball/be2783be516bf6e2872ff5c81fb9048596617b97",
-                "reference": "be2783be516bf6e2872ff5c81fb9048596617b97",
+                "url": "https://api.github.com/repos/ProkitsNetwork/RakLib/zipball/4be3e7ff23bcda5ac8227ebd12d71dee381f6e8e",
+                "reference": "4be3e7ff23bcda5ac8227ebd12d71dee381f6e8e",
                 "shasum": ""
             },
             "require": {
@@ -650,63 +650,61 @@
                 "phpstan/phpstan": "1.10.1",
                 "phpstan/phpstan-strict-rules": "^1.0"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "raklib\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-3.0"
             ],
             "description": "A RakNet server implementation written in PHP",
             "support": {
-                "issues": "https://github.com/pmmp/RakLib/issues",
-                "source": "https://github.com/pmmp/RakLib/tree/1.1.1"
+                "source": "https://github.com/ProkitsNetwork/RakLib/tree/stable"
             },
-            "time": "2024-03-04T14:02:14+00:00"
+            "time": "2024-12-08T09:38:38+00:00"
         },
         {
             "name": "pocketmine/raklib-ipc",
-            "version": "1.0.1",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/pmmp/RakLibIpc.git",
-                "reference": "ce632ef2c6743e71eddb5dc329c49af6555f90bc"
+                "url": "https://github.com/ProkitsNetwork/RakLibIpc.git",
+                "reference": "c10f5248f2dfd94dd3655f91ab43a4fcc6ad3ef9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pmmp/RakLibIpc/zipball/ce632ef2c6743e71eddb5dc329c49af6555f90bc",
-                "reference": "ce632ef2c6743e71eddb5dc329c49af6555f90bc",
+                "url": "https://api.github.com/repos/ProkitsNetwork/RakLibIpc/zipball/c10f5248f2dfd94dd3655f91ab43a4fcc6ad3ef9",
+                "reference": "c10f5248f2dfd94dd3655f91ab43a4fcc6ad3ef9",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.0",
                 "php-64bit": "*",
                 "pocketmine/binaryutils": "^0.2.0",
-                "pocketmine/raklib": "^0.15.0 || ^1.0.0"
+                "pocketmine/raklib": "dev-stable"
             },
             "require-dev": {
                 "phpstan/phpstan": "1.10.1",
                 "phpstan/phpstan-strict-rules": "^1.0.0"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "raklib\\server\\ipc\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-3.0"
             ],
             "description": "Channel-based protocols for inter-thread/inter-process communication with RakLib",
             "support": {
-                "issues": "https://github.com/pmmp/RakLibIpc/issues",
-                "source": "https://github.com/pmmp/RakLibIpc/tree/1.0.1"
+                "source": "https://github.com/ProkitsNetwork/RakLibIpc/tree/master"
             },
-            "time": "2024-03-01T15:55:05+00:00"
+            "time": "2024-12-08T09:39:49+00:00"
         },
         {
             "name": "pocketmine/snooze",
@@ -3005,7 +3003,9 @@
     "minimum-stability": "stable",
     "stability-flags": {
         "nethergamesmc/bedrock-data": 20,
-        "nethergamesmc/bedrock-protocol": 20
+        "nethergamesmc/bedrock-protocol": 20,
+        "pocketmine/raklib": 20,
+        "pocketmine/raklib-ipc": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

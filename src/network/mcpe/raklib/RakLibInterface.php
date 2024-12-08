@@ -287,6 +287,10 @@ class RakLibInterface implements ServerEventListener, AdvancedNetworkInterface{
 		$this->interface->setPacketsPerTickLimit($limit);
 	}
 
+	public function setUploadPacketLimit(int $limit) : void{
+		$this->interface->setUploadPacketsPerTickLimit($limit);
+	}
+
 	public function onBandwidthStatsUpdate(int $bytesSentDiff, int $bytesReceivedDiff) : void{
 		$this->network->getBandwidthTracker()->add($bytesSentDiff, $bytesReceivedDiff);
 	}

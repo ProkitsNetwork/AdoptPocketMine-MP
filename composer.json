@@ -45,8 +45,8 @@
       "pocketmine/log": "^0.4.0",
       "pocketmine/math": "~1.0.0",
       "pocketmine/nbt": "~1.0.0",
-      "pocketmine/raklib": "~1.1.0",
-      "pocketmine/raklib-ipc": "~1.0.0",
+      "pocketmine/raklib": "dev-stable",
+      "pocketmine/raklib-ipc": "dev-master",
       "pocketmine/snooze": "^0.5.0",
       "ramsey/uuid": "~4.7.0",
       "symfony/filesystem": "~6.4.0"
@@ -95,6 +95,14 @@
       {
          "type": "vcs",
          "url": "git@github.com:NetherGamesMC/BedrockData.git"
+      },
+      {
+         "type": "vcs",
+         "url": "git@github.com:ProkitsNetwork/RakLib.git"
+      },
+      {
+         "type": "vcs",
+         "url": "git@github.com:ProkitsNetwork/RakLibIpc.git"
       }
    ]
 }
