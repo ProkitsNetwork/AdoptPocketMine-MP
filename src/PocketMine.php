@@ -283,6 +283,11 @@ JIT_WARNING
 			exit(0);
 		}
 
+		if(defined('pocketmine\ORIGINAL_PHAR_PATH')){
+			//if we're inside a phar cache, \pocketmine\PATH will not include the original phar
+			Filesystem::addCleanedPath(ORIGINAL_PHAR_PATH, Filesystem::CLEAN_PATH_SRC_PREFIX);
+		}
+
 		$cwd = Utils::assumeNotFalse(realpath(Utils::assumeNotFalse(getcwd())));
 		$dataPath = getopt_string(BootstrapOptions::DATA) ?? $cwd;
 		define('DATA_PATH', $dataPath);
