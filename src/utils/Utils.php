@@ -693,6 +693,14 @@ final class Utils{
 	}
 
 	/**
+	 * Returns a random float between 0.0 and 1.0
+	 * Drop-in replacement for lcg_value()
+	 */
+	public static function getRandomFloat() : float{
+		return mt_rand() / mt_getrandmax();
+	}
+
+	/**
 	 *  Array map implementation that preserves keys.
 	 *
 	 *  @phpstan-template TKeyType
@@ -704,13 +712,5 @@ final class Utils{
 	 */
 	public static function arrayMapPreserveKeys(callable $callback, array $array) : array{
 		return array_combine(array_keys($array), array_map($callback, $array));
-	}
-
-	/**
-	 * Returns a random float between 0.0 and 1.0
-	 * Drop-in replacement for lcg_value()
-	 */
-	public static function getRandomFloat() : float{
-		return mt_rand() / mt_getrandmax();
 	}
 }
