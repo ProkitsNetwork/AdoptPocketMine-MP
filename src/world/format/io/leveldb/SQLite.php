@@ -43,10 +43,10 @@ use pocketmine\world\format\io\ChunkUtils;
 use pocketmine\world\format\io\data\BedrockWorldData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
 use pocketmine\world\format\io\exception\CorruptedWorldException;
-use pocketmine\world\format\io\exception\UnsupportedWorldFormatException;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\io\WorldData;
+use pocketmine\world\format\io\WritableWorldProvider;
 use pocketmine\world\format\PalettedBlockArray;
 use pocketmine\world\format\SubChunk;
 use pocketmine\world\WorldCreationOptions;
@@ -55,21 +55,15 @@ use function array_map;
 use function array_values;
 use function chr;
 use function count;
-use function defined;
-use function extension_loaded;
 use function file_exists;
 use function implode;
-use function is_dir;
-use function mkdir;
+use function is_file;
 use function ord;
 use function str_repeat;
-use function strlen;
-use function substr;
 use function trim;
 use function unpack;
-use const LEVELDB_ZLIB_RAW_COMPRESSION;
 
-class LevelDB extends BaseWorldProvider {
+class SQLite extends BaseWorldProvider implements WritableWorldProvider{
 
 	protected const FINALISATION_NEEDS_INSTATICKING = 0;
 	protected const FINALISATION_NEEDS_POPULATION = 1;
@@ -82,30 +76,16 @@ class LevelDB extends BaseWorldProvider {
 
 	private const CAVES_CLIFFS_EXPERIMENTAL_SUBCHUNK_KEY_OFFSET = 4;
 
-	protected \LevelDB $db;
-
-	private static function checkForLevelDBExtension() : void{
-		if(!extension_loaded('leveldb')){
-			throw new UnsupportedWorldFormatException("The leveldb PHP extension is required to use this world format");
-		}
-
-		if(!defined('LEVELDB_ZLIB_RAW_COMPRESSION')){
-			throw new UnsupportedWorldFormatException("Given version of php-leveldb doesn't support zlib raw compression");
-		}
-	}
+	protected SQLiteLevelDB $db;
 
 	/**
 	 * @throws \LevelDBException
 	 */
-	private static function createDB(string $path) : \LevelDB{
-		return new \LevelDB(Path::join($path, "db"), [
-			"compression" => LEVELDB_ZLIB_RAW_COMPRESSION,
-			"block_size" => 64 * 1024 //64KB, big enough for most chunks
-		]);
+	private static function createDB(string $path) : SQLiteLevelDB{
+		return new SQLiteLevelDB(Path::join($path, "region.sqlite"));
 	}
 
 	public function __construct(string $path, \Logger $logger){
-		self::checkForLevelDBExtension();
 		parent::__construct($path, $logger);
 
 		try{
@@ -129,17 +109,11 @@ class LevelDB extends BaseWorldProvider {
 	}
 
 	public static function isValid(string $path) : bool{
-		return file_exists(Path::join($path, "level.dat")) && is_dir(Path::join($path, "db"));
+		return file_exists(Path::join($path, "level.dat")) && is_file(Path::join($path, "region.sqlite"));
 	}
 
 	public static function generate(string $path, string $name, WorldCreationOptions $options) : void{
-		self::checkForLevelDBExtension();
-
-		$dbPath = Path::join($path, "db");
-		if(!file_exists($dbPath)){
-			mkdir($dbPath, 0777, true);
-		}
-
+		new SQLiteLevelDB(Path::join($path, "region.sqlite"));
 		BedrockWorldData::generate($path, $name, $options);
 	}
 
@@ -362,8 +336,8 @@ class LevelDB extends BaseWorldProvider {
 	/**
 	 * @return PalettedBlockArray[]
 	 */
-	protected function deserializeLegacyExtraData(string $index, int $chunkVersion, \Logger $logger) : array{
-		if(($extraRawData = $this->db->get($index . ChunkDataKey::LEGACY_BLOCK_EXTRA_DATA)) === false || $extraRawData === ""){
+	protected function deserializeLegacyExtraData(int $chunkX, int $chunkZ, int $chunkVersion, \Logger $logger) : array{
+		if(($extraRawData = $this->db->get($chunkX, $chunkZ, ChunkDataKey::LEGACY_BLOCK_EXTRA_DATA)) === false || $extraRawData === ""){
 			return [];
 		}
 
@@ -404,10 +378,9 @@ class LevelDB extends BaseWorldProvider {
 	}
 
 	private function readVersion(int $chunkX, int $chunkZ) : ?int{
-		$index = self::chunkIndex($chunkX, $chunkZ);
-		$chunkVersionRaw = $this->db->get($index . ChunkDataKey::NEW_VERSION);
+		$chunkVersionRaw = $this->db->get($chunkX, $chunkZ, ChunkDataKey::NEW_VERSION);
 		if($chunkVersionRaw === false){
-			$chunkVersionRaw = $this->db->get($index . ChunkDataKey::OLD_VERSION);
+			$chunkVersionRaw = $this->db->get($chunkX, $chunkZ, ChunkDataKey::OLD_VERSION);
 			if($chunkVersionRaw === false){
 				return null;
 			}
@@ -423,10 +396,10 @@ class LevelDB extends BaseWorldProvider {
 	 * @phpstan-return array<int, SubChunk>
 	 * @throws CorruptedWorldException
 	 */
-	private function deserializeLegacyTerrainData(string $index, int $chunkVersion, \Logger $logger) : array{
-		$convertedLegacyExtraData = $this->deserializeLegacyExtraData($index, $chunkVersion, $logger);
+	private function deserializeLegacyTerrainData(int $chunkX, int $chunkZ, int $chunkVersion, \Logger $logger) : array{
+		$convertedLegacyExtraData = $this->deserializeLegacyExtraData($chunkX, $chunkZ, $chunkVersion, $logger);
 
-		$legacyTerrain = $this->db->get($index . ChunkDataKey::LEGACY_TERRAIN);
+		$legacyTerrain = $this->db->get($chunkX, $chunkZ, ChunkDataKey::LEGACY_TERRAIN);
 		if($legacyTerrain === false){
 			throw new CorruptedChunkException("Missing expected LEGACY_TERRAIN tag for format version $chunkVersion");
 		}
@@ -560,12 +533,12 @@ class LevelDB extends BaseWorldProvider {
 	 * @return SubChunk[]
 	 * @phpstan-return array<int, SubChunk>
 	 */
-	private function deserializeAllSubChunkData(string $index, int $chunkVersion, bool &$hasBeenUpgraded, array $convertedLegacyExtraData, array $biomeArrays, \Logger $logger) : array{
+	private function deserializeAllSubChunkData(int $chunkX, int $chunkZ, int $chunkVersion, bool &$hasBeenUpgraded, array $convertedLegacyExtraData, array $biomeArrays, \Logger $logger) : array{
 		$subChunks = [];
 
 		$subChunkKeyOffset = self::hasOffsetCavesAndCliffsSubChunks($chunkVersion) ? self::CAVES_CLIFFS_EXPERIMENTAL_SUBCHUNK_KEY_OFFSET : 0;
 		for($y = Chunk::MIN_SUBCHUNK_INDEX; $y <= Chunk::MAX_SUBCHUNK_INDEX; ++$y){
-			if(($data = $this->db->get($index . ChunkDataKey::SUBCHUNK . chr($y + $subChunkKeyOffset))) === false){
+			if(($data = $this->db->get($chunkX, $chunkZ, ChunkDataKey::SUBCHUNK . chr($y + $subChunkKeyOffset))) === false){
 				$subChunks[$y] = new SubChunk(Block::EMPTY_STATE_ID, [], $biomeArrays[$y]);
 				continue;
 			}
@@ -598,9 +571,9 @@ class LevelDB extends BaseWorldProvider {
 	 * @return PalettedBlockArray[]
 	 * @phpstan-return array<int, PalettedBlockArray>
 	 */
-	private function deserializeBiomeData(string $index, int $chunkVersion, \Logger $logger) : array{
+	private function deserializeBiomeData(int $chunkX, int $chunkZ, int $chunkVersion, \Logger $logger) : array{
 		$biomeArrays = [];
-		if(($maps2d = $this->db->get($index . ChunkDataKey::HEIGHTMAP_AND_2D_BIOMES)) !== false){
+		if(($maps2d = $this->db->get($chunkX, $chunkZ, ChunkDataKey::HEIGHTMAP_AND_2D_BIOMES)) !== false){
 			$binaryStream = new BinaryStream($maps2d);
 
 			try{
@@ -615,7 +588,7 @@ class LevelDB extends BaseWorldProvider {
 			for($i = Chunk::MIN_SUBCHUNK_INDEX; $i <= Chunk::MAX_SUBCHUNK_INDEX; ++$i){
 				$biomeArrays[$i] = clone $biomes3d;
 			}
-		}elseif(($maps3d = $this->db->get($index . ChunkDataKey::HEIGHTMAP_AND_3D_BIOMES)) !== false){
+		}elseif(($maps3d = $this->db->get($chunkX, $chunkZ, ChunkDataKey::HEIGHTMAP_AND_3D_BIOMES)) !== false){
 			$binaryStream = new BinaryStream($maps3d);
 
 			try{
@@ -638,8 +611,6 @@ class LevelDB extends BaseWorldProvider {
 	 * @throws CorruptedChunkException
 	 */
 	public function loadChunk(int $chunkX, int $chunkZ) : ?LoadedChunkData{
-		$index = LevelDB::chunkIndex($chunkX, $chunkZ);
-
 		$chunkVersion = $this->readVersion($chunkX, $chunkZ);
 		if($chunkVersion === null){
 			//TODO: this might be a slightly-corrupted chunk with a missing version field
@@ -695,14 +666,14 @@ class LevelDB extends BaseWorldProvider {
 			case ChunkVersion::v1_1_0:
 				//TODO: check beds
 			case ChunkVersion::v1_0_0:
-				$convertedLegacyExtraData = $this->deserializeLegacyExtraData($index, $chunkVersion, $logger);
-				$biomeArrays = $this->deserializeBiomeData($index, $chunkVersion, $logger);
-				$subChunks = $this->deserializeAllSubChunkData($index, $chunkVersion, $hasBeenUpgraded, $convertedLegacyExtraData, $biomeArrays, $logger);
+			$convertedLegacyExtraData = $this->deserializeLegacyExtraData($chunkX, $chunkZ, $chunkVersion, $logger);
+			$biomeArrays = $this->deserializeBiomeData($chunkX, $chunkZ, $chunkVersion, $logger);
+			$subChunks = $this->deserializeAllSubChunkData($chunkX, $chunkZ, $chunkVersion, $hasBeenUpgraded, $convertedLegacyExtraData, $biomeArrays, $logger);
 				break;
 			case ChunkVersion::v0_9_5:
 			case ChunkVersion::v0_9_2:
 			case ChunkVersion::v0_9_0:
-				$subChunks = $this->deserializeLegacyTerrainData($index, $chunkVersion, $logger);
+			$subChunks = $this->deserializeLegacyTerrainData($chunkX, $chunkZ, $chunkVersion, $logger);
 				break;
 			default:
 				throw new CorruptedChunkException("don't know how to decode chunk format version $chunkVersion");
@@ -712,7 +683,7 @@ class LevelDB extends BaseWorldProvider {
 
 		/** @var CompoundTag[] $entities */
 		$entities = [];
-		if(($entityData = $this->db->get($index . ChunkDataKey::ENTITIES)) !== false && $entityData !== ""){
+		if(($entityData = $this->db->get($chunkX, $chunkZ, ChunkDataKey::ENTITIES)) !== false && $entityData !== ""){
 			try{
 				$entities = array_map(fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($entityData));
 			}catch(NbtDataException $e){
@@ -722,7 +693,7 @@ class LevelDB extends BaseWorldProvider {
 
 		/** @var CompoundTag[] $tiles */
 		$tiles = [];
-		if(($tileData = $this->db->get($index . ChunkDataKey::BLOCK_ENTITIES)) !== false && $tileData !== ""){
+		if(($tileData = $this->db->get($chunkX, $chunkZ, ChunkDataKey::BLOCK_ENTITIES)) !== false && $tileData !== ""){
 			try{
 				$tiles = array_map(fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($tileData));
 			}catch(NbtDataException $e){
@@ -730,7 +701,7 @@ class LevelDB extends BaseWorldProvider {
 			}
 		}
 
-		$finalisationChr = $this->db->get($index . ChunkDataKey::FINALIZATION);
+		$finalisationChr = $this->db->get($chunkX, $chunkZ, ChunkDataKey::FINALIZATION);
 		if($finalisationChr !== false){
 			$finalisation = ord($finalisationChr);
 			$terrainPopulated = $finalisation === self::FINALISATION_DONE;
@@ -748,21 +719,18 @@ class LevelDB extends BaseWorldProvider {
 	}
 
 	public function saveChunk(int $chunkX, int $chunkZ, ChunkData $chunkData, int $dirtyFlags) : void{
-		$index = LevelDB::chunkIndex($chunkX, $chunkZ);
+		$write = new SQLiteLevelDBWriteBatch();
 
-		$write = new \LevelDBWriteBatch();
-
-		$write->put($index . ChunkDataKey::NEW_VERSION, chr(self::CURRENT_LEVEL_CHUNK_VERSION));
-		$write->put($index . ChunkDataKey::PM_DATA_VERSION, Binary::writeLLong(VersionInfo::WORLD_DATA_VERSION));
+		$write->put($chunkX, $chunkZ, ChunkDataKey::NEW_VERSION, chr(self::CURRENT_LEVEL_CHUNK_VERSION));
+		$write->put($chunkX, $chunkZ, ChunkDataKey::PM_DATA_VERSION, Binary::writeLLong(VersionInfo::WORLD_DATA_VERSION));
 
 		$subChunks = $chunkData->getSubChunks();
 
 		if(($dirtyFlags & Chunk::DIRTY_FLAG_BLOCKS) !== 0){
 
 			foreach($subChunks as $y => $subChunk){
-				$key = $index . ChunkDataKey::SUBCHUNK . chr($y);
 				if($subChunk->isEmptyAuthoritative()){
-					$write->delete($key);
+					$write->delete($chunkX, $chunkZ, ChunkDataKey::SUBCHUNK . chr($y));
 				}else{
 					$subStream = new BinaryStream();
 					$subStream->putByte(self::CURRENT_LEVEL_SUBCHUNK_VERSION);
@@ -773,27 +741,27 @@ class LevelDB extends BaseWorldProvider {
 						$this->serializeBlockPalette($subStream, $blocks);
 					}
 
-					$write->put($key, $subStream->getBuffer());
+					$write->put($chunkX, $chunkZ, ChunkDataKey::SUBCHUNK . chr($y), $subStream->getBuffer());
 				}
 			}
 		}
 
 		if(($dirtyFlags & Chunk::DIRTY_FLAG_BIOMES) !== 0){
-			$write->delete($index . ChunkDataKey::HEIGHTMAP_AND_2D_BIOMES);
+			$write->delete($chunkX, $chunkZ, ChunkDataKey::HEIGHTMAP_AND_2D_BIOMES);
 			$stream = new BinaryStream();
 			$stream->put(str_repeat("\x00", 512)); //fake heightmap
 			self::serialize3dBiomes($stream, $subChunks);
-			$write->put($index . ChunkDataKey::HEIGHTMAP_AND_3D_BIOMES, $stream->getBuffer());
+			$write->put($chunkX, $chunkZ, ChunkDataKey::HEIGHTMAP_AND_3D_BIOMES, $stream->getBuffer());
 		}
 
 		//TODO: use this properly
-		$write->put($index . ChunkDataKey::FINALIZATION, chr($chunkData->isPopulated() ? self::FINALISATION_DONE : self::FINALISATION_NEEDS_POPULATION));
+		$write->put($chunkX, $chunkZ, ChunkDataKey::FINALIZATION, chr($chunkData->isPopulated() ? self::FINALISATION_DONE : self::FINALISATION_NEEDS_POPULATION));
 
-		$this->writeTags($chunkData->getTileNBT(), $index . ChunkDataKey::BLOCK_ENTITIES, $write);
-		$this->writeTags($chunkData->getEntityNBT(), $index . ChunkDataKey::ENTITIES, $write);
+		$this->writeTags($chunkData->getTileNBT(), $chunkX, $chunkZ, ChunkDataKey::BLOCK_ENTITIES, $write);
+		$this->writeTags($chunkData->getEntityNBT(), $chunkX, $chunkZ, ChunkDataKey::ENTITIES, $write);
 
-		$write->delete($index . ChunkDataKey::HEIGHTMAP_AND_2D_BIOME_COLORS);
-		$write->delete($index . ChunkDataKey::LEGACY_TERRAIN);
+		$write->delete($chunkX, $chunkZ, ChunkDataKey::HEIGHTMAP_AND_2D_BIOME_COLORS);
+		$write->delete($chunkX, $chunkZ, ChunkDataKey::LEGACY_TERRAIN);
 
 		$this->db->write($write);
 	}
@@ -801,21 +769,17 @@ class LevelDB extends BaseWorldProvider {
 	/**
 	 * @param CompoundTag[] $targets
 	 */
-	private function writeTags(array $targets, string $index, \LevelDBWriteBatch $write) : void{
+	private function writeTags(array $targets, int $chunkX, int $chunkZ, string $type, SQLiteLevelDBWriteBatch $write) : void{
 		if(count($targets) > 0){
 			$nbt = new LittleEndianNbtSerializer();
-			$write->put($index, $nbt->writeMultiple(array_map(fn(CompoundTag $tag) => new TreeRoot($tag), $targets)));
+			$write->put($chunkX, $chunkZ, $type, $nbt->writeMultiple(array_map(fn(CompoundTag $tag) => new TreeRoot($tag), $targets)));
 		}else{
-			$write->delete($index);
+			$write->delete($chunkX, $chunkZ, $type);
 		}
 	}
 
-	public function getDatabase() : \LevelDB{
+	public function getDatabase() : SQLiteLevelDB{
 		return $this->db;
-	}
-
-	public static function chunkIndex(int $chunkX, int $chunkZ) : string{
-		return Binary::writeLInt($chunkX) . Binary::writeLInt($chunkZ);
 	}
 
 	public function doGarbageCollection() : void{
@@ -828,9 +792,8 @@ class LevelDB extends BaseWorldProvider {
 
 	public function getAllChunks(bool $skipCorrupted = false, ?\Logger $logger = null) : \Generator{
 		foreach($this->db->getIterator() as $key => $_){
-			if(strlen($key) === 9 && ($key[8] === ChunkDataKey::NEW_VERSION || $key[8] === ChunkDataKey::OLD_VERSION)){
-				$chunkX = Binary::readLInt(substr($key, 0, 4));
-				$chunkZ = Binary::readLInt(substr($key, 4, 4));
+			[$chunkX, $chunkZ, $type] = $key;
+			if($type === ChunkDataKey::NEW_VERSION || $type === ChunkDataKey::OLD_VERSION){
 				try{
 					if(($chunk = $this->loadChunk($chunkX, $chunkZ)) !== null){
 						yield [$chunkX, $chunkZ] => $chunk;
@@ -850,7 +813,8 @@ class LevelDB extends BaseWorldProvider {
 	public function calculateChunkCount() : int{
 		$count = 0;
 		foreach($this->db->getIterator() as $key => $_){
-			if(strlen($key) === 9 && ($key[8] === ChunkDataKey::NEW_VERSION || $key[8] === ChunkDataKey::OLD_VERSION)){
+			[$chunkX, $chunkZ, $type] = $key;
+			if($type === ChunkDataKey::NEW_VERSION || $type === ChunkDataKey::OLD_VERSION){
 				$count++;
 			}
 		}

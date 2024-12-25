@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8ed9dff0794e6fbbd75f7a2ebde97f5f",
+    "content-hash": "717bc26d18bc01dfaee34769c55a5e8d",
     "packages": [
         {
             "name": "adhocore/json-comment",
@@ -3021,7 +3021,7 @@
         "ext-hash": "*",
         "ext-igbinary": "^3.0.1",
         "ext-json": "*",
-        "ext-leveldb": "^0.2.1 || ^0.3.0",
+        "ext-pdo": "*",
         "ext-mbstring": "*",
         "ext-morton": "^0.1.0",
         "ext-openssl": "*",

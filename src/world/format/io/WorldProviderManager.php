@@ -25,6 +25,7 @@ namespace pocketmine\world\format\io;
 
 use pocketmine\utils\Utils;
 use pocketmine\world\format\io\leveldb\LevelDB;
+use pocketmine\world\format\io\leveldb\SQLite;
 use pocketmine\world\format\io\region\Anvil;
 use pocketmine\world\format\io\region\McRegion;
 use pocketmine\world\format\io\region\PMAnvil;
@@ -41,10 +42,11 @@ final class WorldProviderManager{
 	private WritableWorldProviderManagerEntry $default;
 
 	public function __construct(){
-		$leveldb = new WritableWorldProviderManagerEntry(LevelDB::isValid(...), fn(string $path, \Logger $logger) => new LevelDB($path, $logger), LevelDB::generate(...));
-		$this->default = $leveldb;
-		$this->addProvider($leveldb, "leveldb");
+		$sqlite = new WritableWorldProviderManagerEntry(SQLite::isValid(...), fn(string $path, \Logger $logger) => new SQLite($path, $logger), SQLite::generate(...));
+		$this->default = $sqlite;
+		$this->addProvider($sqlite, "sqlite");
 
+		$this->addProvider(new ReadOnlyWorldProviderManagerEntry(LevelDB::isValid(...), fn(string $path, \Logger $logger) => new LevelDB($path, $logger)), "leveldb");
 		$this->addProvider(new ReadOnlyWorldProviderManagerEntry(Anvil::isValid(...), fn(string $path, \Logger $logger) => new Anvil($path, $logger)), "anvil");
 		$this->addProvider(new ReadOnlyWorldProviderManagerEntry(McRegion::isValid(...), fn(string $path, \Logger $logger) => new McRegion($path, $logger)), "mcregion");
 		$this->addProvider(new ReadOnlyWorldProviderManagerEntry(PMAnvil::isValid(...), fn(string $path, \Logger $logger) => new PMAnvil($path, $logger)), "pmanvil");
