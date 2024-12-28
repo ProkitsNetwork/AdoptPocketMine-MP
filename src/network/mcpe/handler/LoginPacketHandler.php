@@ -75,6 +75,9 @@ class LoginPacketHandler extends PacketHandler{
 		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
 			ClientDataToSkinDataHelper::fromClientData($clientData),
 			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
+				if(!$this->session->isConnected()){
+					return;
+				}
 				if($error !== null){
 					$this->session->disconnectWithError(
 						reason: "Invalid skin: " . $error,

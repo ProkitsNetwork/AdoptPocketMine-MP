@@ -848,6 +848,9 @@ class InGamePacketHandler extends PacketHandler{
 		$this->player->getServer()->getAsyncPool()->submitTask(new ProcessSkinTask(
 			$packet->skin,
 			function(?Skin $skin, ?string $error) use ($packet) : void{
+				if(!$this->session->isConnected()){
+					return;
+				}
 				if($error !== null){
 					$this->session->disconnectWithError(
 						reason: "Invalid skin: " . $error,
