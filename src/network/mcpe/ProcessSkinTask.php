@@ -24,32 +24,35 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe;
 
 use Closure;
-use pmmp\thread\ThreadSafe;
 use pocketmine\entity\InvalidSkinException;
 use pocketmine\entity\Skin;
-use pocketmine\network\mcpe\convert\SkinAdapter;
+use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\types\skin\SkinData;
 use pocketmine\scheduler\AsyncTask;
+use pocketmine\thread\NonThreadSafeValue;
 
 class ProcessSkinTask extends AsyncTask{
 	private const KEY_ON_COMPLETION = 'onCompletion';
 
-	private ?string $error = 'Unknown';
+	private ?string $error = null;
+	/** @var NonThreadSafeValue<SkinData> */
+	private NonThreadSafeValue $skinData;
 
 	/**
 	 * @param Closure(?Skin $skin,?string $error) : void $callback
 	 */
 	public function __construct(
-		private SkinAdapter&ThreadSafe $adapter,
-		private SkinData $skin,
+		private int $protocol,
+		SkinData $skinData,
 		Closure $callback,
 	){
+		$this->skinData = new NonThreadSafeValue($skinData);
 		$this->storeLocal(self::KEY_ON_COMPLETION, $callback);
 	}
 
 	public function onRun() : void{
 		try{
-			$skin = $this->adapter->fromSkinData($this->skin);
+			$skin = TypeConverter::getInstance($this->protocol)->getSkinAdapter()->fromSkinData($this->skinData->deserialize());
 			$this->setResult($skin);
 			$this->error = null;
 		}catch(InvalidSkinException $e){
