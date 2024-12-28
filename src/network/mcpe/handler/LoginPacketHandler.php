@@ -99,7 +99,7 @@ class LoginPacketHandler extends PacketHandler{
 		if(!Uuid::isValid($extraData->identity)){
 			$this->session->disconnectWithError(
 				reason: "Invalid login uuid",
-				disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_notAuthenticated()
+				disconnectScreenMessage: KnownTranslationFactory::pocketmine_disconnect_error_badPacket()
 			);
 			return;
 		}
