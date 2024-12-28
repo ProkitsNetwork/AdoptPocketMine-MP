@@ -49,16 +49,12 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 		return $this->maxY;
 	}
 
-	/*
-		public function getPath() : string{
-			return $this->path;
-		}
-	*/
+	public function getPath() : string{
+		return $this->path;
+	}
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
-//usleep(10000);
-			var_dump("work $chunkX $chunkZ");
 			return $provider->loadChunk($chunkX, $chunkZ);
 		});
 	}

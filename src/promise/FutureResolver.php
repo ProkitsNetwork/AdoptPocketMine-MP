@@ -26,6 +26,7 @@ namespace pocketmine\promise;
 use pmmp\thread\ThreadSafe;
 use function igbinary_serialize;
 use function igbinary_unserialize;
+use function spl_object_id;
 
 /**
  * @template C
@@ -34,9 +35,7 @@ use function igbinary_unserialize;
 class FutureResolver extends ThreadSafe{
 	/** @var FutureSharedData<T> */
 	private FutureSharedData $data;
-	/**
-	 * @var C
-	 */
+	/** @var C */
 	private $context = null;
 	/**
 	 * @internal

@@ -50,9 +50,12 @@ use function array_keys;
 use function array_shift;
 use function assert;
 use function count;
+use function igbinary_serialize;
+use function igbinary_unserialize;
 use function implode;
 use function is_dir;
 use function is_string;
+use function iterator_to_array;
 use function trim;
 
 class WorldProviderThread extends Thread{
@@ -289,7 +292,6 @@ class WorldProviderThread extends Thread{
 			}
 		}
 	}
-
 
 	private function lockedShift(ThreadSafeArray $queue) : ?FutureResolver{
 		return $queue->synchronized(fn() => $queue->shift());
