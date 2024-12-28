@@ -842,12 +842,12 @@ class InGamePacketHandler extends PacketHandler{
 			$this->session->getLogger()->debug("Refused duplicate skin change request");
 			return true;
 		}
-		$this->lastRequestedFullSkinId = $packet->skin->getFullSkinId();
+		$currentFullSkinId = $this->lastRequestedFullSkinId = $packet->skin->getFullSkinId();
 
 		$this->session->getLogger()->debug("Processing skin change request");
 		$this->player->getServer()->getAsyncPool()->submitTask(new ProcessSkinTask(
 			$packet->skin,
-			function(?Skin $skin, ?string $error) use ($packet) : void{
+			function(?Skin $skin, ?string $error) use ($currentFullSkinId, $packet) : void{
 				if(!$this->session->isConnected()){
 					return;
 				}
@@ -859,6 +859,10 @@ class InGamePacketHandler extends PacketHandler{
 					return;
 				}
 				if($skin !== null){
+					if ($currentFullSkinId !== $this->lastRequestedFullSkinId) {
+						$this->session->getLogger()->debug("Skin change request ignored due to newer skin change");
+						return;
+					}
 					$this->player->changeSkin($skin, $packet->newSkinName, $packet->oldSkinName);
 					$this->session->getLogger()->debug("Skin change request processed");
 				}
