@@ -1193,3 +1193,227 @@ parameters:
 			message: "#^Static property pocketmine\\\\VersionInfo\\:\\:\\$gitCommitDate \\(int\\|null\\) does not accept mixed\\.$#"
 			count: 1
 			path: ../../../src/VersionInfo.php
+		-
+			message: "#^Method pocketmine\\\\promise\\\\FutureResolver\\:\\:getContext\\(\\) should return TContext but returns \\(Closure\\)\\|pmmp\\\\thread\\\\ThreadSafe\\|null\\.$#"
+			count: 1
+			path: ../../../src/promise/FutureResolver.php
+
+		-
+			message: "#^Parameter \\#1 \\$value of method pocketmine\\\\promise\\\\FutureResolver\\<TContext,TReturn\\>\\:\\:finish\\(\\) expects TReturn, void given\\.$#"
+			count: 1
+			path: ../../../src/promise/FutureResolver.php
+
+		-
+			message: "#^Property pocketmine\\\\promise\\\\FutureResolver\\:\\:\\$neverDestruct with generic class pocketmine\\\\promise\\\\FutureResolver does not specify its types\\: TContext, TReturn$#"
+			count: 1
+			path: ../../../src/promise/FutureResolver.php
+
+		-
+			message: "#^Result of closure \\(void\\) is used\\.$#"
+			count: 1
+			path: ../../../src/promise/FutureResolver.php
+
+		-
+			message: "#^Method pocketmine\\\\promise\\\\FutureSharedData\\:\\:getValue\\(\\) should return TReturn but returns null\\.$#"
+			count: 1
+			path: ../../../src/promise/FutureSharedData.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:calculateChunkCount\\(\\) should return pocketmine\\\\promise\\\\Future\\<void\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:doGarbageCollection\\(\\) should return pocketmine\\\\promise\\\\Future\\<void\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:getWorldData\\(\\) should return pocketmine\\\\promise\\\\Future\\<pocketmine\\\\world\\\\format\\\\io\\\\WorldData\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:loadChunk\\(\\) should return pocketmine\\\\promise\\\\Future\\<pocketmine\\\\world\\\\format\\\\io\\\\LoadedChunkData\\|null\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:reloadWorldData\\(\\) should return pocketmine\\\\promise\\\\Future\\<void\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\:\\:saveChunk\\(\\) should return pocketmine\\\\promise\\\\Future\\<void\\> but returns pocketmine\\\\promise\\\\Future\\<mixed\\>\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Parameter \\#1 \\$str of function igbinary_unserialize expects string, string\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Parameter \\#3 \\$chunkData of method pocketmine\\\\world\\\\format\\\\io\\\\WritableWorldProvider\\:\\:saveChunk\\(\\) expects pocketmine\\\\world\\\\format\\\\io\\\\ChunkData, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/BaseThreadedWorldProvider.php
+
+		-
+			message: "#^Call to function assert\\(\\) with true will always evaluate to true\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Cannot access an offset on mixed\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Constant DATA_PATH not found\\.$#"
+			count: 2
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#"
+			count: 2
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Instanceof between pocketmine\\\\promise\\\\FutureResolver and pocketmine\\\\promise\\\\FutureResolver will always evaluate to true\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:lockedGetAll\\(\\) has parameter \\$queue with generic class pmmp\\\\thread\\\\ThreadSafeArray but does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:lockedGetAll\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:lockedShift\\(\\) has parameter \\$queue with generic class pmmp\\\\thread\\\\ThreadSafeArray but does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:lockedShift\\(\\) return type with generic class pocketmine\\\\promise\\\\FutureResolver does not specify its types\\: TContext, TReturn$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:lockedShift\\(\\) should return pocketmine\\\\promise\\\\FutureResolver\\|null but returns mixed\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:transaction\\(\\) has parameter \\$c with no signature specified for Closure\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$c contains unresolvable type\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Parameter \\#1 \\$c of method pocketmine\\\\promise\\\\FutureResolver\\<array\\<int, bool\\|string\\>,void\\>\\:\\:do\\(\\) expects Closure\\(\\)\\: void, Closure\\(\\)\\: \\(pocketmine\\\\world\\\\format\\\\BaseThreadedWorldProvider\\|null\\) given\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Parameter \\#1 \\$lang of method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:loadWorldData\\(\\) expects pocketmine\\\\lang\\\\Language, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Parameter \\#1 \\$value of function count expects array\\|Countable, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:\\$lang \\(string\\) does not accept string\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:\\$loadQueue with generic class pmmp\\\\thread\\\\ThreadSafeArray does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:\\$transactionQueue with generic class pmmp\\\\thread\\\\ThreadSafeArray does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:\\$unloadQueue with generic class pmmp\\\\thread\\\\ThreadSafeArray does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Template type T of method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:transaction\\(\\) is not referenced in a parameter\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Trying to invoke mixed but it's not a callable\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Cannot use array destructuring on mixed\\.$#"
+			count: 2
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\io\\\\FastChunkSerializer\\:\\:serializeLoadedChunkData\\(\\) should return string but returns string\\|null\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#1 \\$data of static method pocketmine\\\\world\\\\format\\\\io\\\\FastChunkSerializer\\:\\:deserializeChunkData\\(\\) expects string, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#1 \\$str of method pocketmine\\\\utils\\\\BinaryStream\\:\\:put\\(\\) expects string, string\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, string\\|null given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#2 \\$populated of class pocketmine\\\\world\\\\format\\\\io\\\\ChunkData constructor expects bool, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#2 \\$upgraded of class pocketmine\\\\world\\\\format\\\\io\\\\LoadedChunkData constructor expects bool, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#3 \\$entityNBT of class pocketmine\\\\world\\\\format\\\\io\\\\ChunkData constructor expects array\\<int, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\>, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#3 \\$fixerFlags of class pocketmine\\\\world\\\\format\\\\io\\\\LoadedChunkData constructor expects int, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php
+
+		-
+			message: "#^Parameter \\#4 \\$tileNBT of class pocketmine\\\\world\\\\format\\\\io\\\\ChunkData constructor expects array\\<int, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\>, mixed given\\.$#"
+			count: 1
+			path: ../../../src/world/format/io/FastChunkSerializer.php

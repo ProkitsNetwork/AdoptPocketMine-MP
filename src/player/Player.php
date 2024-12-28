@@ -824,7 +824,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 	 * Requests chunks from the world to be sent, up to a set limit every tick. This operates on the results of the most recent chunk
 	 * order.
 	 */
-	protected function requestChunks() : void{
+	public function requestChunks() : void{
 		if(!$this->isConnected()){
 			return;
 		}
@@ -844,6 +844,15 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			$Z = null;
 			World::getXZ($index, $X, $Z);
 			assert(is_int($X) && is_int($Z));
+
+			if(!$world->isChunkLoading($X, $Z) && !$world->isChunkLoaded($X, $Z)){
+				$world->queueChunk($X, $Z);
+				continue;
+			}
+
+			if($world->isChunkLoading($X, $Z)){
+				continue;
+			}
 
 			++$count;
 
