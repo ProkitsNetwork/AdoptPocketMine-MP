@@ -63,6 +63,7 @@ class WorldProviderThread extends Thread{
 	private ThreadSafeArray $loadQueue;
 	private ThreadSafeArray $unloadQueue;
 	private ThreadSafeArray $transactionQueue;
+	private ThreadSafeArray $executeQueue;
 
 	private string $lang;
 	private ThreadSafeLogger $logger;
@@ -169,6 +170,9 @@ class WorldProviderThread extends Thread{
 
 		while(!$this->isKilled){
 			try{
+				while(($func = $this->executeQueue->pop()) !== null){
+					$func();
+				}
 				while(($resolver = $this->lockedShift($this->loadQueue)) !== null){
 					/** @var FutureResolver<array{0:string,1:bool},void> $resolver */
 					if($resolver->isCancelled()){
@@ -346,6 +350,9 @@ class WorldProviderThread extends Thread{
 			});
 			return $resolver->future();
 		});
+	}
 
+	public function execute(\Closure $closure) : void{
+		$this->executeQueue->synchronized(fn() => $this->executeQueue[] = $closure);
 	}
 }
