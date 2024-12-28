@@ -41,7 +41,6 @@ trait CommonThreadPartsTrait{
 	 */
 	private ?ThreadSafeArray $classLoaders = null;
 	protected ?string $composerAutoloaderPath = null;
-	protected string $__ex__dataPath;
 
 	protected bool $isKilled = false;
 
@@ -98,7 +97,6 @@ trait CommonThreadPartsTrait{
 	public function getCrashInfo() : ?ThreadCrashInfo{ return $this->crashInfo; }
 
 	public function start(int $options = NativeThread::INHERIT_NONE) : bool{
-		$this->__ex__dataPath = Server::getInstance()->getDataPath();
 		ThreadManager::getInstance()->add($this);
 
 		if($this->getClassLoaders() === null){

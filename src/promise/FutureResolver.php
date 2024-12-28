@@ -27,6 +27,7 @@ use Closure;
 use pmmp\thread\ThreadSafe;
 use function igbinary_serialize;
 use function igbinary_unserialize;
+use function is_string;
 use function spl_object_id;
 
 /**
