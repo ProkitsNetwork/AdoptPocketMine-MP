@@ -45,6 +45,7 @@ use pocketmine\world\generator\InvalidGeneratorOptionsException;
 use PrefixedLogger;
 use RuntimeException;
 use Symfony\Component\Filesystem\Path;
+use Throwable;
 use function array_keys;
 use function array_shift;
 use function assert;
@@ -162,84 +163,140 @@ class WorldProviderThread extends Thread{
 		$lang = igbinary_unserialize($this->lang);
 		$mgr = new WorldProviderManager();
 
-		while(!$this->isKilled || count($providers) !== 0){
-			while(($resolver = $this->loadQueue->pop()) !== null){
-				/** @var FutureResolver<array{0:string,1:bool},void> $resolver */
-				if($resolver->isCancelled()){
-					continue;
-				}
-				$resolver->do(function() use ($mgr, $lang, $resolver, &$providers){
-					[$folderName, $autoUpgrade] = $resolver->getContext();
-					if(isset($providers[$folderName])){
-						throw new RuntimeException("Provider for world $folderName has already loaded.");
-					}
-					$provider = $this->loadWorldData($lang, $mgr, $folderName, $autoUpgrade);
-					$this->logger->debug("World provider for $folderName is loaded.");
-					if($provider === null){
-						return null;
-					}
-					$providers[$folderName] = $provider;
-					$this->transactionQueue[$folderName] = new ThreadSafeArray();
-					return new BaseThreadedWorldProvider(
-						$provider->getWorldMinY(),
-						$provider->getWorldMaxY(),
-						$this->getWorldPath($folderName),
-						$folderName
-					);
-				});
-			}
-
-			foreach($this->unloadQueue as $idx => $resolver){
-				assert($resolver instanceof FutureResolver);
-				if($resolver->isCancelled()){
-					continue;
-				}
-				$folderName = $resolver->getContext();
-				assert(is_string($folderName));
-
-				if(!$this->isKilled && !empty($this->transactionQueue[$folderName])){
-					if(!isset($providers[$folderName])){
-						continue;
-					}
-					$resolver->do(function() use (&$providers, $folderName){
-						$provider = $providers[$folderName];
-						$provider->close();
-						$this->logger->debug("World provider for $folderName is unloaded.");
-						unset($providers[$folderName], $this->transactionQueue[$folderName]);
-					});
-					unset($this->unloadQueue[$idx]);
-				}
-			}
-
-			foreach($this->transactionQueue as $world => $queue){
-				$provider = $providers[$world];
-				if($provider === null){
-					unset($this->transactionQueue[$world]);
-					continue;
-				}
-				while(($resolver = $queue->pop()) !== null){
+		while(!$this->isKilled){
+			try{
+				while(($resolver = $this->lockedShift($this->loadQueue)) !== null){
+					/** @var FutureResolver<array{0:string,1:bool},void> $resolver */
 					if($resolver->isCancelled()){
 						continue;
 					}
+
+					$resolver->do(function() use ($mgr, $lang, $resolver, &$providers){
+						[$folderName, $autoUpgrade] = $resolver->getContext();
+						try{
+							if(isset($providers[$folderName])){
+								throw new RuntimeException("Provider for \"$folderName\" has already loaded.");
+							}
+
+							$provider = $this->loadWorldData($lang, $mgr, $folderName, $autoUpgrade);
+							$this->logger->debug("World provider for \"$folderName\" is loaded.");
+
+							if($provider === null){
+								return null;
+							}
+
+							$providers[$folderName] = $provider;
+							$this->transactionQueue->synchronized(fn() => $this->transactionQueue[$folderName] = new ThreadSafeArray());
+
+							return new BaseThreadedWorldProvider(
+								$provider->getWorldMinY(),
+								$provider->getWorldMaxY(),
+								$this->getWorldPath($folderName),
+								$folderName
+							);
+						}catch(Throwable $e){
+							$this->logger->critical("Failed to load \"$folderName\".");
+							$this->logger->logException($e);
+							return null;
+						}
+					});
+				}
+
+				foreach($this->lockedGetAll($this->unloadQueue) as $idx => $resolver){
 					assert($resolver instanceof FutureResolver);
-					$resolver->do(static fn() => $resolver->getContext()($provider));
-				}
-			}
-			$need = false;
-			foreach($this->transactionQueue as $k => $queue){
-				if(count($queue) !== 0){
-					$need = true;
-					break;
-				}
-			}
-			if(!$need && count($this->unloadQueue) === 0){
-				$this->synchronized(function() : void{
-					if(!$this->isKilled){
-						$this->wait(1000);
+					if($resolver->isCancelled()){
+						continue;
 					}
+
+					$folderName = $resolver->getContext();
+					assert(is_string($folderName));
+
+					if(!$this->isKilled && !empty($this->transactionQueue->synchronized(fn() => $this->transactionQueue[$folderName] ?? []))){
+						if(!isset($providers[$folderName])){
+							continue;
+						}
+
+						$resolver->do(function() use (&$providers, $folderName){
+							try{
+								$provider = $providers[$folderName];
+								$provider->close();
+								$this->logger->debug("World provider for \"$folderName\" is unloaded.");
+
+								$this->transactionQueue->synchronized(function() use ($folderName){
+									unset($this->transactionQueue[$folderName]);
+								});
+
+								unset($providers[$folderName]);
+							}catch(Throwable $e){
+								$this->logger->critical("Failed to unload world provider for \"$folderName\".");
+								$this->logger->logException($e);
+							}
+						});
+					}
+				}
+
+				foreach($this->lockedGetAll($this->transactionQueue) as $world => $queue){
+					$provider = $providers[$world] ?? null;
+					if($provider === null){
+						$this->transactionQueue->synchronized(function() use ($world){ unset($this->transactionQueue[$world]); });
+						continue;
+					}
+
+					while(($resolver = $this->lockedShift($queue)) !== null){
+						if($resolver->isCancelled()){
+							continue;
+						}
+
+						assert($resolver instanceof FutureResolver);
+						try{
+							$resolver->do(static fn() => $resolver->getContext()($provider));
+						}catch(Throwable $e){
+							$this->logger->critical("Failed to execute transaction for $world.");
+							$this->logger->logException($e);
+						}
+					}
+				}
+
+				$need = $this->transactionQueue->synchronized(function(){
+					foreach($this->transactionQueue as $queue){
+						if(count($queue) !== 0){
+							return true;
+						}
+					}
+					return false;
 				});
+
+				if(!$need && $this->unloadQueue->synchronized(fn() => empty($this->unloadQueue))){
+					$this->synchronized(function() : void{
+						if(!$this->isKilled){
+							$this->wait(1000);
+						}
+					});
+				}
+			}catch(Throwable $e){
+				$this->logger->critical("Unhandled exception in onRun loop.");
+				$this->logger->logException($e);
 			}
 		}
+
+		foreach($providers as $folderName => $provider){
+			try{
+				$provider->close();
+				$this->logger->debug("Closed world provider for \"$folderName\" on shutdown gracefully.");
+			}catch(Throwable $e){
+				$this->logger->critical("Error closing provider for \"$folderName\" during shutdown.");
+				$this->logger->logException($e);
+			}
+		}
+	}
+
+
+	private function lockedShift(ThreadSafeArray $queue) : ?FutureResolver{
+		return $queue->synchronized(fn() => $queue->shift());
+	}
+
+	private function lockedGetAll(ThreadSafeArray $queue) : array{
+		return $queue->synchronized(fn() => iterator_to_array($queue));
 	}
 
 	/**
@@ -275,14 +332,17 @@ class WorldProviderThread extends Thread{
 	 * @return Future<T>|null
 	 */
 	public function transaction(string $world, \Closure $c) : ?Future{
-		if(!isset($this->transactionQueue[$world])){
-			return null;
-		}
-		$resolver = new FutureResolver($c);
-		$this->transactionQueue[$world][] = $resolver;
-		$this->synchronized(function() : void{
-			$this->notify();
+		return $this->transactionQueue->synchronized(function() use ($world, $c){
+			if(!isset($this->transactionQueue[$world])){
+				return null;
+			}
+			$resolver = new FutureResolver($c);
+			$this->transactionQueue[$world][] = $resolver;
+			$this->synchronized(function() : void{
+				$this->notify();
+			});
+			return $resolver->future();
 		});
-		return $resolver->future();
+
 	}
 }

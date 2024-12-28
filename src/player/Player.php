@@ -829,9 +829,12 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 			World::getXZ($index, $X, $Z);
 			assert(is_int($X) && is_int($Z));
 
-			if (!isset($world->processedChunk[$index]) && !$world->isChunkLoaded($X,$Z)) {
-				$world->queueChunk($X,$Z);
-				//var_dump("EE");
+			if(!$world->isChunkLoading($X, $Z) && !$world->isChunkLoaded($X, $Z)){
+				$world->queueChunk($X, $Z);
+				continue;
+			}
+
+			if($world->isChunkLoading($X, $Z)){
 				continue;
 			}
 
@@ -846,7 +849,7 @@ class Player extends Human implements CommandSender, ChunkListener, IPlayer{
 				$world->registerTickingChunk($this->chunkTicker, $X, $Z);
 			}
 
-			$world->requestChunkPopulation($X, $Z, $this->chunkLoader, false)->onCompletion(
+			$world->requestChunkPopulation($X, $Z, $this->chunkLoader)->onCompletion(
 				function() use ($X, $Z, $index, $world) : void{
 					if(!$this->isConnected() || !isset($this->usedChunks[$index]) || $world !== $this->getWorld()){
 						return;

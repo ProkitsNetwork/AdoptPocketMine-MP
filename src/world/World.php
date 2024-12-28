@@ -395,11 +395,6 @@ class World implements ChunkManager{
 	 */
 	private array $loadingChunks = [];
 
-	public function setProcessedChunk() : void{ $this->processedChunk = []; }
-	public array $processedChunk = [];
-	private LoadedChunkData $dirtyIntermediateChunk;
-	private Chunk $intermediateChunk;
-
 	/**
 	 * @phpstan-return ChunkPosHash
 	 */
@@ -568,18 +563,6 @@ class World implements ChunkManager{
 		$this->addOnUnloadCallback(static function() use ($workerPool, $workerStartHook) : void{
 			$workerPool->removeWorkerStartHook($workerStartHook);
 		});
-
-		$chunk = new Chunk([],true);
-		$glass = VanillaBlocks::GLASS()->getStateId();
-		for($x=0;$x<16;$x++){
-			for($y=0;$y<256;$y++){
-				for($z=0;$z<16;$z++){
-					$chunk->setBlockStateId($x, $y, $z, $glass);
-				}
-			}
-		}
-		$this->intermediateChunk = $chunk;
-		$this->dirtyIntermediateChunk = new LoadedChunkData(new ChunkData($chunk->getSubChunks(), true, [], []), false, LoadedChunkData::FIXER_FLAG_NONE);
 	}
 
 	private function initRandomTickBlocksFromConfig(ServerConfigGroup $cfg) : void{
@@ -1046,17 +1029,16 @@ class World implements ChunkManager{
 				continue;
 			}
 			unset($this->loadingChunks[$chunkPosHash]);
-			$this->processedChunk[$chunkPosHash]=2;
 			$chunkData = $future->get();
 			if($chunkData !== null){
 				$this->onChunkDataLoaded($chunkData,$chunkX,$chunkZ,$chunkPosHash);
 			}
-			/*$chunk = $this->loadChunk($chunkX, $chunkZ, true, $chunkData);
+			$chunk = $this->loadChunk($chunkX, $chunkZ);
 			if($chunk !== null){
 				foreach($this->getChunkListeners($chunkX, $chunkZ) as $listener){
 					$listener->onChunkChanged($chunkX, $chunkZ, $chunk);
 				}
-			}*/
+			}
 		}
 
 		$this->sunAnglePercentage = $this->computeSunAnglePercentage(); //Sun angle depends on the current time
@@ -1570,13 +1552,15 @@ class World implements ChunkManager{
 					$this->logger->debug("Ignoring chunk x=$chunkX z=$chunkZ");
 					continue;
 				}
-				$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
-					$chunk->getSubChunks(),
-					$chunk->isPopulated(),
-					array_map(fn(Entity $e) => $e->saveNBT(), array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk())),
-					array_map(fn(Tile $t) => $t->saveNBT(), $chunk->getTiles()),
-				), $chunk->getTerrainDirtyFlags())->get();
-				$chunk->clearTerrainDirtyFlags();
+				if($chunk->isTerrainDirty()){
+					$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
+						$chunk->getSubChunks(),
+						$chunk->isPopulated(),
+						array_map(fn(Entity $e) => $e->saveNBT(), array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk())),
+						array_map(fn(Tile $t) => $t->saveNBT(), $chunk->getTiles()),
+					), $chunk->getTerrainDirtyFlags())->get();
+					$chunk->clearTerrainDirtyFlags();
+				}
 			}
 		}finally{
 			$this->timings->syncChunkSave->stopTiming();
@@ -2955,13 +2939,15 @@ class World implements ChunkManager{
 		return isset($this->chunkLoaders[$index = World::chunkHash($x, $z)]) && count($this->chunkLoaders[$index]) > 0;
 	}
 
-	public function queueChunk(int $x, int $z) : void{
+	public function isChunkLoading(int $x,int $z) : bool{
+		return isset($this->loadingChunks[World::chunkHash($x, $z)]);
+	}
 
-		$hash = World::chunkHash($x, $z);
-		if(isset($this->loadingChunks[$hash])){
+	public function queueChunk(int $x, int $z) : void{
+		if($this->isChunkLoading($x, $z)){
 			return;
 		}
-		$this->loadingChunks[$hash]=$this->provider->loadChunk($x,$z);
+		$this->loadingChunks[World::chunkHash($x, $z)] = $this->provider->loadChunk($x, $z);
 	}
 
 	/**
@@ -2976,9 +2962,15 @@ class World implements ChunkManager{
 			return $this->chunks[$chunkHash];
 		}
 		if(isset($this->loadingChunks[$chunkHash])){
-			return $this->intermediateChunk;
+			$future = $this->loadingChunks[$chunkHash];
+			unset($this->loadingChunks[$chunkHash]);
+			$data = $future->get();
+			if($data !== null){
+				$this->onChunkDataLoaded($data, $x, $z, $chunkHash);
+				return $this->chunks[$chunkHash];
+			}
+			return null;
 		}
-		$this->chunks[$chunkHash] =$this->intermediateChunk;
 		$this->queueChunk($x,$z);
 
 		$this->timings->syncChunkLoad->startTiming();
@@ -2990,9 +2982,7 @@ class World implements ChunkManager{
 		$loadedChunkData = null;
 
 		try{
-			$fut = $this->provider->loadChunk($x, $z);
-			//$this->loadingChunks[$chunkHash] = $fut;
-			$loadedChunkData = $fut->get();
+			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
 		}catch(CorruptedChunkException $e){
 			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
 		}
