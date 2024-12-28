@@ -44,6 +44,7 @@ use pocketmine\player\PlayerInfo;
 use pocketmine\player\XboxLivePlayerInfo;
 use pocketmine\Server;
 use Ramsey\Uuid\Uuid;
+use function assert;
 use function in_array;
 use function is_array;
 
@@ -180,7 +181,7 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 		return in_array($protocolVersion, ProtocolInfo::ACCEPTED_PROTOCOL, true);
 	}
 
-	private function onSkinParsed(AuthenticationData $extraData, ClientData $clientData, \pocketmine\entity\Skin $skin, LoginPacket $packet) : void{
+	private function onSkinParsed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
 		if(!Uuid::isValid($extraData->identity)){
 			throw new PacketHandlingException("Invalid login UUID");
 		}

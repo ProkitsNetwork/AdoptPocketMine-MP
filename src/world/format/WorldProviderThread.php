@@ -54,6 +54,7 @@ use function count;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 use function implode;
+use function is_callable;
 use function is_dir;
 use function is_string;
 use function iterator_to_array;
@@ -171,7 +172,7 @@ class WorldProviderThread extends Thread{
 
 		while(!$this->isKilled){
 			try{
-				while(($func = $this->executeQueue->pop()) !== null){
+				while(is_callable($func = $this->executeQueue->pop())){
 					$func();
 				}
 				while(($resolver = $this->lockedShift($this->loadQueue)) !== null){

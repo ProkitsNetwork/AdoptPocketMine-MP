@@ -1417,3 +1417,12 @@ parameters:
 			message: "#^Parameter \\#4 \\$tileNBT of class pocketmine\\\\world\\\\format\\\\io\\\\ChunkData constructor expects array\\<int, pocketmine\\\\nbt\\\\tag\\\\CompoundTag\\>, mixed given\\.$#"
 			count: 1
 			path: ../../../src/world/format/io/FastChunkSerializer.php
+		-
+			message: "#^Method pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:execute\\(\\) has parameter \\$closure with no signature specified for Closure\\.$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
+
+		-
+			message: "#^Property pocketmine\\\\world\\\\format\\\\WorldProviderThread\\:\\:\\$executeQueue with generic class pmmp\\\\thread\\\\ThreadSafeArray does not specify its types\\: TKey, TValue$#"
+			count: 1
+			path: ../../../src/world/format/WorldProviderThread.php
