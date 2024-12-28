@@ -81,6 +81,7 @@ class WorldProviderThread extends Thread{
 		$this->loadQueue = new ThreadSafeArray();
 		$this->unloadQueue = new ThreadSafeArray();
 		$this->transactionQueue = new ThreadSafeArray();
+		$this->executeQueue = new ThreadSafeArray();
 		$this->logger = Server::getInstance()->getLogger();
 	}
 

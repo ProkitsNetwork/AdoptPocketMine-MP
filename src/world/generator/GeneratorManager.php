@@ -23,8 +23,10 @@ declare(strict_types=1);
 
 namespace pocketmine\world\generator;
 
+use pmmp\thread\Thread;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\utils\Utils;
+use pocketmine\world\format\WorldProviderThread;
 use pocketmine\world\generator\hell\Nether;
 use pocketmine\world\generator\normal\Normal;
 use function array_keys;
@@ -38,6 +40,7 @@ final class GeneratorManager{
 	 * @phpstan-var array<string, GeneratorManagerEntry>
 	 */
 	private array $list = [];
+	private bool $constructed = false;
 
 	public function __construct(){
 		$this->addGenerator(Flat::class, "flat", function(string $preset) : ?InvalidGeneratorOptionsException{
@@ -55,6 +58,7 @@ final class GeneratorManager{
 		$this->addAlias("normal", "default");
 		$this->addGenerator(Nether::class, "nether", fn() => null);
 		$this->addAlias("nether", "hell");
+		$this->constructed = true;
 	}
 
 	/**
@@ -77,6 +81,9 @@ final class GeneratorManager{
 			throw new \InvalidArgumentException("Alias \"$name\" is already assigned");
 		}
 
+		if($this->constructed && Thread::getCurrentThread() === null){
+			WorldProviderThread::getInstance()->execute(static fn() => GeneratorManager::getInstance()->addGenerator($class, $name, $presetValidator, $overwrite));
+		}
 		$this->list[$name] = new GeneratorManagerEntry($class, $presetValidator);
 	}
 
@@ -92,6 +99,9 @@ final class GeneratorManager{
 		}
 		if(isset($this->list[$alias])){
 			throw new \InvalidArgumentException("Alias \"$alias\" is already assigned");
+		}
+		if($this->constructed && Thread::getCurrentThread() === null){
+			WorldProviderThread::getInstance()->execute(static fn() => GeneratorManager::getInstance()->addAlias($name, $alias));
 		}
 		$this->list[$alias] = $this->list[$name];
 	}
