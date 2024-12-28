@@ -859,7 +859,7 @@ class InGamePacketHandler extends PacketHandler{
 					return;
 				}
 				if($skin !== null){
-					if ($currentFullSkinId !== $this->lastRequestedFullSkinId) {
+					if($currentFullSkinId !== $this->lastRequestedFullSkinId){
 						$this->session->getLogger()->debug("Skin change request ignored due to newer skin change");
 						return;
 					}
