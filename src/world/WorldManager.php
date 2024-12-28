@@ -30,6 +30,7 @@ use pocketmine\event\world\WorldUnloadEvent;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\player\ChunkSelector;
 use pocketmine\Server;
+use pocketmine\utils\AssumptionFailedError;
 use pocketmine\world\format\Chunk;
 use pocketmine\world\format\io\WorldProviderManager;
 use pocketmine\world\format\WorldProviderThread;
@@ -152,7 +153,6 @@ class WorldManager{
 		}
 		unset($this->worlds[$world->getId()]);
 		$world->onUnload();
-		WorldProviderThread::getInstance()->unregister($world->getFolderName())->get();
 		return true;
 	}
 
@@ -204,7 +204,10 @@ class WorldManager{
 		$provider = $providerEntry->fromPath($path, new \PrefixedLogger($this->server->getLogger(), "World Provider: $name"));
 		$provider->close();
 		$provider = WorldProviderThread::getInstance()->register($name)->get();
-		$world = new World($this->server, $name,$provider, $this->server->getAsyncPool());
+		if($provider === null){
+			throw new AssumptionFailedError("This should never happen...");
+		}
+		$world = new World($this->server, $name, $provider, $this->server->getAsyncPool());
 		$this->worlds[$world->getId()] = $world;
 
 		$world->setAutoSave($this->autoSave);

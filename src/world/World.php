@@ -95,13 +95,15 @@ use pocketmine\utils\Utils;
 use pocketmine\world\biome\Biome;
 use pocketmine\world\biome\BiomeRegistry;
 use pocketmine\world\format\Chunk;
-use pocketmine\world\format\io\BaseWorldProvider;
 use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use pocketmine\world\format\io\LoadedChunkData;
+use pocketmine\world\format\io\WorldData;
+use pocketmine\world\format\LightArray;
 use pocketmine\world\format\SubChunk;
 use pocketmine\world\format\ThreadedWorldProvider;
+use pocketmine\world\format\WorldProviderThread;
 use pocketmine\world\generator\GeneratorManager;
 use pocketmine\world\generator\GeneratorRegisterTask;
 use pocketmine\world\generator\GeneratorUnregisterTask;
@@ -390,10 +392,10 @@ class World implements ChunkManager{
 	private ?SkyLightUpdate $skyLightUpdate = null;
 
 	private \Logger $logger;
-	private $worldData;
+	private WorldData $worldData;
 	/**
 	 * @var Future<LoadedChunkData|null>[]
-	 * @phpstan-var array<ChunkPosHash,Future<LoadedChunkData|null>>[]
+	 * @phpstan-var array<ChunkPosHash,Future<LoadedChunkData|null>>
 	 */
 	private array $loadingChunks = [];
 
@@ -630,7 +632,7 @@ class World implements ChunkManager{
 		return $this->logger;
 	}
 
-	final public function getProvider() : BaseWorldProvider{
+	final public function getProvider() : ThreadedWorldProvider{
 		return $this->provider;
 	}
 
@@ -684,7 +686,7 @@ class World implements ChunkManager{
 
 		$this->unregisterGenerator();
 
-		//$this->provider->close();
+		WorldProviderThread::getInstance()->unregister($this->folderName);
 		$this->blockCache = [];
 		$this->blockCollisionBoxCache = [];
 

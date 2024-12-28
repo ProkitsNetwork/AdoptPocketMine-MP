@@ -34,6 +34,7 @@ use pocketmine\Server;
 use pocketmine\thread\log\ThreadSafeLogger;
 use pocketmine\thread\Thread;
 use pocketmine\utils\SingletonTrait;
+use pocketmine\utils\Utils;
 use pocketmine\world\format\io\exception\CorruptedWorldException;
 use pocketmine\world\format\io\exception\UnsupportedWorldFormatException;
 use pocketmine\world\format\io\FormatConverter;
@@ -205,7 +206,7 @@ class WorldProviderThread extends Thread{
 					});
 				}
 
-				foreach($this->lockedGetAll($this->unloadQueue) as $idx => $resolver){
+				foreach(Utils::promoteKeys($this->lockedGetAll($this->unloadQueue)) as $idx => $resolver){
 					assert($resolver instanceof FutureResolver);
 					if($resolver->isCancelled()){
 						continue;
@@ -238,7 +239,7 @@ class WorldProviderThread extends Thread{
 					}
 				}
 
-				foreach($this->lockedGetAll($this->transactionQueue) as $world => $queue){
+				foreach(Utils::promoteKeys($this->lockedGetAll($this->transactionQueue)) as $world => $queue){
 					$provider = $providers[$world] ?? null;
 					if($provider === null){
 						$this->transactionQueue->synchronized(function() use ($world){ unset($this->transactionQueue[$world]); });
@@ -282,7 +283,7 @@ class WorldProviderThread extends Thread{
 			}
 		}
 
-		foreach($providers as $folderName => $provider){
+		foreach(Utils::promoteKeys($providers) as $folderName => $provider){
 			try{
 				$provider->close();
 				$this->logger->debug("Closed world provider for \"$folderName\" on shutdown gracefully.");

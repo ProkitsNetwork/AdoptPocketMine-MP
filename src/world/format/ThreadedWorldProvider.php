@@ -24,7 +24,9 @@ declare(strict_types=1);
 namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
+use pocketmine\world\format\io\ChunkData;
 use pocketmine\world\format\io\exception\CorruptedChunkException;
+use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\io\WorldData;
 
 interface ThreadedWorldProvider{
@@ -41,11 +43,16 @@ interface ThreadedWorldProvider{
 	/**
 	 * Loads a chunk (usually from disk storage) and returns it. If the chunk does not exist, null is returned.
 	 *
-	 * @return Future<string|null>
+	 * @return Future<LoadedChunkData|null>
 	 * @throws CorruptedChunkException
 	 */
 	public function loadChunk(int $chunkX, int $chunkZ) : Future;
 
+	/**
+	 * Saves a chunk to disk storage.
+	 * @return Future<void>
+	 */
+	public function saveChunk(int $chunkX, int $chunkZ, ChunkData $chunkData, int $dirtyFlags) : Future;
 	/**
 	 * Performs garbage collection in the world provider, such as cleaning up regions in Region-based worlds.
 	 * @return Future<void>
@@ -57,6 +64,10 @@ interface ThreadedWorldProvider{
 	 * @return Future<WorldData>
 	 */
 	public function getWorldData() : Future;
+
+	/**
+	 * @return Future<void>
+	 */
 
 	public function reloadWorldData() : Future;
 

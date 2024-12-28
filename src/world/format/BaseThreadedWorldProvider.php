@@ -25,6 +25,7 @@ namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
 use pocketmine\world\format\io\ChunkData;
+use pocketmine\world\format\io\LoadedChunkData;
 use pocketmine\world\format\io\WorldData;
 use pocketmine\world\format\io\WorldProvider;
 use pocketmine\world\format\io\WritableWorldProvider;
@@ -54,26 +55,19 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 	}
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX) : ?LoadedChunkData{
 			return $provider->loadChunk($chunkX, $chunkZ);
 		});
 	}
 
 	public function getWorldData() : Future{
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) : WorldData{
 			return $provider->getWorldData();
 		});
 	}
 
-	public function saveWorldData(WorldData $worldData) : Future{
-		$worldData->save();
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
-			$provider->reloadWorldData();
-		});
-	}
-
 	public function calculateChunkCount() : Future{
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) : int{
 			return $provider->calculateChunkCount();
 		});
 	}
@@ -93,7 +87,7 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 	}
 
 	public function reloadWorldData() : Future{
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider){
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) : void{
 			$provider->reloadWorldData();
 		});
 	}

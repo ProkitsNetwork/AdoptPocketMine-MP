@@ -23,30 +23,32 @@ declare(strict_types=1);
 
 namespace pocketmine\promise;
 
+use Closure;
 use pmmp\thread\ThreadSafe;
 use function igbinary_serialize;
 use function igbinary_unserialize;
 use function spl_object_id;
 
 /**
- * @template C
- * @template T
+ * @template TContext
+ * @template TReturn
  */
 class FutureResolver extends ThreadSafe{
-	/** @var FutureSharedData<T> */
+	/** @var FutureSharedData<TReturn> */
 	private FutureSharedData $data;
-	/** @var C */
-	private $context = null;
+	/** @phpstan-var ThreadSafe|anyClosure|string|null  */
+	private ThreadSafe|Closure|string|null $context;
 	/**
 	 * @internal
 	 * @var FutureResolver[]
+	 * @phpstan-var array<int, FutureResolver>
 	 */
 	public static array $neverDestruct = [];
 
 	/**
-	 * @param C $context
+	 * @param TContext $context
 	 */
-	public function __construct($context = null){
+	public function __construct($context){
 		$this->setContext($context);
 		$this->data = new FutureSharedData();
 		$id = spl_object_id($this);
@@ -55,10 +57,10 @@ class FutureResolver extends ThreadSafe{
 	}
 
 	/**
-	 * @param C $context
+	 * @param TContext $context
 	 */
 	private function setContext($context) : void{
-		if(!$context instanceof \Closure && !$context instanceof ThreadSafe){
+		if(!$context instanceof Closure && !$context instanceof ThreadSafe && $context !== null){
 			$this->context = igbinary_serialize($context);
 			return;
 		}
@@ -66,37 +68,40 @@ class FutureResolver extends ThreadSafe{
 	}
 
 	/**
-	 * @return C
+	 * @return TContext
 	 */
 	public function getContext(){
-		if(!$this->context instanceof \Closure && !$this->context instanceof ThreadSafe){
+		if(is_string($this->context)){
 			return igbinary_unserialize($this->context);
 		}
 		return $this->context;
 	}
 
 	/**
-	 * @param T $value
+	 * @param TReturn $value
 	 */
 	public function finish($value) : void{
 		$this->data->setValue($value);
 		$this->data->done = true;
 	}
 
-	public function crash($info) : void{
+	public function crash(string $info) : void{
 		$this->data->done = true;
 		$this->data->crashed = true;
 		$this->data->crashMessage = $info;
 	}
 
 	/**
-	 * @return Future<T>
+	 * @return Future<TReturn>
 	 */
 	public function future() : Future{
 		return new Future($this->data);
 	}
 
-	public function do(\Closure $c) : void{
+	/**
+	 * @param Closure():void $c
+	 */
+	public function do(Closure $c) : void{
 		try{
 			$this->finish($c());
 		}catch(\Throwable $throwable){

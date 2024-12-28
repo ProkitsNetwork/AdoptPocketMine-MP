@@ -28,12 +28,14 @@ use function microtime;
 use function usleep;
 
 /**
- * @template V
+ * @template TReturn
  */
 class Future extends ThreadSafe{
 	/**
+	 * @param FutureSharedData<TReturn> $data
+	 *
+	 * @see FutureResolver<?,TReturn>
 	 * @internal
-	 * @see FutureResolver
 	 */
 	public function __construct(
 		private FutureSharedData $data
@@ -42,7 +44,7 @@ class Future extends ThreadSafe{
 	}
 
 	/**
-	 * @return V
+	 * @return TReturn
 	 * @throws FutureExecutionException
 	 */
 	public function get(){
@@ -51,34 +53,10 @@ class Future extends ThreadSafe{
 			if($this->data->cancelled){
 				throw new FutureCancelledException("Future cancelled");
 			}
-			if(microtime(true) - $start > 5){
+			if(microtime(true) - $start > 50){
 				throw new \RuntimeException('Future died.');
 			}
 			usleep(500);
-		}
-		if($this->data->cancelled){
-			throw new FutureCancelledException("Future cancelled");
-		}
-		if($this->data->crashed){
-			throw new FutureExecutionException('Future crashed :' . $this->data->crashMessage);
-		}
-		return $this->data->getValue();
-	}
-
-	/**
-	 * @return \Generator|V
-	 * @throws \RuntimeException
-	 */
-	public function getGenerator(){
-		$start = microtime(true);
-		while(!$this->data->done){
-			if($this->data->cancelled){
-				throw new FutureCancelledException("Future cancelled");
-			}
-			if(microtime(true) - $start > 5){
-				throw new \RuntimeException('Future died.');
-			}
-			yield;
 		}
 		if($this->data->cancelled){
 			throw new FutureCancelledException("Future cancelled");

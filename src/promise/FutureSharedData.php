@@ -30,7 +30,7 @@ use function igbinary_unserialize;
 /**
  * @internal
  * @see FutureResolver
- * @template T
+ * @template TReturn
  */
 class FutureSharedData extends ThreadSafe{
 	public int $resolver;
@@ -43,11 +43,17 @@ class FutureSharedData extends ThreadSafe{
 	public function __construct(){
 	}
 
+	/**
+	 * @param TReturn $value
+	 */
 	public function setValue($value) : void{
 		$this->value = igbinary_serialize($value);
 		unset(FutureResolver::$neverDestruct[$this->resolver]);
 	}
 
+	/**
+	 * @return TReturn
+	 */
 	public function getValue(){
 		if($this->value === null){
 			return null;
