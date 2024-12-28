@@ -29,7 +29,7 @@ use pocketmine\block\tile\Sign;
 use pocketmine\block\utils\SignText;
 use pocketmine\entity\animation\ConsumingItemAnimation;
 use pocketmine\entity\Attribute;
-use pocketmine\entity\InvalidSkinException;
+use pocketmine\entity\Skin;
 use pocketmine\event\player\PlayerEditBookEvent;
 use pocketmine\inventory\transaction\action\DropItemAction;
 use pocketmine\inventory\transaction\InventoryTransaction;
@@ -40,12 +40,14 @@ use pocketmine\item\VanillaItems;
 use pocketmine\item\WritableBook;
 use pocketmine\item\WritableBookPage;
 use pocketmine\item\WrittenBook;
+use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\StringTag;
 use pocketmine\network\mcpe\InventoryManager;
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\ProcessSkinTask;
 use pocketmine\network\mcpe\protocol\ActorEventPacket;
 use pocketmine\network\mcpe\protocol\ActorPickRequestPacket;
 use pocketmine\network\mcpe\protocol\AnimatePacket;
@@ -843,12 +845,23 @@ class InGamePacketHandler extends PacketHandler{
 		$this->lastRequestedFullSkinId = $packet->skin->getFullSkinId();
 
 		$this->session->getLogger()->debug("Processing skin change request");
-		try{
-			$skin = $this->session->getTypeConverter()->getSkinAdapter()->fromSkinData($packet->skin);
-		}catch(InvalidSkinException $e){
-			throw PacketHandlingException::wrap($e, "Invalid skin in PlayerSkinPacket");
-		}
-		return $this->player->changeSkin($skin, $packet->newSkinName, $packet->oldSkinName);
+		$this->player->getServer()->getAsyncPool()->submitTask(new ProcessSkinTask(
+			$packet->skin,
+			function(?Skin $skin, ?string $error) use ($packet) : void{
+				if($error !== null){
+					$this->session->disconnectWithError(
+						reason: "Invalid skin: " . $error,
+						disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_invalidSkin()
+					);
+					return;
+				}
+				if($skin !== null){
+					$this->player->changeSkin($skin, $packet->newSkinName, $packet->oldSkinName);
+					$this->session->getLogger()->debug("Skin change request processed");
+				}
+			}
+		));
+		return true;
 	}
 
 	public function handleSubClientLogin(SubClientLoginPacket $packet) : bool{

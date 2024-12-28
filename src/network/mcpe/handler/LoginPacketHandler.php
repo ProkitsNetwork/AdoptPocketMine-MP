@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\handler;
 
-use pocketmine\entity\InvalidSkinException;
+use pocketmine\entity\Skin;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\lang\Translatable;
@@ -31,6 +31,7 @@ use pocketmine\network\mcpe\auth\ProcessLoginTask;
 use pocketmine\network\mcpe\JwtException;
 use pocketmine\network\mcpe\JwtUtils;
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\ProcessSkinTask;
 use pocketmine\network\mcpe\protocol\LoginPacket;
 use pocketmine\network\mcpe\protocol\types\login\AuthenticationData;
 use pocketmine\network\mcpe\protocol\types\login\ClientData;
@@ -41,6 +42,7 @@ use pocketmine\player\Player;
 use pocketmine\player\PlayerInfo;
 use pocketmine\player\XboxLivePlayerInfo;
 use pocketmine\Server;
+use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
 use function is_array;
 
@@ -70,19 +72,33 @@ class LoginPacketHandler extends PacketHandler{
 
 		$clientData = $this->parseClientData($packet->clientDataJwt);
 
-		try{
-			$skin = $this->session->getTypeConverter()->getSkinAdapter()->fromSkinData(ClientDataToSkinDataHelper::fromClientData($clientData));
-		}catch(\InvalidArgumentException | InvalidSkinException $e){
-			$this->session->disconnectWithError(
-				reason: "Invalid skin: " . $e->getMessage(),
-				disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_invalidSkin()
-			);
+		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
+			ClientDataToSkinDataHelper::fromClientData($clientData),
+			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
+				if($error !== null){
+					$this->session->disconnectWithError(
+						reason: "Invalid skin: " . $error,
+						disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_invalidSkin()
+					);
+					return;
+				}
+				if($skin === null){
+					throw new AssumptionFailedError("This should never happen...");
+				}
+				$this->onSkinParsed($extraData, $clientData, $skin, $packet);
+			},
+		));
 
-			return true;
-		}
+		return true;
+	}
 
+	private function onSkinParsed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
 		if(!Uuid::isValid($extraData->identity)){
-			throw new PacketHandlingException("Invalid login UUID");
+			$this->session->disconnectWithError(
+				reason: "Invalid login uuid",
+				disconnectScreenMessage: KnownTranslationFactory::disconnectionScreen_notAuthenticated()
+			);
+			return;
 		}
 		$uuid = Uuid::fromString($extraData->identity);
 		$arrClientData = (array) $clientData;
@@ -136,12 +152,11 @@ class LoginPacketHandler extends PacketHandler{
 		$ev->call();
 		if(!$ev->isAllowed()){
 			$this->session->disconnect($ev->getFinalDisconnectReason(), $ev->getFinalDisconnectScreenMessage());
-			return true;
+			return;
 		}
 
 		$this->processLogin($packet, $ev->isAuthRequired());
 
-		return true;
 	}
 
 	/**
