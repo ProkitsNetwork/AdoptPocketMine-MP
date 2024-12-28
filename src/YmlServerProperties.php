@@ -47,11 +47,10 @@ final class YmlServerProperties{
 	public const AUTO_REPORT_SEND_SETTINGS = 'auto-report.send-settings';
 	public const AUTO_REPORT_USE_HTTPS = 'auto-report.use-https';
 	public const AUTO_UPDATER = 'auto-updater';
+	public const AUTO_UPDATER_BRANCH = 'auto-updater.branch';
 	public const AUTO_UPDATER_ENABLED = 'auto-updater.enabled';
-	public const AUTO_UPDATER_HOST = 'auto-updater.host';
 	public const AUTO_UPDATER_ON_UPDATE = 'auto-updater.on-update';
 	public const AUTO_UPDATER_ON_UPDATE_WARN_CONSOLE = 'auto-updater.on-update.warn-console';
-	public const AUTO_UPDATER_PREFERRED_CHANNEL = 'auto-updater.preferred-channel';
 	public const AUTO_UPDATER_SUGGEST_CHANNELS = 'auto-updater.suggest-channels';
 	public const CHUNK_GENERATION = 'chunk-generation';
 	public const CHUNK_GENERATION_POPULATION_QUEUE_SIZE = 'chunk-generation.population-queue-size';
@@ -69,6 +68,7 @@ final class YmlServerProperties{
 	public const DEBUG_LEVEL = 'debug.level';
 	public const LEVEL_SETTINGS = 'level-settings';
 	public const LEVEL_SETTINGS_DEFAULT_FORMAT = 'level-settings.default-format';
+	public const LEVEL_SETTINGS_MIN_Y = 'level-settings.min-y';
 	public const MEMORY = 'memory';
 	public const MEMORY_ASYNC_WORKER_HARD_LIMIT = 'memory.async-worker-hard-limit';
 	public const MEMORY_CHECK_RATE = 'memory.check-rate';

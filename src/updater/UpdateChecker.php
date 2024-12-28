@@ -35,14 +35,12 @@ use function ucfirst;
 class UpdateChecker{
 
 	protected Server $server;
-	protected string $endpoint;
 	protected ?UpdateInfo $updateInfo = null;
 	private \Logger $logger;
 
-	public function __construct(Server $server, string $endpoint){
+	public function __construct(Server $server){
 		$this->server = $server;
 		$this->logger = new \PrefixedLogger($server->getLogger(), "Update Checker");
-		$this->endpoint = "http://$endpoint/api/";
 
 		if($server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_ENABLED, true)){
 			$this->doCheck();
@@ -63,10 +61,10 @@ class UpdateChecker{
 			if($this->server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_ON_UPDATE_WARN_CONSOLE, true)){
 				$this->showConsoleUpdate();
 			}
-		}else{
-			if(!VersionInfo::IS_DEVELOPMENT_BUILD && $this->getChannel() !== "stable"){
+		}elseif($this->server->getConfigGroup()->getPropertyBool(YmlServerProperties::AUTO_UPDATER_SUGGEST_CHANNELS, true)){
+			if(!VersionInfo::IS_DEVELOPMENT_BUILD && $this->getBranch() !== "stable"){
 				$this->showChannelSuggestionStable();
-			}elseif(VersionInfo::IS_DEVELOPMENT_BUILD && $this->getChannel() === "stable"){
+			}elseif(VersionInfo::IS_DEVELOPMENT_BUILD && $this->getBranch() === "stable"){
 				$this->showChannelSuggestionBeta();
 			}
 		}
@@ -99,7 +97,7 @@ class UpdateChecker{
 
 	protected function showChannelSuggestionStable() : void{
 		$this->printConsoleMessage([
-			"You're running a Stable build, but you're receiving update notifications for " . ucfirst($this->getChannel()) . " builds.",
+			"You're running a Stable build, but you're receiving update notifications for " . ucfirst($this->getBranch()) . " builds.",
 			"To get notified about new Stable builds only, change 'preferred-channel' in your pocketmine.yml to 'stable'."
 		]);
 	}
@@ -131,40 +129,29 @@ class UpdateChecker{
 	 * Schedules an AsyncTask to check for an update.
 	 */
 	public function doCheck() : void{
-		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->endpoint, $this->getChannel()));
+		$this->server->getAsyncPool()->submitTask(new UpdateCheckTask($this, $this->getBranch()));
 	}
 
 	/**
 	 * Checks the update information against the current server version to decide if there's an update
 	 */
 	protected function checkUpdate(UpdateInfo $updateInfo) : void{
-		$currentVersion = VersionInfo::VERSION();
-		try{
-			$newVersion = new VersionString($updateInfo->base_version, $updateInfo->is_dev, $updateInfo->build);
-		}catch(\InvalidArgumentException $e){
-			//Invalid version returned from API, assume there's no update
-			$this->logger->debug("Assuming no update because \"" . $e->getMessage() . "\"");
-			return;
-		}
-
-		if($currentVersion->getBuild() > 0 && $currentVersion->compare($newVersion) > 0){
-			$this->updateInfo = $updateInfo;
+		if(VersionInfo::GIT_HASH() !== $updateInfo->git_commit){
+			$commitDate = VersionInfo::GIT_COMMIT_DATE();
+			if($updateInfo->date <= $commitDate){
+				$this->logger->debug("API reported version is an older version, not showing notification");
+			}elseif($commitDate !== 0){
+				$this->updateInfo = $updateInfo;
+			}
 		}else{
-			$this->logger->debug("API reported version is an older version or the same version (" . $newVersion->getFullVersion() . "), not showing notification");
+			$this->logger->debug("API reported version is the same version, not showing notification");
 		}
 	}
 
 	/**
-	 * Returns the channel used for update checking (stable, beta, dev)
+	 * Returns the branch used for update checking
 	 */
-	public function getChannel() : string{
-		return strtolower($this->server->getConfigGroup()->getPropertyString(YmlServerProperties::AUTO_UPDATER_PREFERRED_CHANNEL, "stable"));
-	}
-
-	/**
-	 * Returns the host used for update checks.
-	 */
-	public function getEndpoint() : string{
-		return $this->endpoint;
+	public function getBranch() : string{
+		return strtolower($this->server->getConfigGroup()->getPropertyString(YmlServerProperties::AUTO_UPDATER_BRANCH, "stable"));
 	}
 }

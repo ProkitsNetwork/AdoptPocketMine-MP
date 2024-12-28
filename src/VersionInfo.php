@@ -28,10 +28,11 @@ use pocketmine\utils\VersionString;
 use function is_array;
 use function is_int;
 use function str_repeat;
+use function time;
 
 final class VersionInfo{
 	public const NAME = "PocketMine-MP";
-	public const BASE_VERSION = "5.16.1";
+	public const BASE_VERSION = "5.23.3";
 	public const IS_DEVELOPMENT_BUILD = true;
 	public const BUILD_CHANNEL = "stable";
 
@@ -75,6 +76,35 @@ final class VersionInfo{
 		}
 
 		return self::$gitHash;
+	}
+
+	private static ?int $gitCommitDate = null;
+
+	public static function GIT_COMMIT_DATE() : int{
+		if(self::$gitCommitDate === null){
+			$commitDate = 0;
+
+			if(\Phar::running(true) === ""){
+				$dirty = false;
+				$gitHash = Git::getRepositoryState(\pocketmine\PATH, $dirty);
+				if($dirty || $gitHash === null){
+					$commitDate = time();
+				}else{
+					$commitDate = Git::getRepositoryCommitDate(\pocketmine\PATH, $gitHash);
+				}
+			}else{
+				$pharPath = \Phar::running(false);
+				$phar = \Phar::isValidPharFilename($pharPath) ? new \Phar($pharPath) : new \PharData($pharPath);
+				$meta = $phar->getMetadata();
+				if(isset($meta["git_commit_date"])){
+					$commitDate = $meta["git_commit_date"];
+				}
+			}
+
+			self::$gitCommitDate = $commitDate;
+		}
+
+		return self::$gitCommitDate;
 	}
 
 	private static ?int $buildNumber = null;

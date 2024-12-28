@@ -24,10 +24,6 @@ declare(strict_types=1);
 namespace pocketmine\updater;
 
 use pocketmine\scheduler\AsyncTask;
-use pocketmine\utils\Internet;
-use function is_array;
-use function is_string;
-use function json_decode;
 
 class UpdateCheckTask extends AsyncTask{
 	private const TLS_KEY_UPDATER = "updater";
@@ -36,38 +32,16 @@ class UpdateCheckTask extends AsyncTask{
 
 	public function __construct(
 		UpdateChecker $updater,
-		private string $endpoint,
 		private string $channel
 	){
 		$this->storeLocal(self::TLS_KEY_UPDATER, $updater);
 	}
 
 	public function onRun() : void{
-		$error = "";
-		$response = Internet::getURL($this->endpoint . "?channel=" . $this->channel, 4, [], $error);
-		$this->error = $error;
-
-		if($response !== null){
-			$response = json_decode($response->getBody(), true);
-			if(is_array($response)){
-				if(isset($response["error"]) && is_string($response["error"])){
-					$this->error = $response["error"];
-				}else{
-					$mapper = new \JsonMapper();
-					$mapper->bExceptionOnMissingData = true;
-					$mapper->bStrictObjectTypeChecking = true;
-					$mapper->bEnforceMapType = false;
-					try{
-						/** @var UpdateInfo $responseObj */
-						$responseObj = $mapper->map($response, new UpdateInfo());
-						$this->setResult($responseObj);
-					}catch(\JsonMapper_Exception $e){
-						$this->error = "Invalid JSON response data: " . $e->getMessage();
-					}
-				}
-			}else{
-				$this->error = "Invalid response data";
-			}
+		try{
+			$this->setResult(UpdaterApi::retrieve(channel: $this->channel));
+		}catch(\RuntimeException $e){
+			$this->error = $e->getMessage();
 		}
 	}
 

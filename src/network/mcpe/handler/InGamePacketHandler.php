@@ -78,6 +78,7 @@ use pocketmine\network\mcpe\protocol\PlayerHotbarPacket;
 use pocketmine\network\mcpe\protocol\PlayerInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
 use pocketmine\network\mcpe\protocol\RequestChunkRadiusPacket;
+use pocketmine\network\mcpe\protocol\serializer\BitSet;
 use pocketmine\network\mcpe\protocol\ServerSettingsRequestPacket;
 use pocketmine\network\mcpe\protocol\SetActorMotionPacket;
 use pocketmine\network\mcpe\protocol\SetPlayerGameTypePacket;
@@ -136,7 +137,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	protected ?Vector3 $lastPlayerAuthInputPosition = null;
 	protected ?float $lastPlayerAuthInputYaw = null;
 	protected ?float $lastPlayerAuthInputPitch = null;
-	protected ?int $lastPlayerAuthInputFlags = null;
+	protected ?BitSet $lastPlayerAuthInputFlags = null;
 
 	public bool $forceMoveSync = false;
 
@@ -164,9 +165,9 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 		return true;
 	}
 
-	private function resolveOnOffInputFlags(int $inputFlags, int $startFlag, int $stopFlag) : ?bool{
-		$enabled = ($inputFlags & (1 << $startFlag)) !== 0;
-		$disabled = ($inputFlags & (1 << $stopFlag)) !== 0;
+	private function resolveOnOffInputFlags(BitSet $inputFlags, int $startFlag, int $stopFlag) : ?bool{
+		$enabled = $inputFlags->get($startFlag);
+		$disabled = $inputFlags->get($stopFlag);
 		if($enabled !== $disabled){
 			return $enabled;
 		}
@@ -205,7 +206,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			$curPos = $this->player->getLocation();
 
 			if($newPos->distanceSquared($curPos) > 1){  //Tolerate up to 1 block to avoid problems with client-sided physics when spawning in blocks
-				//$this->session->getLogger()->debug("Got outdated pre-teleport movement, received " . $newPos . ", expected " . $curPos);
+				$this->session->getLogger()->debug("Got outdated pre-teleport movement, received " . $newPos . ", expected " . $curPos);
 				//Still getting movements from before teleport, ignore them
 				return true;
 			}
@@ -218,7 +219,10 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 		if($inputFlags !== $this->lastPlayerAuthInputFlags){
 			$this->lastPlayerAuthInputFlags = $inputFlags;
 
-			$sneaking = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SNEAKING, PlayerAuthInputFlags::STOP_SNEAKING);
+			$sneaking = $inputFlags->get(PlayerAuthInputFlags::SNEAKING);
+			if($this->player->isSneaking() === $sneaking){
+				$sneaking = null;
+			}
 			$sprinting = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SPRINTING, PlayerAuthInputFlags::STOP_SPRINTING);
 			$swimming = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_SWIMMING, PlayerAuthInputFlags::STOP_SWIMMING);
 			$gliding = $this->resolveOnOffInputFlags($inputFlags, PlayerAuthInputFlags::START_GLIDING, PlayerAuthInputFlags::STOP_GLIDING);
@@ -235,10 +239,10 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 				$this->player->sendData([$this->player]);
 			}
 
-			if($packet->hasFlag(PlayerAuthInputFlags::START_JUMPING)){
+			if($inputFlags->get(PlayerAuthInputFlags::START_JUMPING)){
 				$this->player->jump();
 			}
-			if($packet->hasFlag(PlayerAuthInputFlags::MISSED_SWING)){
+			if($inputFlags->get(PlayerAuthInputFlags::MISSED_SWING)){
 				$this->player->missSwing();
 			}
 		}
@@ -256,7 +260,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			if(count($blockActions) > 100){
 				throw new PacketHandlingException("Too many block actions in PlayerAuthInputPacket");
 			}
-			foreach($blockActions as $k => $blockAction){
+			foreach(Utils::promoteKeys($blockActions) as $k => $blockAction){
 				$actionHandled = false;
 				if($blockAction instanceof PlayerBlockActionStopBreak){
 					$actionHandled = $this->handlePlayerActionFromData($blockAction->getActionType(), new BlockPosition(0, 0, 0), Facing::DOWN);
@@ -498,15 +502,18 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 
 				$blockPos = $data->getBlockPosition();
 				$vBlockPos = new Vector3($blockPos->getX(), $blockPos->getY(), $blockPos->getZ());
-				if(!$this->player->interactBlock($vBlockPos, $data->getFace(), $clickPos)){
-					$this->onFailedBlockAction($vBlockPos, $data->getFace());
-				}
+				$this->player->interactBlock($vBlockPos, $data->getFace(), $clickPos);
+				//always sync this in case plugins caused a different result than the client expected
+				//we *could* try to enhance detection of plugin-altered behaviour, but this would require propagating
+				//more information up the stack. For now I think this is good enough.
+				//if only the client would tell us what blocks it thinks changed...
+				$this->syncBlocksNearby($vBlockPos, $data->getFace());
 				return true;
 			case UseItemTransactionData::ACTION_BREAK_BLOCK:
 				$blockPos = $data->getBlockPosition();
 				$vBlockPos = new Vector3($blockPos->getX(), $blockPos->getY(), $blockPos->getZ());
 				if(!$this->player->breakBlock($vBlockPos)){
-					$this->onFailedBlockAction($vBlockPos, null);
+					$this->syncBlocksNearby($vBlockPos, null);
 				}
 				return true;
 			case UseItemTransactionData::ACTION_CLICK_AIR:
@@ -534,9 +541,9 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	}
 
 	/**
-	 * Internal function used to execute rollbacks when an action fails on a block.
+	 * Syncs blocks nearby to ensure that the client and server agree on the world's blocks after a block interaction.
 	 */
-	private function onFailedBlockAction(Vector3 $blockPos, ?int $face) : void{
+	private function syncBlocksNearby(Vector3 $blockPos, ?int $face) : void{
 		if($blockPos->distanceSquared($this->player->getLocation()) < 10000){
 			$blocks = $blockPos->sidesArray();
 			if($face !== null){
@@ -673,7 +680,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	}
 
 	public function handleActorPickRequest(ActorPickRequestPacket $packet) : bool{
-		return false; //TODO
+		return $this->player->pickEntity($packet->actorUniqueId);
 	}
 
 	public function handlePlayerAction(PlayerActionPacket $packet) : bool{
@@ -687,7 +694,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			case PlayerAction::START_BREAK:
 				self::validateFacing($face);
 				if(!$this->player->attackBlock($pos, $face)){
-					$this->onFailedBlockAction($pos, $face);
+					$this->syncBlocksNearby($pos, $face);
 				}
 
 				break;
@@ -1007,7 +1014,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 		$lectern = $world->getBlockAt($pos->getX(), $pos->getY(), $pos->getZ());
 		if($lectern instanceof Lectern && $this->player->canInteract($lectern->getPosition(), 15)){
 			if(!$lectern->onPageTurn($packet->page)){
-				$this->onFailedBlockAction($lectern->getPosition(), null);
+				$this->syncBlocksNearby($lectern->getPosition(), null);
 			}
 			return true;
 		}

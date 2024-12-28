@@ -28,7 +28,6 @@ use pmmp\thread\ThreadSafeArray;
 use pocketmine\crash\CrashDump;
 use pocketmine\errorhandler\ErrorToExceptionHandler;
 use pocketmine\Server;
-use function define;
 use function error_get_last;
 use function error_reporting;
 use function implode;
@@ -109,7 +108,6 @@ trait CommonThreadPartsTrait{
 	}
 
 	final public function run() : void{
-		define('DATA_PATH', $this->__ex__dataPath);
 		error_reporting(-1);
 		$this->registerClassLoaders();
 		//set this after the autoloader is registered

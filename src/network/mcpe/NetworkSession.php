@@ -31,6 +31,7 @@ use pocketmine\event\server\DataPacketDecodeEvent;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\server\DataPacketSendEvent;
 use pocketmine\form\Form;
+use pocketmine\item\Item;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\lang\Translatable;
 use pocketmine\math\Vector3;
@@ -66,6 +67,7 @@ use pocketmine\network\mcpe\protocol\Packet;
 use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\PacketPool;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
+use pocketmine\network\mcpe\protocol\PlayerStartItemCooldownPacket;
 use pocketmine\network\mcpe\protocol\PlayStatusPacket;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\PacketBatch;
@@ -113,6 +115,7 @@ use pocketmine\utils\BinaryDataException;
 use pocketmine\utils\BinaryStream;
 use pocketmine\utils\ObjectSet;
 use pocketmine\utils\TextFormat;
+use pocketmine\world\format\io\GlobalItemDataHandlers;
 use pocketmine\world\Position;
 use pocketmine\YmlServerProperties;
 use function array_keys;
@@ -164,6 +167,7 @@ class NetworkSession{
 
 	private ?EncryptionContext $cipher = null;
 
+	private bool $bufferEnabled = true;
 	/** @var string[] */
 	private array $sendBuffer = [];
 	/** @var string[] */
@@ -385,6 +389,10 @@ class NetworkSession{
 		return $this->protocolId ?? ProtocolInfo::CURRENT_PROTOCOL;
 	}
 
+	public function setPacketBuffered(bool $bufferEnabled) : void{ $this->bufferEnabled = $bufferEnabled; }
+
+	public function isPacketBuffered() : bool{ return $this->bufferEnabled; }
+
 	/**
 	 * @return \Closure[]|ObjectSet
 	 * @phpstan-return ObjectSet<\Closure() : void>
@@ -583,7 +591,7 @@ class NetworkSession{
 			foreach($packets as $evPacket){
 				$this->addToSendBuffer(self::encodePacketTimed(PacketSerializer::encoder($this->getProtocolId()), $evPacket));
 			}
-			if($immediate){
+			if($immediate || !$this->bufferEnabled){
 				$this->flushSendBuffer(true);
 			}
 
@@ -808,7 +816,7 @@ class NetworkSession{
 		}else{
 			$translated = $message;
 		}
-		$this->sendDataPacket(DisconnectPacket::create(0, $translated), true);
+		$this->sendDataPacket(DisconnectPacket::create(0, $translated, ""));
 	}
 
 	/**
@@ -853,7 +861,7 @@ class NetworkSession{
 		$this->flushChunkCache();
 		$reason ??= KnownTranslationFactory::pocketmine_disconnect_transfer();
 		$this->tryDisconnect(function() use ($ip, $port, $reason) : void{
-			$this->sendDataPacket(TransferPacket::create($ip, $port), true);
+			$this->sendDataPacket(TransferPacket::create($ip, $port, false), true);
 			if($this->player !== null){
 				$this->player->onPostDisconnect($reason, null);
 			}
@@ -1155,7 +1163,7 @@ class NetworkSession{
 
 	public function syncAvailableCommands() : void{
 		$commandData = [];
-		foreach($this->server->getCommandMap()->getCommands() as $name => $command){
+		foreach($this->server->getCommandMap()->getCommands() as $command){
 			if(isset($commandData[$command->getLabel()]) || $command->getLabel() === "help" || !$command->testPermissionSilent($this->player)){
 				continue;
 			}
@@ -1369,6 +1377,13 @@ flush:
 
 	public function onOpenSignEditor(Vector3 $signPosition, bool $frontSide) : void{
 		$this->sendDataPacket(OpenSignPacket::create(BlockPosition::fromVector3($signPosition), $frontSide));
+	}
+
+	public function onItemCooldownChanged(Item $item, int $ticks) : void{
+		$this->sendDataPacket(PlayerStartItemCooldownPacket::create(
+			GlobalItemDataHandlers::getSerializer()->serializeType($item)->getName(),
+			$ticks
+		));
 	}
 
 	public function tick() : void{

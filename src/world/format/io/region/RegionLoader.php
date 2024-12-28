@@ -67,7 +67,10 @@ class RegionLoader{
 	/** @var resource */
 	protected $filePointer;
 	protected int $nextSector = self::FIRST_SECTOR;
-	/** @var RegionLocationTableEntry[]|null[] */
+	/**
+	 * @var RegionLocationTableEntry[]|null[]
+	 * @phpstan-var list<RegionLocationTableEntry|null>
+	 */
 	protected array $locationTable = [];
 	protected RegionGarbageMap $garbageTable;
 	public int $lastUsed;
@@ -148,6 +151,9 @@ class RegionLoader{
 		 * this relies on the assumption that the end of the file is always padded to a multiple of 4096 bytes.
 		 */
 		$bytesToRead = $this->locationTable[$index]->getSectorCount() << 12;
+		if($bytesToRead < 1){
+			throw new CorruptedChunkException("Corrupted chunk detected (invalid sector count)");
+		}
 		$payload = fread($this->filePointer, $bytesToRead);
 
 		if($payload === false || strlen($payload) !== $bytesToRead){
@@ -327,7 +333,6 @@ class RegionLoader{
 	 * @throws CorruptedRegionException
 	 */
 	private function checkLocationTableValidity() : void{
-		/** @var int[] $usedOffsets */
 		$usedOffsets = [];
 
 		$fileSize = filesize($this->filePath);
@@ -355,7 +360,7 @@ class RegionLoader{
 		}
 		ksort($usedOffsets, SORT_NUMERIC);
 		$prevLocationIndex = null;
-		foreach($usedOffsets as $startOffset => $locationTableIndex){
+		foreach($usedOffsets as $locationTableIndex){
 			if($this->locationTable[$locationTableIndex] === null){
 				continue;
 			}

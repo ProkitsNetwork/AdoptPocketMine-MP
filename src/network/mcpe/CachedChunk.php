@@ -31,14 +31,21 @@ use pocketmine\network\mcpe\protocol\serializer\PacketBatch;
 use pocketmine\network\mcpe\protocol\types\ChunkPosition;
 use pocketmine\network\mcpe\protocol\types\DimensionIds;
 use pocketmine\utils\BinaryStream;
+use pocketmine\utils\Utils;
 use function chr;
 use function count;
 use function strlen;
 
 class CachedChunk{
-	/** @var int[] */
+	/**
+	 * @var int[]
+	 * @phpstan-var array<int, int>
+	 */
 	protected array $hashes = [];
-	/** @var string[] */
+	/**
+	 * @var string[]
+	 * @phpstan-var array<int, string>
+	 */
 	protected array $blobs = [];
 
 	protected string $biomes;
@@ -73,7 +80,7 @@ class CachedChunk{
 	public function getHashMap() : array{
 		$map = [];
 
-		foreach($this->hashes as $id => $hash){
+		foreach(Utils::promoteKeys($this->hashes) as $id => $hash){
 			$map[$hash] = $this->blobs[$id];
 		}
 		$map[$this->biomeHash] = $this->biomes;

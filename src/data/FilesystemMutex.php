@@ -39,6 +39,24 @@ class FilesystemMutex{
 	){
 	}
 
+	/**
+	 * @template T
+	 * @param Closure():T $c
+	 *
+	 * @return T
+	 */
+	public function do(Closure $c){
+		$b = $this->acquire();
+		try{
+			return $c();
+		}finally{
+			$b();
+		}
+	}
+
+	/**
+	 * @return Closure():void
+	 */
 	private function acquire() : Closure{
 		if($this->locked){
 			return static fn() => null;
@@ -51,14 +69,5 @@ class FilesystemMutex{
 			fclose($fp);
 			$this->locked = false;
 		};
-	}
-
-	public function do(Closure $c){
-		$b = $this->acquire();
-		try{
-			return $c();
-		}finally{
-			$b();
-		}
 	}
 }

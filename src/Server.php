@@ -89,6 +89,8 @@ use pocketmine\promise\Promise;
 use pocketmine\promise\PromiseResolver;
 use pocketmine\resourcepacks\ResourcePackManager;
 use pocketmine\scheduler\AsyncPool;
+use pocketmine\scheduler\TimingsCollectionTask;
+use pocketmine\scheduler\TimingsControlTask;
 use pocketmine\snooze\SleeperHandler;
 use pocketmine\stats\SendUsageTask;
 use pocketmine\thread\log\AttachableThreadSafeLogger;
@@ -107,6 +109,7 @@ use pocketmine\utils\NotCloneable;
 use pocketmine\utils\NotSerializable;
 use pocketmine\utils\ObjectSet;
 use pocketmine\utils\Process;
+use pocketmine\utils\ServerKiller;
 use pocketmine\utils\SignalHandler;
 use pocketmine\utils\Terminal;
 use pocketmine\utils\TextFormat;
@@ -234,6 +237,7 @@ class Server{
 	private UpdateChecker $updater;
 
 	private AsyncPool $asyncPool;
+	private AsyncPool $compressorAsyncPool;
 
 	/** Counts the ticks since the server start */
 	private int $tickCounter = 0;
@@ -778,12 +782,15 @@ class Server{
 
 	/**
 	 * @return string[][]
+	 * @phpstan-return array<string, list<string>>
 	 */
 	public function getCommandAliases() : array{
 		$section = $this->configGroup->getProperty(Yml::ALIASES);
 		$result = [];
 		if(is_array($section)){
-			foreach($section as $key => $value){
+			foreach(Utils::promoteKeys($section) as $key => $value){
+				//TODO: more validation needed here
+				//key might not be a string, value might not be list<string>
 				$commands = [];
 				if(is_array($value)){
 					$commands = $value;
@@ -791,7 +798,7 @@ class Server{
 					$commands[] = (string) $value;
 				}
 
-				$result[$key] = $commands;
+				$result[(string) $key] = $commands;
 			}
 		}
 
@@ -933,7 +940,64 @@ class Server{
 				$poolSize = max(1, (int) $poolSize);
 			}
 
+			TimingsHandler::setEnabled($this->configGroup->getPropertyBool(Yml::SETTINGS_ENABLE_PROFILING, false));
+			$this->profilingTickRate = $this->configGroup->getPropertyInt(Yml::SETTINGS_PROFILE_REPORT_TRIGGER, self::TARGET_TICKS_PER_SECOND);
+
 			$this->asyncPool = new AsyncPool($poolSize, max(-1, $this->configGroup->getPropertyInt(Yml::MEMORY_ASYNC_WORKER_HARD_LIMIT, 256)), $this->autoloader, $this->logger, $this->tickSleeper);
+			$this->asyncPool->addWorkerStartHook(function(int $i) : void{
+				if(TimingsHandler::isEnabled()){
+					$this->asyncPool->submitTaskToWorker(TimingsControlTask::setEnabled(true), $i);
+				}
+			});
+			TimingsHandler::getToggleCallbacks()->add(function(bool $enable) : void{
+				foreach($this->asyncPool->getRunningWorkers() as $workerId){
+					$this->asyncPool->submitTaskToWorker(TimingsControlTask::setEnabled($enable), $workerId);
+				}
+			});
+			TimingsHandler::getReloadCallbacks()->add(function() : void{
+				foreach($this->asyncPool->getRunningWorkers() as $workerId){
+					$this->asyncPool->submitTaskToWorker(TimingsControlTask::reload(), $workerId);
+				}
+			});
+			TimingsHandler::getCollectCallbacks()->add(function() : array{
+				$promises = [];
+				foreach($this->asyncPool->getRunningWorkers() as $workerId){
+					$resolver = new PromiseResolver();
+					$this->asyncPool->submitTaskToWorker(new TimingsCollectionTask($resolver), $workerId);
+
+					$promises[] = $resolver->getPromise();
+				}
+
+				return $promises;
+			});
+
+			$this->compressorAsyncPool = new AsyncPool($poolSize, max(-1, $this->configGroup->getPropertyInt(Yml::MEMORY_ASYNC_WORKER_HARD_LIMIT, 256)), $this->autoloader, $this->logger, $this->tickSleeper);
+			$this->compressorAsyncPool->addWorkerStartHook(function(int $i) : void{
+				if(TimingsHandler::isEnabled()){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::setEnabled(true), $i);
+				}
+			});
+			TimingsHandler::getToggleCallbacks()->add(function(bool $enable) : void{
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::setEnabled($enable), $workerId);
+				}
+			});
+			TimingsHandler::getReloadCallbacks()->add(function() : void{
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					$this->compressorAsyncPool->submitTaskToWorker(TimingsControlTask::reload(), $workerId);
+				}
+			});
+			TimingsHandler::getCollectCallbacks()->add(function() : array{
+				$promises = [];
+				foreach($this->compressorAsyncPool->getRunningWorkers() as $workerId){
+					$resolver = new PromiseResolver();
+					$this->compressorAsyncPool->submitTaskToWorker(new TimingsCollectionTask($resolver), $workerId);
+
+					$promises[] = $resolver->getPromise();
+				}
+
+				return $promises;
+			});
 
 			$netCompressionThreshold = -1;
 			if($this->configGroup->getPropertyInt(Yml::NETWORK_BATCH_THRESHOLD, 256) >= 0){
@@ -1007,9 +1071,6 @@ class Server{
 			)));
 			$this->logger->info($this->language->translate(KnownTranslationFactory::pocketmine_server_license($this->getName())));
 
-			TimingsHandler::setEnabled($this->configGroup->getPropertyBool(Yml::SETTINGS_ENABLE_PROFILING, false));
-			$this->profilingTickRate = $this->configGroup->getPropertyInt(Yml::SETTINGS_PROFILE_REPORT_TRIGGER, self::TARGET_TICKS_PER_SECOND);
-
 			DefaultPermissions::registerCorePermissions();
 
 			$this->commandMap = new SimpleCommandMap($this);
@@ -1048,7 +1109,7 @@ class Server{
 			$this->worldManager->setAutoSave($this->configGroup->getConfigBool(ServerProperties::AUTO_SAVE, $this->worldManager->getAutoSave()));
 			$this->worldManager->setAutoSaveInterval($this->configGroup->getPropertyInt(Yml::TICKS_PER_AUTOSAVE, $this->worldManager->getAutoSaveInterval()));
 
-			$this->updater = new UpdateChecker($this, $this->configGroup->getPropertyString(Yml::AUTO_UPDATER_HOST, "update.pmmp.io"));
+			$this->updater = new UpdateChecker($this);
 
 			$this->queryInfo = new QueryInfo($this);
 
@@ -1136,7 +1197,11 @@ class Server{
 
 		$anyWorldFailedToLoad = false;
 
-		foreach((array) $this->configGroup->getProperty(Yml::WORLDS, []) as $name => $options){
+		foreach(Utils::promoteKeys((array) $this->configGroup->getProperty(Yml::WORLDS, [])) as $name => $options){
+			if(!is_string($name)){
+				//TODO: this probably should be an error
+				continue;
+			}
 			if($options === null){
 				$options = [];
 			}elseif(!is_array($options)){
@@ -1425,7 +1490,7 @@ class Server{
 				if(!$sync && strlen($buffer) >= $this->networkCompressionAsyncThreshold){
 					$promise = new CompressBatchPromise();
 					$task = new CompressBatchTask($buffer, $promise, $compressor, $protocolId);
-					$this->asyncPool->submitTask($task);
+					$this->compressorAsyncPool->submitTask($task);
 					return $promise;
 				}
 
@@ -1501,6 +1566,10 @@ class Server{
 			$this->logger->emergency($this->language->translate(KnownTranslationFactory::pocketmine_server_forcingShutdown()));
 			$this->hasForceShutdown = true;
 		}
+
+		$killer = new ServerKiller(30);
+		$killer->start();
+
 		try{
 			if(!$this->isRunning()){
 				$this->sendUsage(SendUsageTask::TYPE_CLOSE);
@@ -1532,6 +1601,11 @@ class Server{
 			if(isset($this->asyncPool)){
 				$this->logger->debug("Shutting down async task worker pool");
 				$this->asyncPool->shutdown();
+			}
+
+			if(isset($this->compressorAsyncPool)){
+				$this->logger->debug("Shutting down compressor worker pool");
+				$this->compressorAsyncPool->shutdown();
 			}
 
 			if(isset($this->configGroup)){
@@ -1569,7 +1643,6 @@ class Server{
 	 */
 	public function exceptionHandler(\Throwable $e, ?array $trace = null) : void{
 		while(@ob_end_flush()){}
-		global $lastError;
 
 		if($trace === null){
 			$trace = $e->getTrace();
@@ -1580,6 +1653,16 @@ class Server{
 		//Assume that the thread already logged the original exception with the correct stack trace
 		$this->logger->logException($e, $trace);
 
+		$this->setCrashData($e, $trace);
+		$this->crashDump();
+	}
+
+	/**
+	 * @param mixed[][] $trace
+	 * @phpstan-param list<array<string, mixed>> $trace
+	 */
+	private function setCrashData(\Throwable $e, array $trace) : void{
+		global $lastError;
 		if($e instanceof ThreadCrashException){
 			$info = $e->getCrashInfo();
 			$type = $info->getType();
@@ -1611,7 +1694,6 @@ class Server{
 
 		global $lastExceptionError, $lastError;
 		$lastExceptionError = $lastError;
-		$this->crashDump();
 	}
 
 	private function writeCrashDumpFile(CrashDump $dump) : string{
@@ -1643,6 +1725,16 @@ class Server{
 		}
 		$this->hasStopped = false;
 
+		$this->writeCrashDump();
+
+		$this->forceShutdown();
+		$this->isRunning = false;
+
+		@Process::kill(Process::pid());
+		exit(1);
+	}
+
+	private function writeCrashDump() : void{
 		ini_set("error_reporting", '0');
 		ini_set("memory_limit", '-1'); //Fix error dump not dumped on memory problems
 		try{
@@ -1702,14 +1794,9 @@ class Server{
 			$this->logger->logException($e);
 			try{
 				$this->logger->critical($this->language->translate(KnownTranslationFactory::pocketmine_crash_error($e->getMessage())));
-			}catch(\Throwable $e){}
+			}catch(\Throwable $e){
+			}
 		}
-
-		$this->forceShutdown();
-		$this->isRunning = false;
-
-		@Process::kill(Process::pid());
-		exit(1);
 	}
 
 	/**
@@ -1726,8 +1813,16 @@ class Server{
 	private function tickProcessor() : void{
 		$this->nextTick = microtime(true);
 
+		// Dangerous but for production servers we catch errors thrown in a tick and log them instead
+		// This is so the servers will not crash and kick everyone as that is not acceptable
 		while($this->isRunning){
-			$this->tick();
+			try{
+				$this->tick();
+			}catch(\Throwable $error){
+				$this->getLogger()->logException($error);
+				$this->setCrashData($error, $error->getTrace());
+				$this->writeCrashDump();
+			}
 
 			//sleeps are self-correcting - if we undersleep 1ms on this tick, we'll sleep an extra ms on the next tick
 			$this->tickSleeper->sleepUntil($this->nextTick);
@@ -1843,6 +1938,7 @@ class Server{
 
 		Timings::$schedulerAsync->startTiming();
 		$this->asyncPool->collectTasks();
+		$this->compressorAsyncPool->collectTasks();
 		Timings::$schedulerAsync->stopTiming();
 
 		$this->worldManager->tick($this->tickCounter);

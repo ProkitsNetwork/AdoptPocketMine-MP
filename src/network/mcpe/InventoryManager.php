@@ -54,6 +54,7 @@ use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\Enchant;
 use pocketmine\network\mcpe\protocol\types\EnchantOption as ProtocolEnchantOption;
 use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
+use pocketmine\network\mcpe\protocol\types\inventory\FullContainerName;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper;
 use pocketmine\network\mcpe\protocol\types\inventory\NetworkInventoryAction;
@@ -363,6 +364,7 @@ class InventoryManager{
 						FurnaceType::FURNACE => WindowTypes::FURNACE,
 						FurnaceType::BLAST_FURNACE => WindowTypes::BLAST_FURNACE,
 						FurnaceType::SMOKER => WindowTypes::SMOKER,
+						FurnaceType::CAMPFIRE, FurnaceType::SOUL_CAMPFIRE => throw new \LogicException("Campfire inventory cannot be displayed to a player")
 					},
 				$inv instanceof EnchantInventory => WindowTypes::ENCHANTMENT,
 				$inv instanceof BrewingStandInventory => WindowTypes::BREWING_STAND,
@@ -444,8 +446,8 @@ class InventoryManager{
 		}
 
 		$typeConverter = $this->session->getTypeConverter();
-		$leftExtraData = $typeConverter->deserializeItemStackExtraData($this->session->getProtocolId(), $left->getRawExtraData(), $left->getId());
-		$rightExtraData = $typeConverter->deserializeItemStackExtraData($this->session->getProtocolId(), $right->getRawExtraData(), $right->getId());
+		$leftExtraData = $typeConverter->deserializeItemStackExtraData($left->getRawExtraData(), $left->getId());
+		$rightExtraData = $typeConverter->deserializeItemStackExtraData($right->getRawExtraData(), $right->getId());
 
 		$leftNbt = $leftExtraData->getNbt();
 		$rightNbt = $rightExtraData->getNbt();
@@ -500,6 +502,9 @@ class InventoryManager{
 			$this->session->sendDataPacket(InventorySlotPacket::create(
 				$windowId,
 				$netSlot,
+				new FullContainerName($this->lastInventoryNetworkId),
+				0,
+				new ItemStackWrapper(0, ItemStack::null()),
 				new ItemStackWrapper(0, ItemStack::null())
 			));
 		}
@@ -507,6 +512,9 @@ class InventoryManager{
 		$this->session->sendDataPacket(InventorySlotPacket::create(
 			$windowId,
 			$netSlot,
+			new FullContainerName($this->lastInventoryNetworkId),
+			0,
+			new ItemStackWrapper(0, ItemStack::null()),
 			$itemStackWrapper
 		));
 	}
@@ -525,10 +533,13 @@ class InventoryManager{
 		 */
 		$this->session->sendDataPacket(InventoryContentPacket::create(
 			$windowId,
-			array_fill_keys(array_keys($itemStackWrappers), new ItemStackWrapper(0, ItemStack::null()))
+			array_fill_keys(array_keys($itemStackWrappers), new ItemStackWrapper(0, ItemStack::null())),
+			new FullContainerName($this->lastInventoryNetworkId),
+			0,
+			new ItemStackWrapper(0, ItemStack::null())
 		));
 		//now send the real contents
-		$this->session->sendDataPacket(InventoryContentPacket::create($windowId, $itemStackWrappers));
+		$this->session->sendDataPacket(InventoryContentPacket::create($windowId, $itemStackWrappers, new FullContainerName($this->lastInventoryNetworkId), 0, new ItemStackWrapper(0, ItemStack::null())));
 	}
 
 	public function syncSlot(Inventory $inventory, int $slot, ItemStack $itemStack) : void{
@@ -584,7 +595,6 @@ class InventoryManager{
 				$info = $this->trackItemStack($entry, $slot, $itemStack, null);
 				$contents[] = new ItemStackWrapper($info->getStackId(), $itemStack);
 			}
-			$clearSlotWrapper = new ItemStackWrapper(0, ItemStack::null());
 			if($entry->complexSlotMap !== null){
 				foreach($contents as $slotId => $info){
 					$packetSlot = $entry->complexSlotMap->mapCoreToNet($slotId) ?? null;
@@ -688,6 +698,7 @@ class InventoryManager{
 
 	/**
 	 * @param EnchantingOption[] $options
+	 * @phpstan-param list<EnchantingOption> $options
 	 */
 	public function syncEnchantingTableOptions(array $options) : void{
 		$protocolOptions = [];

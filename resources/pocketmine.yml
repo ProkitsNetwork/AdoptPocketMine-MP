@@ -113,6 +113,9 @@ player:
 level-settings:
   #The default format that worlds will use when created
   default-format: leveldb
+  #The minimum Y level an entity can go before taking damage from the void
+  #Default PM sets this as -80 but NetherGames makes this configurable and the default is 0
+  min-y: 0
 
 chunk-sending:
   #To change server normal render distance, change view-distance in server.properties.
@@ -158,11 +161,9 @@ auto-updater:
   enabled: true
   on-update:
     warn-console: true
-  #Can be development, alpha, beta or stable.
-  preferred-channel: stable
+  branch: stable
   #If using a development version, it will suggest changing the channel
-  suggest-channels: true
-  host: update.pmmp.io
+  suggest-channels: false
 
 timings:
   #Choose the host to use for viewing your timings results.

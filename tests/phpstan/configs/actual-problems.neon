@@ -1,11 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Parameter \\#3 \\$subject of function preg_replace expects array\\|string, string\\|null given\\.$#"
-			count: 2
-			path: ../../../build/make-release.php
-
-		-
 			message: "#^Parameter \\#1 \\$strings of function pocketmine\\\\build\\\\server_phar\\\\preg_quote_array expects array\\<string\\>, array\\<int, string\\|false\\> given\\.$#"
 			count: 1
 			path: ../../../build/server-phar.php
@@ -461,26 +456,6 @@ parameters:
 			path: ../../../src/command/defaults/TimeCommand.php
 
 		-
-			message: "#^Parameter \\#1 \\$stream of function fclose expects resource, resource\\|false given\\.$#"
-			count: 2
-			path: ../../../src/command/defaults/TimingsCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$stream of function fseek expects resource, resource\\|false given\\.$#"
-			count: 1
-			path: ../../../src/command/defaults/TimingsCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$stream of function fwrite expects resource, resource\\|false given\\.$#"
-			count: 1
-			path: ../../../src/command/defaults/TimingsCommand.php
-
-		-
-			message: "#^Parameter \\#1 \\$stream of function stream_get_contents expects resource, resource\\|false given\\.$#"
-			count: 1
-			path: ../../../src/command/defaults/TimingsCommand.php
-
-		-
 			message: "#^Parameter \\#1 \\$path of static method pocketmine\\\\utils\\\\Filesystem\\:\\:cleanPath\\(\\) expects string, mixed given\\.$#"
 			count: 1
 			path: ../../../src/crash/CrashDump.php
@@ -786,11 +761,6 @@ parameters:
 			path: ../../../src/resourcepacks/ZippedResourcePack.php
 
 		-
-			message: "#^Parameter \\#2 \\$length of function fread expects int\\<0, max\\>, int given\\.$#"
-			count: 1
-			path: ../../../src/resourcepacks/ZippedResourcePack.php
-
-		-
 			message: "#^Property pocketmine\\\\resourcepacks\\\\ZippedResourcePack\\:\\:\\$fileResource \\(resource\\) does not accept resource\\|false\\.$#"
 			count: 1
 			path: ../../../src/resourcepacks/ZippedResourcePack.php
@@ -806,7 +776,7 @@ parameters:
 			path: ../../../src/scheduler/BulkCurlTask.php
 
 		-
-			message: "#^Cannot call method getNextRun\\(\\) on array\\<string, int\\|pocketmine\\\\scheduler\\\\TaskHandler\\>\\|int\\|pocketmine\\\\scheduler\\\\TaskHandler\\.$#"
+			message: "#^Cannot call method getNextRun\\(\\) on array\\<string, int\\|pocketmine\\\\scheduler\\\\TaskHandler\\<covariant pocketmine\\\\scheduler\\\\Task\\>\\>\\|int\\|pocketmine\\\\scheduler\\\\TaskHandler\\<covariant pocketmine\\\\scheduler\\\\Task\\>\\.$#"
 			count: 1
 			path: ../../../src/scheduler/TaskScheduler.php
 
@@ -842,11 +812,6 @@ parameters:
 
 		-
 			message: "#^Parameter \\#1 \\$path of static method pocketmine\\\\utils\\\\Filesystem\\:\\:cleanPath\\(\\) expects string, mixed given\\.$#"
-			count: 1
-			path: ../../../src/utils/Utils.php
-
-		-
-			message: "#^Parameter \\#1 \\$trace of static method pocketmine\\\\utils\\\\Utils\\:\\:printableTrace\\(\\) expects array\\<int, array\\<string, mixed\\>\\>, array given\\.$#"
 			count: 1
 			path: ../../../src/utils/Utils.php
 
@@ -1036,11 +1001,6 @@ parameters:
 			path: ../../../src/world/format/io/region/RegionLoader.php
 
 		-
-			message: "#^Parameter \\#2 \\$length of function fread expects int\\<0, max\\>, int given\\.$#"
-			count: 1
-			path: ../../../src/world/format/io/region/RegionLoader.php
-
-		-
 			message: "#^Parameter \\#2 \\$size of function ftruncate expects int\\<0, max\\>, int given\\.$#"
 			count: 1
 			path: ../../../src/world/format/io/region/RegionLoader.php
@@ -1214,3 +1174,22 @@ parameters:
 			message: "#^Method pocketmine\\\\network\\\\mcpe\\\\cache\\\\ChunkCache\\:\\:restartPendingRequest\\(\\) is unused\\.$#"
 			count: 1
 			path: ../../../src/network/mcpe/cache/ChunkCache.php
+		-
+			message: "#^Parameter \\#2 \\$commit of static method pocketmine\\\\utils\\\\Git\\:\\:getRepositoryCommitDate\\(\\) expects string, array\\<int, mixed\\>\\|string\\|false given\\.$#"
+			count: 1
+			path: ../../../build/server-phar.php
+
+		-
+			message: "#^Cannot access offset 'git_commit_date' on mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php
+
+		-
+			message: "#^Method pocketmine\\\\VersionInfo\\:\\:GIT_COMMIT_DATE\\(\\) should return int but returns mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php
+
+		-
+			message: "#^Static property pocketmine\\\\VersionInfo\\:\\:\\$gitCommitDate \\(int\\|null\\) does not accept mixed\\.$#"
+			count: 1
+			path: ../../../src/VersionInfo.php

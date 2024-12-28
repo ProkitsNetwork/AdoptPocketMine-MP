@@ -31,6 +31,7 @@ use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\RequestChunkRadiusPacket;
 use pocketmine\network\mcpe\protocol\StartGamePacket;
+use pocketmine\network\mcpe\protocol\TickSyncPacket;
 use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\BoolGameRule;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
@@ -39,7 +40,7 @@ use pocketmine\network\mcpe\protocol\types\Experiments;
 use pocketmine\network\mcpe\protocol\types\LevelSettings;
 use pocketmine\network\mcpe\protocol\types\NetworkPermissions;
 use pocketmine\network\mcpe\protocol\types\PlayerMovementSettings;
-use pocketmine\network\mcpe\protocol\types\PlayerMovementType;
+use pocketmine\network\mcpe\protocol\types\ServerAuthMovementMode;
 use pocketmine\network\mcpe\protocol\types\SpawnSettings;
 use pocketmine\player\Player;
 use pocketmine\Server;
@@ -82,6 +83,10 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 			$levelSettings->lightningLevel = 0;
 			$levelSettings->commandsEnabled = true;
 			$levelSettings->disablePersona = true;
+			$levelSettings->useMsaGamertagsOnly = true;
+			$levelSettings->muteEmoteAnnouncements = true;
+			$levelSettings->onlySpawnV1Villagers = true;
+			$levelSettings->isNewNether = false;
 			$levelSettings->gameRules = [
 				"naturalregeneration" => new BoolGameRule(false, false) //Hack for client side regeneration
 			];
@@ -100,7 +105,7 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				$this->server->getMotd(),
 				"",
 				false,
-				new PlayerMovementSettings(PlayerMovementType::SERVER_AUTHORITATIVE_V1, 0, false),
+				new PlayerMovementSettings(ServerAuthMovementMode::SERVER_AUTHORITATIVE_V2, 0, false),
 				0,
 				0,
 				"",
@@ -109,47 +114,48 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 				Uuid::fromString(Uuid::NIL),
 				false,
 				false,
-				new NetworkPermissions(disableClientSounds: true),
+				new NetworkPermissions(disableClientSounds: false),
 				[],
 				0,
 				$typeConverter->getItemTypeDictionary()->getEntries(),
 			));
 
-			$this->session->getLogger()->debug("Sending actor identifiers");
+			//$this->session->getLogger()->debug("Sending actor identifiers");
 			$this->session->sendDataPacket(StaticPacketCache::getInstance()->getAvailableActorIdentifiers());
 
-			$this->session->getLogger()->debug("Sending biome definitions");
+			//$this->session->getLogger()->debug("Sending biome definitions");
 			$this->session->sendDataPacket(StaticPacketCache::getInstance()->getBiomeDefs());
 
-			$this->session->getLogger()->debug("Sending attributes");
-			$this->session->getEntityEventBroadcaster()->syncAttributes([$this->session], $this->player, $this->player->getAttributeMap()->getAll());
+			//$this->session->getLogger()->debug("Sending attributes");
+			$broadcaster = $this->session->getEntityEventBroadcaster();
+			$broadcaster->syncAttributes([$this->session], $this->player, $this->player->getAttributeMap()->getAll());
 
-			$this->session->getLogger()->debug("Sending available commands");
+			//$this->session->getLogger()->debug("Sending available commands");
 			$this->session->syncAvailableCommands();
 
-			$this->session->getLogger()->debug("Sending abilities");
+			//$this->session->getLogger()->debug("Sending abilities");
 			$this->session->syncAbilities($this->player);
 			$this->session->syncAdventureSettings();
 
-			$this->session->getLogger()->debug("Sending effects");
+			//$this->session->getLogger()->debug("Sending effects");
 			foreach($this->player->getEffects()->all() as $effect){
-				$this->session->getEntityEventBroadcaster()->onEntityEffectAdded([$this->session], $this->player, $effect, false);
+				$broadcaster->onEntityEffectAdded([$this->session], $this->player, $effect, false);
 			}
 
-			$this->session->getLogger()->debug("Sending actor metadata");
+			//$this->session->getLogger()->debug("Sending actor metadata");
 			$this->player->sendData([$this->player]);
 
-			$this->session->getLogger()->debug("Sending inventory");
+			//$this->session->getLogger()->debug("Sending inventory");
 			$this->inventoryManager->syncAll();
 			$this->inventoryManager->syncSelectedHotbarSlot();
 
-			$this->session->getLogger()->debug("Sending creative inventory data");
+			//$this->session->getLogger()->debug("Sending creative inventory data");
 			$this->inventoryManager->syncCreative();
 
-			$this->session->getLogger()->debug("Sending crafting data");
+			//$this->session->getLogger()->debug("Sending crafting data");
 			$this->session->addToSendBuffer(CraftingDataCache::getInstance($protocolId)->getCache($this->server->getCraftingManager()));
 
-			$this->session->getLogger()->debug("Sending player list");
+			//$this->session->getLogger()->debug("Sending player list");
 			$this->session->syncPlayerList($this->server->getOnlinePlayers());
 		}finally{
 			Timings::$playerNetworkSendPreSpawnGameData->stopTiming();
@@ -165,6 +171,12 @@ class PreSpawnPacketHandler extends ChunkRequestPacketHandler{
 	public function handlePlayerAuthInput(PlayerAuthInputPacket $packet) : bool{
 		//the client will send this every tick once we start sending chunks, but we don't handle it in this stage
 		//this is very spammy so we filter it out
+		return true;
+	}
+
+	public function handleTickSync(TickSyncPacket $packet) : bool{
+		$this->session->sendDataPacket(TickSyncPacket::response($packet->getClientSendTime(), Server::getInstance()->getTick()));
+		$this->session->getLogger()->debug("Synchronizing tick between the client and the server");
 		return true;
 	}
 }

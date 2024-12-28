@@ -27,6 +27,7 @@ use GlobalLogger;
 use pmmp\thread\Runnable;
 use pmmp\thread\Thread as NativeThread;
 use pocketmine\MemoryManager;
+use pocketmine\utils\Utils;
 use PrefixedLogger;
 use ReflectionClass;
 use Symfony\Component\Filesystem\Path;
@@ -44,11 +45,12 @@ class DumpWorkerMemoryRunnable extends Runnable{
 
 	public function run() : void{
 		$worker = NativeThread::getCurrentThread();
+		Utils::assumeNotFalse($worker !== null);
 		if($worker instanceof AsyncWorker){
 			$path = Path::join($this->outputFolder, "AsyncWorker#$this->id#" . $worker->getAsyncWorkerId());
 			$logger = $worker->getLogger();
 		}else{
-			$idName = (new ReflectionClass($worker::class))->getShortName() . "#" . $this->id;
+			$idName = (new ReflectionClass($worker))->getShortName() . "#" . $this->id;
 			$path = Path::join($this->outputFolder, $idName);
 			$logger = GlobalLogger::get();
 			if(!($logger instanceof PrefixedLogger)){

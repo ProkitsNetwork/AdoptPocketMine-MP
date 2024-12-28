@@ -24,6 +24,10 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe\handler;
 
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\protocol\EmoteListPacket;
+use pocketmine\network\mcpe\protocol\InteractPacket;
+use pocketmine\network\mcpe\protocol\MovePlayerPacket;
+use pocketmine\network\mcpe\protocol\PlayerActionPacket;
 use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerSkinPacket;
 use pocketmine\network\mcpe\protocol\SetLocalPlayerAsInitializedPacket;
@@ -51,6 +55,22 @@ final class SpawnResponsePacketHandler extends ChunkRequestPacketHandler{
 	public function handlePlayerAuthInput(PlayerAuthInputPacket $packet) : bool{
 		//the client will send this every tick once we start sending chunks, but we don't handle it in this stage
 		//this is very spammy so we filter it out
+		return true;
+	}
+
+	public function handleMovePlayer(MovePlayerPacket $packet) : bool{
+		return true;
+	}
+
+	public function handlePlayerAction(PlayerActionPacket $packet) : bool{
+		return true;
+	}
+
+	public function handleInteract(InteractPacket $packet) : bool{
+		return true;
+	}
+
+	public function handleEmoteList(EmoteListPacket $packet) : bool{
 		return true;
 	}
 }

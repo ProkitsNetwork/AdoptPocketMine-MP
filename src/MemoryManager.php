@@ -335,7 +335,7 @@ class MemoryManager{
 					continue;
 				}
 				$methodStatics = [];
-				foreach($method->getStaticVariables() as $name => $variable){
+				foreach(Utils::promoteKeys($method->getStaticVariables()) as $name => $variable){
 					$methodStatics[$name] = self::continueDump($variable, $objects, $refCounts, 0, $maxNesting, $maxStringSize);
 				}
 				if(count($methodStatics) > 0){
@@ -363,7 +363,7 @@ class MemoryManager{
 			'_SESSION' => true
 		];
 
-		foreach($GLOBALS as $varName => $value){
+		foreach(Utils::promoteKeys($GLOBALS) as $varName => $value){
 			if(isset($ignoredGlobals[$varName])){
 				continue;
 			}
@@ -379,7 +379,7 @@ class MemoryManager{
 			$reflect = new \ReflectionFunction($function);
 
 			$vars = [];
-			foreach($reflect->getStaticVariables() as $varName => $variable){
+			foreach(Utils::promoteKeys($reflect->getStaticVariables()) as $varName => $variable){
 				$vars[$varName] = self::continueDump($variable, $objects, $refCounts, 0, $maxNesting, $maxStringSize);
 			}
 			if(count($vars) > 0){
@@ -419,7 +419,7 @@ class MemoryManager{
 						$info["this"] = self::continueDump($closureThis, $objects, $refCounts, 0, $maxNesting, $maxStringSize);
 					}
 
-					foreach($reflect->getStaticVariables() as $name => $variable){
+					foreach(Utils::promoteKeys($reflect->getStaticVariables()) as $name => $variable){
 						$info["referencedVars"][$name] = self::continueDump($variable, $objects, $refCounts, 0, $maxNesting, $maxStringSize);
 					}
 				}else{
@@ -501,7 +501,7 @@ class MemoryManager{
 			}
 			$data = [];
 			$numeric = 0;
-			foreach($from as $key => $value){
+			foreach(Utils::promoteKeys($from) as $key => $value){
 				$data[$numeric] = [
 					"k" => self::continueDump($key, $objects, $refCounts, $recursion + 1, $maxNesting, $maxStringSize),
 					"v" => self::continueDump($value, $objects, $refCounts, $recursion + 1, $maxNesting, $maxStringSize),

@@ -106,9 +106,9 @@ function buildPhar(string $pharPath, string $basePath, array $includedPaths, arr
 	}
 
 	$regex = sprintf('/^(?!.*(%s))^%s(%s).*/i',
-		 implode('|', $excludedSubstrings), //String may not contain any of these substrings
-		 preg_quote($basePath, '/'), //String must start with this path...
-		 implode('|', preg_quote_array($includedPaths, '/')) //... and must be followed by one of these relative paths, if any were specified. If none, this will produce a null capturing group which will allow anything.
+		implode('|', $excludedSubstrings), //String may not contain any of these substrings
+		preg_quote($basePath, '/'), //String must start with this path...
+		implode('|', preg_quote_array($includedPaths, '/')) //... and must be followed by one of these relative paths, if any were specified. If none, this will produce a null capturing group which will allow anything.
 	);
 
 	$directory = new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS | \FilesystemIterator::CURRENT_AS_PATHNAME); //can't use fileinfo because of symlinks
@@ -145,6 +145,7 @@ function main() : void{
 		$gitHash = Git::getRepositoryStatePretty(dirname(__DIR__));
 		echo "Git hash detected as $gitHash" . PHP_EOL;
 	}
+	$gitCommitDate = Git::getRepositoryCommitDate(dirname(__DIR__), $gitHash);
 	if(isset($opts["build"])){
 		$build = (int) $opts["build"];
 	}else{
@@ -169,6 +170,7 @@ function main() : void{
 		],
 		[
 			'git' => $gitHash,
+			'git_commit_date' => $gitCommitDate,
 			'build' => $build
 		],
 		Filesystem::fileGetContents(Path::join(__DIR__, 'server-phar-stub.php')) . "\n__HALT_COMPILER();",

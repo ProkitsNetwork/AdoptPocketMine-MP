@@ -25,10 +25,11 @@ namespace pocketmine\world\format;
 
 use pocketmine\promise\Future;
 use pocketmine\world\format\io\ChunkData;
-use pocketmine\world\format\io\FastChunkSerializer;
 use pocketmine\world\format\io\WorldData;
 use pocketmine\world\format\io\WorldProvider;
 use pocketmine\world\format\io\WritableWorldProvider;
+use function igbinary_serialize;
+use function igbinary_unserialize;
 
 class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 	public function __construct(
@@ -48,12 +49,16 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 		return $this->maxY;
 	}
 
-	public function getPath() : string{
-		return $this->path;
-	}
+	/*
+		public function getPath() : string{
+			return $this->path;
+		}
+	*/
 
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX){
+//usleep(10000);
+			var_dump("work $chunkX $chunkZ");
 			return $provider->loadChunk($chunkX, $chunkZ);
 		});
 	}
@@ -81,10 +86,10 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 	 * Saves a chunk (usually to disk).
 	 */
 	public function saveChunk(int $chunkX, int $chunkZ, ChunkData $chunkData, int $dirtyFlags) : Future{
-		$serialized = FastChunkSerializer::serializeChunkData($chunkData);
-		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX, $serialized, $dirtyFlags){
+		$chunkData = igbinary_serialize($chunkData);
+		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX, $chunkData, $dirtyFlags){
 			if($provider instanceof WritableWorldProvider){
-				$provider->saveChunk($chunkX, $chunkZ, FastChunkSerializer::deserializeChunkData($serialized), $dirtyFlags);
+				$provider->saveChunk($chunkX, $chunkZ, igbinary_unserialize($chunkData), $dirtyFlags);
 			}else{
 				throw new \RuntimeException("not saved");
 			}

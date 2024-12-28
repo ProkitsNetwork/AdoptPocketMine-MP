@@ -44,7 +44,7 @@ final class WorldCreationOptions{
 
 	public function __construct(){
 		$this->seed = random_int(Limits::INT32_MIN, Limits::INT32_MAX);
-		$this->spawnPosition = new Vector3(256, 70, 256);
+		$this->spawnPosition = new Vector3(0, 70, 0);
 	}
 
 	public static function create() : self{

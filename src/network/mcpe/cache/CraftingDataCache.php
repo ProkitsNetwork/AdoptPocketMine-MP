@@ -52,6 +52,7 @@ use pocketmine\utils\Binary;
 use pocketmine\utils\ProtocolSingletonTrait;
 use Ramsey\Uuid\Uuid;
 use function array_map;
+use function is_string;
 use function spl_object_id;
 
 final class CraftingDataCache{
@@ -82,15 +83,11 @@ final class CraftingDataCache{
 		if(!$isDefault){
 			return $this->buildCraftingDataCache($manager);
 		}
-		$key = FilesystemCacheKey::getCraftingDataKey($this->protocolId);
-		$cache = FilesystemCache::getInstance();
-		$cached = $cache->get($key);
-		if($cached !== null){
-			return $cached;
-		}
-		$buffer = $this->buildCraftingDataCache($manager);
-		$cache->put($key, $buffer);
-		return $buffer;
+		return FilesystemCache::getInstance()->getOrDefault(
+			FilesystemCacheKey::getCraftingDataKey($this->protocolId),
+			fn() => $this->buildCraftingDataCache($manager),
+			static fn($val) => is_string($val)
+		);
 	}
 
 	/**
@@ -166,6 +163,8 @@ final class CraftingDataCache{
 					FurnaceType::FURNACE => FurnaceRecipeBlockName::FURNACE,
 					FurnaceType::BLAST_FURNACE => FurnaceRecipeBlockName::BLAST_FURNACE,
 					FurnaceType::SMOKER => FurnaceRecipeBlockName::SMOKER,
+					FurnaceType::CAMPFIRE => FurnaceRecipeBlockName::CAMPFIRE,
+					FurnaceType::SOUL_CAMPFIRE => FurnaceRecipeBlockName::SOUL_CAMPFIRE
 				};
 				foreach($manager->getFurnaceRecipeManager($furnaceType)->getAll() as $recipe){
 					$input = $converter->coreRecipeIngredientToNet($recipe->getInput())->getDescriptor();

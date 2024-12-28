@@ -56,6 +56,7 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\world\ChunkLoadEvent;
 use pocketmine\event\world\ChunkPopulateEvent;
 use pocketmine\event\world\ChunkUnloadEvent;
+use pocketmine\event\world\RequestChunkLoadEvent;
 use pocketmine\event\world\RequestChunkPopulationEvent;
 use pocketmine\event\world\SpawnChangeEvent;
 use pocketmine\event\world\WorldDifficultyChangeEvent;
@@ -133,7 +134,6 @@ use function get_class;
 use function gettype;
 use function is_a;
 use function is_object;
-use function lcg_value;
 use function max;
 use function microtime;
 use function min;
@@ -230,6 +230,7 @@ class World implements ChunkManager{
 
 	private int $minY;
 	private int $maxY;
+	private int $damageY;
 
 	/**
 	 * @var ChunkTicker[][] chunkHash => [spl_object_id => ChunkTicker]
@@ -509,8 +510,11 @@ class World implements ChunkManager{
 		$this->displayName = $this->worldData->getName();
 		$this->logger = new \PrefixedLogger($server->getLogger(), "World: $this->displayName");
 
+		$cfg = $this->server->getConfigGroup();
+
 		$this->minY = $this->provider->getWorldMinY();
 		$this->maxY = $this->provider->getWorldMaxY();
+		$this->damageY = $cfg->getPropertyInt(YmlServerProperties::LEVEL_SETTINGS_MIN_Y, 0);
 
 		$this->server->getLogger()->info($this->server->getLanguage()->translate(KnownTranslationFactory::pocketmine_level_preparing($this->displayName)));
 		$generator = GeneratorManager::getInstance()->getGenerator($this->worldData->getGenerator()) ??
@@ -539,7 +543,6 @@ class World implements ChunkManager{
 
 		$this->time = $this->worldData->getTime();
 
-		$cfg = $this->server->getConfigGroup();
 		$this->chunkTickRadius = min($this->server->getViewDistance(), max(0, $cfg->getPropertyInt(YmlServerProperties::CHUNK_TICKING_TICK_RADIUS, 4)));
 		if($cfg->getPropertyInt("chunk-ticking.per-tick", 40) <= 0){
 			//TODO: this needs l10n
@@ -1528,7 +1531,11 @@ class World implements ChunkManager{
 			return false;
 		}
 
-		(new WorldSaveEvent($this))->call();
+		$event = new WorldSaveEvent($this);
+		$event->call();
+		if($event->isCancelled()){
+			return false;
+		}
 
 		$timings = $this->timings->syncDataSave;
 		$timings->startTiming();
@@ -2120,10 +2127,10 @@ class World implements ChunkManager{
 			return null;
 		}
 
-		$itemEntity = new ItemEntity(Location::fromObject($source, $this, lcg_value() * 360, 0), $item);
+		$itemEntity = new ItemEntity(Location::fromObject($source, $this, Utils::getRandomFloat() * 360, 0), $item);
 
 		$itemEntity->setPickupDelay($delay);
-		$itemEntity->setMotion($motion ?? new Vector3(lcg_value() * 0.2 - 0.1, 0.2, lcg_value() * 0.2 - 0.1));
+		$itemEntity->setMotion($motion ?? new Vector3(Utils::getRandomFloat() * 0.2 - 0.1, 0.2, Utils::getRandomFloat() * 0.2 - 0.1));
 
 		$ev = new ItemEntityDropEvent($itemEntity);
 		$ev->call();
@@ -2149,9 +2156,9 @@ class World implements ChunkManager{
 		$orbs = [];
 
 		foreach(ExperienceOrb::splitIntoOrbSizes($amount) as $split){
-			$orb = new ExperienceOrb(Location::fromObject($pos, $this, lcg_value() * 360, 0), $split);
+			$orb = new ExperienceOrb(Location::fromObject($pos, $this, Utils::getRandomFloat() * 360, 0), $split);
 
-			$orb->setMotion(new Vector3((lcg_value() * 0.2 - 0.1) * 2, lcg_value() * 0.4, (lcg_value() * 0.2 - 0.1) * 2));
+			$orb->setMotion(new Vector3((Utils::getRandomFloat() * 0.2 - 0.1) * 2, Utils::getRandomFloat() * 0.4, (Utils::getRandomFloat() * 0.2 - 0.1) * 2));
 			$orb->spawnToAll();
 
 			$orbs[] = $orb;
@@ -2168,7 +2175,7 @@ class World implements ChunkManager{
 	 * @param Item[] &$returnedItems Items to be added to the target's inventory (or dropped, if the inventory is full)
 	 * @phpstan-param-out Item $item
 	 */
-	public function useBreakOn(Vector3 $vector, Item &$item = null, ?Player $player = null, bool $createParticles = false, array &$returnedItems = []) : bool{
+	public function useBreakOn(Vector3 $vector, ?Item &$item = null, ?Player $player = null, bool $createParticles = false, array &$returnedItems = []) : bool{
 		$vector = $vector->floor();
 
 		$chunkX = $vector->getFloorX() >> Chunk::COORD_BIT_SIZE;
@@ -2304,19 +2311,25 @@ class World implements ChunkManager{
 
 		if($player !== null){
 			$ev = new PlayerInteractEvent($player, $item, $blockClicked, $clickVector, $face, PlayerInteractEvent::RIGHT_CLICK_BLOCK);
+			if($player->isSneaking()){
+				$ev->setUseItem(false);
+				$ev->setUseBlock($item->isNull()); //opening doors is still possible when sneaking if using an empty hand
+			}
 			if($player->isSpectator()){
 				$ev->cancel(); //set it to cancelled so plugins can bypass this
 			}
 
 			$ev->call();
 			if(!$ev->isCancelled()){
-				if((!$player->isSneaking() || $item->isNull()) && $blockClicked->onInteract($item, $face, $clickVector, $player, $returnedItems)){
+				if($ev->useBlock() && $blockClicked->onInteract($item, $face, $clickVector, $player, $returnedItems)){
 					return true;
 				}
 
-				$result = $item->onInteractBlock($player, $blockReplace, $blockClicked, $face, $clickVector, $returnedItems);
-				if($result !== ItemUseResult::NONE){
-					return $result === ItemUseResult::SUCCESS;
+				if($ev->useItem()){
+					$result = $item->onInteractBlock($player, $blockReplace, $blockClicked, $face, $clickVector, $returnedItems);
+					if($result !== ItemUseResult::NONE){
+						return $result === ItemUseResult::SUCCESS;
+					}
 				}
 			}else{
 				return false;
@@ -2981,10 +2994,20 @@ class World implements ChunkManager{
 
 		$loadedChunkData = null;
 
-		try{
-			$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
-		}catch(CorruptedChunkException $e){
-			$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
+		if(RequestChunkLoadEvent::hasHandlers()){
+			$ev = (new RequestChunkLoadEvent($this, $x, $z));
+			$ev->call();
+			if($ev->getChunkData() !== null){
+				$loadedChunkData = $ev->getChunkData();
+			}
+		}
+
+		if($loadedChunkData === null){
+			try{
+				$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
+			}catch(CorruptedChunkException $e){
+				$this->logger->critical("Failed to load chunk x=$x z=$z: " . $e->getMessage());
+			}
 		}
 
 		$this->timings->syncChunkLoadData->stopTiming();
@@ -3315,6 +3338,13 @@ class World implements ChunkManager{
 
 	public function getMaxY() : int{
 		return $this->maxY;
+	}
+
+	/**
+	 * Returns the minimal Y level which an entity takes damage upon
+	 */
+	public function getDamageY() : int{
+		return $this->damageY;
 	}
 
 	public function getDifficulty() : int{
