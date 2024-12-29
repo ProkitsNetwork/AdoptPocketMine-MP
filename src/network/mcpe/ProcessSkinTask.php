@@ -59,10 +59,8 @@ class ProcessSkinTask extends AsyncTask{
 	}
 
 	public function onCompletion() : void{
+		/** @var Skin|null $result */
 		$result = $this->getResult();
-		if(!($result instanceof Skin)){
-			$result = null;
-		}
 		/** @var \Closure(?Skin $skin,?string $error) : void $callback */
 		$callback = $this->fetchLocal(self::KEY_ON_COMPLETION);
 		($callback)($result, $this->error);
