@@ -43,6 +43,7 @@ use pocketmine\player\Player;
 use pocketmine\player\PlayerInfo;
 use pocketmine\player\XboxLivePlayerInfo;
 use pocketmine\Server;
+use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
 use function assert;
 use function in_array;
@@ -88,6 +89,9 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 			$packet->protocol,
 			ClientDataToSkinDataHelper::fromClientData($clientData),
 			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
+				if(!$this->session->isConnected()){
+					return;
+				}
 				if($error !== null){
 					$this->session->disconnectWithError(
 						reason: "Invalid skin: " . $error,
@@ -95,7 +99,9 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 					);
 					return;
 				}
-				assert($skin !== null);
+				if($skin === null){
+					throw new AssumptionFailedError("This should never happen...");
+				}
 				$this->onSkinParsed($extraData, $clientData, $skin, $packet);
 			},
 		));

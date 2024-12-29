@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe;
 
-use Closure;
 use pocketmine\entity\InvalidSkinException;
 use pocketmine\entity\Skin;
 use pocketmine\network\mcpe\convert\TypeConverter;
@@ -34,17 +33,17 @@ use pocketmine\thread\NonThreadSafeValue;
 class ProcessSkinTask extends AsyncTask{
 	private const KEY_ON_COMPLETION = 'onCompletion';
 
-	private ?string $error = null;
+	private ?string $error = "Unknown";
 	/** @var NonThreadSafeValue<SkinData> */
 	private NonThreadSafeValue $skinData;
 
 	/**
-	 * @param Closure(?Skin $skin,?string $error) : void $callback
+	 * @param \Closure(?Skin $skin,?string $error) : void $callback
 	 */
 	public function __construct(
 		private int $protocol,
 		SkinData $skinData,
-		Closure $callback,
+		\Closure $callback,
 	){
 		$this->skinData = new NonThreadSafeValue($skinData);
 		$this->storeLocal(self::KEY_ON_COMPLETION, $callback);
@@ -55,17 +54,15 @@ class ProcessSkinTask extends AsyncTask{
 			$skin = TypeConverter::getInstance($this->protocol)->getSkinAdapter()->fromSkinData($this->skinData->deserialize());
 			$this->setResult($skin);
 			$this->error = null;
-		}catch(InvalidSkinException $e){
+		}catch(\InvalidArgumentException|InvalidSkinException $e){
 			$this->error = $e->getMessage();
 		}
 	}
 
 	public function onCompletion() : void{
+		/** @var Skin|null $result */
 		$result = $this->getResult();
-		if(!($result instanceof Skin)){
-			$result = null;
-		}
-		/** @var Closure(?Skin $skin,?string $error) : void $callback */
+		/** @var \Closure(?Skin $skin,?string $error) : void $callback */
 		$callback = $this->fetchLocal(self::KEY_ON_COMPLETION);
 		($callback)($result, $this->error);
 	}
