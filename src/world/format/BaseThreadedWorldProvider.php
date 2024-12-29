@@ -54,6 +54,10 @@ class BaseThreadedWorldProvider implements ThreadedWorldProvider{
 		return $this->path;
 	}
 
+	public function getWorld() : string{
+		return $this->world;
+	}
+
 	public function loadChunk(int $chunkX, int $chunkZ) : Future{
 		return WorldProviderThread::getInstance()->transaction($this->world, static function(WorldProvider $provider) use ($chunkZ, $chunkX) : ?LoadedChunkData{
 			return $provider->loadChunk($chunkX, $chunkZ);

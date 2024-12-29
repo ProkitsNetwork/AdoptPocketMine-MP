@@ -156,6 +156,16 @@ class WorldManager{
 		return true;
 	}
 
+	public function registerWorld(World $world) : void{
+		if(isset($this->worlds[$world->getId()])){
+			throw new \InvalidArgumentException("World {$world->getFolderName()} has already been registered.");
+		}
+		$this->worlds[$world->getId()] = $world;
+		$world->setAutoSave($this->autoSave);
+
+		(new WorldLoadEvent($world))->call();
+	}
+
 	/**
 	 * Loads a world from the data directory
 	 *
@@ -164,12 +174,7 @@ class WorldManager{
 	 * @throws WorldException
 	 */
 	public function loadWorld(string $name, bool $autoUpgrade = false) : bool{
-		if(trim($name) === ""){
-			throw new \InvalidArgumentException("Invalid empty world name");
-		}
-		if($this->isWorldLoaded($name)){
-			return true;
-		}elseif(!$this->isWorldGenerated($name)){
+		if(!$this->checkLoadWorldPreconditions($name)){
 			return false;
 		}
 
@@ -179,11 +184,20 @@ class WorldManager{
 		}
 		$world = new World($this->server, $name, $provider, $this->server->getAsyncPool());
 
-		$this->worlds[$world->getId()] = $world;
-		$world->setAutoSave($this->autoSave);
+		$this->registerWorld($world);
+		return true;
+	}
 
-		(new WorldLoadEvent($world))->call();
-
+	public function checkLoadWorldPreconditions(string $name) : bool{
+		if(trim($name) === ""){
+			throw new \InvalidArgumentException("Invalid empty world name");
+		}
+		if($this->isWorldLoaded($name)){
+			return false;
+		}
+		if(!$this->isWorldGenerated($name)){
+			return true;
+		}
 		return true;
 	}
 
