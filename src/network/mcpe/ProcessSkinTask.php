@@ -63,6 +63,6 @@ class ProcessSkinTask extends AsyncTask{
 		$result = $this->getResult();
 		/** @var \Closure(?Skin $skin,?string $error) : void $callback */
 		$callback = $this->fetchLocal(self::TLS_KEY_ON_COMPLETION);
-		($callback)($result, $this->error);
+		$callback($result, $this->error);
 	}
 }
