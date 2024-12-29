@@ -70,10 +70,18 @@ class LoginPacketHandler extends PacketHandler{
 			return true;
 		}
 
-		$clientData = $this->parseClientData($packet->clientDataJwt);
+		if(!Uuid::isValid($extraData->identity)){
+			throw new PacketHandlingException("Invalid login UUID");
+		}
 
+		$clientData = $this->parseClientData($packet->clientDataJwt);
+		try{
+			$skinData = ClientDataToSkinDataHelper::fromClientData($clientData);
+		}catch(\InvalidArgumentException $e){
+			throw PacketHandlingException::wrap($e);
+		}
 		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
-			ClientDataToSkinDataHelper::fromClientData($clientData),
+			$skinData,
 			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
 				if(!$this->session->isConnected()){
 					return;
@@ -88,21 +96,13 @@ class LoginPacketHandler extends PacketHandler{
 				if($skin === null){
 					throw new AssumptionFailedError("This should never happen...");
 				}
-				$this->onSkinParsed($extraData, $clientData, $skin, $packet);
+				$this->onSkinDataProcessed($extraData, $clientData, $skin, $packet);
 			},
 		));
-
 		return true;
 	}
 
-	private function onSkinParsed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
-		if(!Uuid::isValid($extraData->identity)){
-			$this->session->disconnectWithError(
-				reason: "Invalid login uuid",
-				disconnectScreenMessage: KnownTranslationFactory::pocketmine_disconnect_error_badPacket()
-			);
-			return;
-		}
+	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
 		$uuid = Uuid::fromString($extraData->identity);
 		$arrClientData = (array) $clientData;
 		$arrClientData["TitleID"] = $extraData->titleId;
@@ -159,7 +159,6 @@ class LoginPacketHandler extends PacketHandler{
 		}
 
 		$this->processLogin($packet, $ev->isAuthRequired());
-
 	}
 
 	/**

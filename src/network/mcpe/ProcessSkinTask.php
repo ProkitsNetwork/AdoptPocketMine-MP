@@ -31,7 +31,7 @@ use pocketmine\scheduler\AsyncTask;
 use pocketmine\thread\NonThreadSafeValue;
 
 class ProcessSkinTask extends AsyncTask{
-	private const KEY_ON_COMPLETION = "onCompletion";
+	private const TLS_KEY_ON_COMPLETION = "onCompletion";
 
 	private ?string $error = "Unknown";
 	/** @var NonThreadSafeValue<SkinData> */
@@ -45,7 +45,7 @@ class ProcessSkinTask extends AsyncTask{
 		\Closure $callback,
 	){
 		$this->skinData = new NonThreadSafeValue($skinData);
-		$this->storeLocal(self::KEY_ON_COMPLETION, $callback);
+		$this->storeLocal(self::TLS_KEY_ON_COMPLETION, $callback);
 	}
 
 	public function onRun() : void{
@@ -62,7 +62,7 @@ class ProcessSkinTask extends AsyncTask{
 		/** @var Skin|null $result */
 		$result = $this->getResult();
 		/** @var \Closure(?Skin $skin,?string $error) : void $callback */
-		$callback = $this->fetchLocal(self::KEY_ON_COMPLETION);
+		$callback = $this->fetchLocal(self::TLS_KEY_ON_COMPLETION);
 		($callback)($result, $this->error);
 	}
 }
