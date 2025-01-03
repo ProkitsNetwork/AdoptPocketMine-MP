@@ -266,18 +266,9 @@ class WorldProviderThread extends Thread{
 						}
 					}
 				}
-
-				$need = $this->transactionQueue->synchronized(function(){
-					foreach($this->transactionQueue as $queue){
-						if(count($queue) !== 0){
-							return true;
-						}
-					}
-					return false;
-				});
 				$this->synchronized(function() : void{
 					if(!$this->isKilled){
-						$this->wait();
+						$this->wait(1000_000);
 					}
 				});
 			}catch(Throwable $e){
@@ -353,5 +344,8 @@ class WorldProviderThread extends Thread{
 
 	public function execute(\Closure $closure) : void{
 		$this->executeQueue->synchronized(fn() => $this->executeQueue[] = $closure);
+		$this->synchronized(function() : void{
+			$this->notify();
+		});
 	}
 }
