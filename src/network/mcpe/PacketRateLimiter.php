@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace pocketmine\network\mcpe;
 
 use pocketmine\network\PacketHandlingException;
+use function ceil;
 use function hrtime;
 use function intdiv;
 use function min;
@@ -40,11 +41,11 @@ final class PacketRateLimiter{
 
 	public function __construct(
 		private string $name,
-		private int $averagePerTick,
+		private int|float $averagePerTick,
 		int $maxBufferTicks,
 		private int $updateFrequencyNs = 50_000_000,
 	){
-		$this->maxBudget = $this->averagePerTick * $maxBufferTicks;
+		$this->maxBudget = (int) ceil($this->averagePerTick * $maxBufferTicks);
 		$this->budget = $this->maxBudget;
 		$this->lastUpdateTimeNs = hrtime(true);
 	}
@@ -74,7 +75,7 @@ final class PacketRateLimiter{
 			 * As long as all the backlogged packets are processed before the next tick, everything should be OK for
 			 * clients behaving normally.
 			 */
-			$this->budget = min($this->budget, $this->maxBudget) + ($this->averagePerTick * 2 * $ticksSinceLastUpdate);
+			$this->budget = min($this->budget, $this->maxBudget) + (int) ceil($this->averagePerTick * 2 * $ticksSinceLastUpdate);
 			$this->lastUpdateTimeNs = $nowNs;
 		}
 	}

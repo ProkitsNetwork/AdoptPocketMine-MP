@@ -45,7 +45,6 @@ use pocketmine\player\XboxLivePlayerInfo;
 use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
-use function assert;
 use function in_array;
 use function is_array;
 
@@ -83,11 +82,19 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 			return true;
 		}
 
-		$clientData = $this->parseClientData($packet->clientDataJwt);
+		if(!Uuid::isValid($extraData->identity)){
+			throw new PacketHandlingException("Invalid login UUID");
+		}
 
+		$clientData = $this->parseClientData($packet->clientDataJwt);
+		try{
+			$skinData = ClientDataToSkinDataHelper::fromClientData($clientData);
+		}catch(\InvalidArgumentException $e){
+			throw PacketHandlingException::wrap($e);
+		}
 		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
 			$packet->protocol,
-			ClientDataToSkinDataHelper::fromClientData($clientData),
+			$skinData,
 			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
 				if(!$this->session->isConnected()){
 					return;
@@ -102,11 +109,71 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 				if($skin === null){
 					throw new AssumptionFailedError("This should never happen...");
 				}
-				$this->onSkinParsed($extraData, $clientData, $skin, $packet);
+				$this->onSkinDataProcessed($extraData, $clientData, $skin, $packet);
 			},
 		));
-
 		return true;
+	}
+
+	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
+		if(!Uuid::isValid($extraData->identity)){
+			throw new PacketHandlingException("Invalid login UUID");
+		}
+		$uuid = Uuid::fromString($extraData->identity);
+		$arrClientData = (array) $clientData;
+		$arrClientData["TitleID"] = $extraData->titleId;
+
+		if($extraData->XUID !== ""){
+			$playerInfo = new XboxLivePlayerInfo(
+				$extraData->XUID,
+				$extraData->displayName,
+				$uuid,
+				$skin,
+				$clientData->LanguageCode,
+				$arrClientData
+			);
+		}else{
+			$playerInfo = new PlayerInfo(
+				$extraData->displayName,
+				$uuid,
+				$skin,
+				$clientData->LanguageCode,
+				$arrClientData
+			);
+		}
+		($this->playerInfoConsumer)($playerInfo);
+
+		$ev = new PlayerPreLoginEvent(
+			$playerInfo,
+			$this->session,
+			$this->server->requiresAuthentication()
+		);
+		if($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()){
+			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_FULL, KnownTranslationFactory::disconnectionScreen_serverFull());
+		}
+		if(!$this->server->isWhitelisted($playerInfo->getUsername())){
+			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_WHITELISTED, KnownTranslationFactory::pocketmine_disconnect_whitelisted());
+		}
+
+		$banMessage = null;
+		if(($banEntry = $this->server->getNameBans()->getEntry($playerInfo->getUsername())) !== null){
+			$banReason = $banEntry->getReason();
+			$banMessage = $banReason === "" ? KnownTranslationFactory::pocketmine_disconnect_ban_noReason() : KnownTranslationFactory::pocketmine_disconnect_ban($banReason);
+		}elseif(($banEntry = $this->server->getIPBans()->getEntry($this->session->getIp())) !== null){
+			$banReason = $banEntry->getReason();
+			$banMessage = KnownTranslationFactory::pocketmine_disconnect_ban($banReason !== "" ? $banReason : KnownTranslationFactory::pocketmine_disconnect_ban_ip());
+		}
+		if($banMessage !== null){
+			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_BANNED, $banMessage);
+		}
+
+		$ev->call();
+		if(!$ev->isAllowed()){
+			$this->session->disconnect($ev->getFinalDisconnectReason(), $ev->getFinalDisconnectScreenMessage());
+			return;
+		}
+
+		$this->processLogin($packet, $ev->isAuthRequired());
 	}
 
 	/**
@@ -185,66 +252,5 @@ class LoginPacketHandler extends ChunkRequestPacketHandler{
 
 	protected function isCompatibleProtocol(int $protocolVersion) : bool{
 		return in_array($protocolVersion, ProtocolInfo::ACCEPTED_PROTOCOL, true);
-	}
-
-	private function onSkinParsed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
-		if(!Uuid::isValid($extraData->identity)){
-			throw new PacketHandlingException("Invalid login UUID");
-		}
-		$uuid = Uuid::fromString($extraData->identity);
-		$arrClientData = (array) $clientData;
-		$arrClientData["TitleID"] = $extraData->titleId;
-
-		if($extraData->XUID !== ""){
-			$playerInfo = new XboxLivePlayerInfo(
-				$extraData->XUID,
-				$extraData->displayName,
-				$uuid,
-				$skin,
-				$clientData->LanguageCode,
-				$arrClientData
-			);
-		}else{
-			$playerInfo = new PlayerInfo(
-				$extraData->displayName,
-				$uuid,
-				$skin,
-				$clientData->LanguageCode,
-				$arrClientData
-			);
-		}
-		($this->playerInfoConsumer)($playerInfo);
-
-		$ev = new PlayerPreLoginEvent(
-			$playerInfo,
-			$this->session,
-			$this->server->requiresAuthentication()
-		);
-		if($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()){
-			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_FULL, KnownTranslationFactory::disconnectionScreen_serverFull());
-		}
-		if(!$this->server->isWhitelisted($playerInfo->getUsername())){
-			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_WHITELISTED, KnownTranslationFactory::pocketmine_disconnect_whitelisted());
-		}
-
-		$banMessage = null;
-		if(($banEntry = $this->server->getNameBans()->getEntry($playerInfo->getUsername())) !== null){
-			$banReason = $banEntry->getReason();
-			$banMessage = $banReason === "" ? KnownTranslationFactory::pocketmine_disconnect_ban_noReason() : KnownTranslationFactory::pocketmine_disconnect_ban($banReason);
-		}elseif(($banEntry = $this->server->getIPBans()->getEntry($this->session->getIp())) !== null){
-			$banReason = $banEntry->getReason();
-			$banMessage = KnownTranslationFactory::pocketmine_disconnect_ban($banReason !== "" ? $banReason : KnownTranslationFactory::pocketmine_disconnect_ban_ip());
-		}
-		if($banMessage !== null){
-			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_BANNED, $banMessage);
-		}
-
-		$ev->call();
-		if(!$ev->isAllowed()){
-			$this->session->disconnect($ev->getFinalDisconnectReason(), $ev->getFinalDisconnectScreenMessage());
-			return;
-		}
-
-		$this->processLogin($packet, $ev->isAuthRequired());
 	}
 }

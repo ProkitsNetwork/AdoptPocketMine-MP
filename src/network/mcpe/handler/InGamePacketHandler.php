@@ -47,6 +47,7 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\StringTag;
 use pocketmine\network\mcpe\InventoryManager;
 use pocketmine\network\mcpe\NetworkSession;
+use pocketmine\network\mcpe\PacketRateLimiter;
 use pocketmine\network\mcpe\ProcessSkinTask;
 use pocketmine\network\mcpe\protocol\ActorEventPacket;
 use pocketmine\network\mcpe\protocol\ActorPickRequestPacket;
@@ -111,7 +112,6 @@ use pocketmine\utils\TextFormat;
 use pocketmine\utils\Utils;
 use pocketmine\world\format\Chunk;
 use function array_push;
-use function assert;
 use function count;
 use function fmod;
 use function get_debug_type;
@@ -133,6 +133,8 @@ use const JSON_THROW_ON_ERROR;
  */
 class InGamePacketHandler extends ChunkRequestPacketHandler{
 	private const MAX_FORM_RESPONSE_DEPTH = 2; //modal/simple will be 1, custom forms 2 - they will never contain anything other than string|int|float|bool|null
+	private const INCOMING_SKIN_PACKET_PER_TICK = 0.1;
+	private const INCOMING_SKIN_PACKET_BUFFER_TICKS = 20;
 
 	protected float $lastRightClickTime = 0.0;
 	protected ?UseItemTransactionData $lastRightClickData = null;
@@ -145,6 +147,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 	public bool $forceMoveSync = false;
 
 	protected ?string $lastRequestedFullSkinId = null;
+	protected PacketRateLimiter $skinPacketLimiter;
 
 	public function __construct(
 		private Player $player,
@@ -152,6 +155,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 		private InventoryManager $inventoryManager
 	){
 		parent::__construct($session);
+		$this->skinPacketLimiter = new PacketRateLimiter("Skin Packet", self::INCOMING_SKIN_PACKET_PER_TICK, self::INCOMING_SKIN_PACKET_BUFFER_TICKS);
 	}
 
 	public function handleText(TextPacket $packet) : bool{
@@ -784,7 +788,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 
 			try{
 				if(!$block->updateText($this->player, $text)){
-					foreach($this->player->getWorld()->createBlockUpdatePackets($this->session->getTypeConverter(), [$pos]) as $updatePacket){
+					foreach($this->player->getWorld()->createBlockUpdatePackets([$pos]) as $updatePacket){
 						$this->session->sendDataPacket($updatePacket);
 					}
 				}
@@ -852,6 +856,7 @@ class InGamePacketHandler extends ChunkRequestPacketHandler{
 			$this->session->getLogger()->debug("Refused duplicate skin change request");
 			return true;
 		}
+		$this->skinPacketLimiter->decrement();
 		$currentFullSkinId = $this->lastRequestedFullSkinId = $packet->skin->getFullSkinId();
 
 		$this->session->getLogger()->debug("Processing skin change request");
