@@ -275,14 +275,11 @@ class WorldProviderThread extends Thread{
 					}
 					return false;
 				});
-
-				if(!$need && $this->unloadQueue->synchronized(fn() => empty($this->unloadQueue))){
-					$this->synchronized(function() : void{
-						if(!$this->isKilled){
-							$this->wait(1000);
-						}
-					});
-				}
+				$this->synchronized(function() : void{
+					if(!$this->isKilled){
+						$this->wait();
+					}
+				});
 			}catch(Throwable $e){
 				$this->logger->critical("Unhandled exception in onRun loop.");
 				$this->logger->logException($e);
