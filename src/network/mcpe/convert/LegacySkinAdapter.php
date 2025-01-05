@@ -70,7 +70,7 @@ class LegacySkinAdapter implements SkinAdapter{
 
 		$capeData = $data->isPersonaCapeOnClassic() ? "" : $data->getCapeImage()->getData();
 
-		$resourcePatch = json_decode($data->getResourcePatch(), true);
+		$resourcePatch = json_decode($data->getResourcePatch(), true, 8);
 		if(is_array($resourcePatch) && isset($resourcePatch["geometry"]["default"]) && is_string($resourcePatch["geometry"]["default"])){
 			$geometryName = $resourcePatch["geometry"]["default"];
 		}else{

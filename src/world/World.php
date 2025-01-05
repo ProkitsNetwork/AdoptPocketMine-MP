@@ -135,7 +135,6 @@ use function floor;
 use function get_class;
 use function gettype;
 use function is_a;
-use function is_int;
 use function is_object;
 use function max;
 use function microtime;
@@ -1028,18 +1027,17 @@ class World implements ChunkManager{
 			}
 		}
 
-		foreach($this->loadingChunks as $chunkPosHash => $future){
-			assert(is_int($chunkPosHash));
+		foreach(Utils::promoteKeys($this->loadingChunks) as $chunkPosHash => $future){
 			World::getXZ($chunkPosHash,$chunkX, $chunkZ);
-			if(!$future->isDone()){
+			if(!$future->isDone() || $this->isChunkLoaded($chunkX, $chunkZ)){
 				continue;
 			}
 			unset($this->loadingChunks[$chunkPosHash]);
 			$chunkData = $future->get();
 			if($chunkData !== null){
-				$this->onChunkDataLoaded($chunkData,$chunkX,$chunkZ,$chunkPosHash);
+				$this->onChunkDataLoaded($chunkData, $chunkX, $chunkZ, $chunkPosHash);
 			}
-			$chunk = $this->loadChunk($chunkX, $chunkZ);
+			$chunk = $this->getChunk($chunkX, $chunkZ);
 			if($chunk !== null){
 				foreach($this->getChunkListeners($chunkX, $chunkZ) as $listener){
 					$listener->onChunkChanged($chunkX, $chunkZ, $chunk);
@@ -1546,7 +1544,7 @@ class World implements ChunkManager{
 		$this->worldData->setTime($this->time);
 		$this->saveChunks();
 		$this->worldData->save();
-		$this->provider->reloadWorldData();
+		$this->provider->reloadWorldData()->get();
 
 		$timings->stopTiming();
 
@@ -2960,7 +2958,7 @@ class World implements ChunkManager{
 	}
 
 	public function queueChunk(int $x, int $z) : void{
-		if($this->isChunkLoading($x, $z)){
+		if($this->isChunkLoading($x, $z) || $this->isChunkLoaded($x, $z)){
 			return;
 		}
 		$this->loadingChunks[World::chunkHash($x, $z)] = $this->provider->loadChunk($x, $z);
@@ -2996,16 +2994,18 @@ class World implements ChunkManager{
 		$this->timings->syncChunkLoadData->startTiming();
 
 		$loadedChunkData = null;
+		$use = false;
 
 		if(RequestChunkLoadEvent::hasHandlers()){
 			$ev = (new RequestChunkLoadEvent($this, $x, $z));
 			$ev->call();
 			if($ev->getChunkData() !== null){
 				$loadedChunkData = $ev->getChunkData();
+				$use = $ev->isChunkDataSet();
 			}
 		}
 
-		if($loadedChunkData === null){
+		if(!$use){
 			try{
 				$loadedChunkData = $this->provider->loadChunk($x, $z)->get();
 			}catch(CorruptedChunkException $e){

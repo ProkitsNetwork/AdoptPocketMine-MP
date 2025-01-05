@@ -28,6 +28,7 @@ use pocketmine\world\World;
 
 class RequestChunkLoadEvent extends WorldEvent{
 	private ?LoadedChunkData $chunk = null;
+	private bool $chunkDataSet = false;
 
 	public function __construct(World $world, private int $chunkX, private int $chunkZ,){
 		parent::__construct($world);
@@ -42,6 +43,9 @@ class RequestChunkLoadEvent extends WorldEvent{
 	}
 
 	public function setChunkData(?LoadedChunkData $chunk) : void{
+		$this->chunkDataSet = true;
 		$this->chunk = $chunk;
 	}
+
+	public function isChunkDataSet() : bool{ return $this->chunkDataSet; }
 }

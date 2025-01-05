@@ -68,7 +68,7 @@ final class Skin{
 
 		if($geometryData !== ""){
 			try{
-				$decodedGeometry = (new CommentedJsonDecoder())->decode($geometryData);
+				$decodedGeometry = (new CommentedJsonDecoder())->decode($geometryData, false, 32);
 			}catch(\RuntimeException $e){
 				throw new InvalidSkinException("Invalid geometry data: " . $e->getMessage(), 0, $e);
 			}
