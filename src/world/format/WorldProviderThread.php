@@ -169,8 +169,9 @@ class WorldProviderThread extends Thread{
 		$providers = [];
 		$lang = igbinary_unserialize($this->lang);
 		$mgr = new WorldProviderManager();
+		$need = false;
 
-		while(!$this->isKilled){
+		while(!$this->isKilled || $need){
 			try{
 				while(is_callable($func = $this->executeQueue->pop())){
 					$func();
@@ -266,9 +267,19 @@ class WorldProviderThread extends Thread{
 						}
 					}
 				}
+
+				$need = $this->transactionQueue->synchronized(function(){
+					foreach($this->transactionQueue as $queue){
+						if(count($queue) !== 0){
+							return true;
+						}
+					}
+					return false;
+				});
+
 				$this->synchronized(function() : void{
 					if(!$this->isKilled){
-						$this->wait(1000_000);
+						$this->wait();
 					}
 				});
 			}catch(Throwable $e){
