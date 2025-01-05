@@ -1028,7 +1028,7 @@ class World implements ChunkManager{
 			}
 		}
 
-		foreach(Utils::promoteKeys($this->loadingChunks) as $chunkPosHash => $future){
+		foreach($this->loadingChunks as $chunkPosHash => $future){
 			World::getXZ($chunkPosHash,$chunkX, $chunkZ);
 			if(!$future->isDone() || $this->isChunkLoaded($chunkX, $chunkZ)){
 				continue;
