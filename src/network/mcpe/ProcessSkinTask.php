@@ -23,47 +23,47 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe;
 
-use Closure;
-use pmmp\thread\ThreadSafe;
 use pocketmine\entity\InvalidSkinException;
 use pocketmine\entity\Skin;
-use pocketmine\network\mcpe\convert\SkinAdapter;
+use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\protocol\types\skin\SkinData;
 use pocketmine\scheduler\AsyncTask;
+use pocketmine\thread\NonThreadSafeValue;
 
 class ProcessSkinTask extends AsyncTask{
-	private const KEY_ON_COMPLETION = 'onCompletion';
+	private const TLS_KEY_ON_COMPLETION = "onCompletion";
 
-	private ?string $error = 'Unknown';
+	private ?string $error = "Unknown";
+	/** @var NonThreadSafeValue<SkinData> */
+	private NonThreadSafeValue $skinData;
 
 	/**
-	 * @param Closure(?Skin $skin,?string $error) : void $callback
+	 * @param \Closure(?Skin $skin,?string $error) : void $callback
 	 */
 	public function __construct(
-		private SkinAdapter&ThreadSafe $adapter,
-		private SkinData $skin,
-		Closure $callback,
+		private int $protocolId,
+		SkinData $skinData,
+		\Closure $callback,
 	){
-		$this->storeLocal(self::KEY_ON_COMPLETION, $callback);
+		$this->skinData = new NonThreadSafeValue($skinData);
+		$this->storeLocal(self::TLS_KEY_ON_COMPLETION, $callback);
 	}
 
 	public function onRun() : void{
 		try{
-			$skin = $this->adapter->fromSkinData($this->skin);
+			$skin = TypeConverter::getInstance($this->protocolId)->getSkinAdapter()->fromSkinData($this->skinData->deserialize());
 			$this->setResult($skin);
 			$this->error = null;
-		}catch(InvalidSkinException $e){
+		}catch(\InvalidArgumentException|InvalidSkinException $e){
 			$this->error = $e->getMessage();
 		}
 	}
 
 	public function onCompletion() : void{
+		/** @var Skin|null $result */
 		$result = $this->getResult();
-		if(!($result instanceof Skin)){
-			$result = null;
-		}
-		/** @var Closure(?Skin $skin,?string $error) : void $callback */
-		$callback = $this->fetchLocal(self::KEY_ON_COMPLETION);
-		($callback)($result, $this->error);
+		/** @var \Closure(?Skin $skin,?string $error) : void $callback */
+		$callback = $this->fetchLocal(self::TLS_KEY_ON_COMPLETION);
+		$callback($result, $this->error);
 	}
 }
