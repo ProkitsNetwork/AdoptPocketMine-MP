@@ -246,12 +246,7 @@ class WorldManager{
 			$this->server->getLogger()->notice($this->server->getLanguage()->translate(KnownTranslationFactory::pocketmine_level_conversion_finish($name, $converter->getBackupPath())));
 		}
 
-		$world = new World($this->server, $name, $provider, $this->server->getAsyncPool());
-
-		$this->worlds[$world->getId()] = $world;
-		$world->setAutoSave($this->autoSave);
-
-		(new WorldLoadEvent($world))->call();
+		$this->loadWorldInternal($name, $provider);
 
 		return true;
 	}
@@ -400,5 +395,20 @@ class WorldManager{
 			}
 			$world->save(false);
 		}
+	}
+
+	public function loadWorldInternal(string $name, WritableWorldProvider $provider) : void{
+		if($this->isWorldLoaded($name)){
+			return;
+		}
+		if(!$this->isWorldGenerated($name)){
+			return;
+		}
+		$world = new World($this->server, $name, $provider, $this->server->getAsyncPool());
+
+		$this->worlds[$world->getId()] = $world;
+		$world->setAutoSave($this->autoSave);
+
+		(new WorldLoadEvent($world))->call();
 	}
 }
