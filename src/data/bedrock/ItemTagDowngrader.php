@@ -107,7 +107,7 @@ final class ItemTagDowngrader{
 
 		if(count($wildcardToIdsMap) === 1){
 			$tagName = array_key_first($wildcardToIdsMap);
-			return array_map(fn(string $id) => [$tagName => $id], $wildcardToIdsMap[$tagName]);
+			return array_map(static fn(string $id) => [$tagName => $id], $wildcardToIdsMap[$tagName]);
 		}
 
 		$ingredientCombinations = [[]];

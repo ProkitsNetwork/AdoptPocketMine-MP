@@ -233,7 +233,7 @@ class BrewingStand extends Spawnable implements Container, Nameable{
 			$this->brewTime = $this->remainingFuelTime = $this->maxFuelTime = 0;
 		}
 
-		$viewers = array_map(fn(Player $p) => $p->getNetworkSession()->getInvManager(), $this->inventory->getViewers());
+		$viewers = array_map(static fn(Player $p) => $p->getNetworkSession()->getInvManager(), $this->inventory->getViewers());
 		foreach($viewers as $v){
 			if($v === null){
 				continue;

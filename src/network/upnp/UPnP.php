@@ -105,7 +105,7 @@ class UPnP{
 	 * @throws UPnPException
 	 */
 	public static function getServiceUrl() : string{
-		$socket = Utils::assumeNotFalse(@socket_create(AF_INET, SOCK_DGRAM, SOL_UDP), fn() => "Socket error: " . trim(socket_strerror(socket_last_error())));
+		$socket = Utils::assumeNotFalse(@socket_create(AF_INET, SOCK_DGRAM, SOL_UDP), static fn() => "Socket error: " . trim(socket_strerror(socket_last_error())));
 		Utils::assumeNotFalse(@socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, ["sec" => 3, "usec" => 0]), "Socket error: " . trim(socket_strerror(socket_last_error($socket))));
 		$contents =
 			"M-SEARCH * HTTP/1.1\r\n" .

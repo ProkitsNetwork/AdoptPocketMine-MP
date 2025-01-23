@@ -102,7 +102,7 @@ abstract class Terminal{
 
 		self::$FORMAT_RESET = "\x1b[m";
 
-		$color = fn(int $code) => "\x1b[38;5;{$code}m";
+		$color = static fn(int $code) => "\x1b[38;5;{$code}m";
 
 		self::$COLOR_BLACK = $color(16);
 		self::$COLOR_DARK_BLUE = $color(19);
@@ -134,8 +134,8 @@ abstract class Terminal{
 	}
 
 	protected static function getEscapeCodes() : void{
-		$tput = fn(string $args) => is_string($result = shell_exec("tput $args")) ? $result : "";
-		$setaf = fn(int $code) => $tput("setaf $code");
+		$tput = static fn(string $args) => is_string($result = shell_exec("tput $args")) ? $result : "";
+		$setaf = static fn(int $code) => $tput("setaf $code");
 
 		self::$FORMAT_BOLD = $tput("bold");
 		self::$FORMAT_OBFUSCATED = $tput("smacs");

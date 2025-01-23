@@ -132,7 +132,7 @@ class TimingsCommand extends VanillaCommand{
 			$timings = Path::join($timingFolder, "timings" . (++$index) . ".txt");
 		}
 
-		$fileTimings = ErrorToExceptionHandler::trapAndRemoveFalse(fn() => fopen($timings, "a+b"));
+		$fileTimings = ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => fopen($timings, "a+b"));
 		foreach($lines as $line){
 			fwrite($fileTimings, $line . PHP_EOL);
 		}

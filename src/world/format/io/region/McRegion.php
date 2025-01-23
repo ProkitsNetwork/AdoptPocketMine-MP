@@ -71,7 +71,7 @@ class McRegion extends RegionWorldProvider{
 			return null;
 		}
 
-		$makeBiomeArray = function(string $biomeIds) : PalettedBlockArray{
+		$makeBiomeArray = static function(string $biomeIds) : PalettedBlockArray{
 			if(strlen($biomeIds) !== 256){
 				throw new CorruptedChunkException("Expected biome array to be exactly 256 bytes, got " . strlen($biomeIds));
 			}

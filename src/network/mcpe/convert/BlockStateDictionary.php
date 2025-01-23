@@ -199,7 +199,7 @@ final class BlockStateDictionary{
 	 */
 	public static function loadPaletteFromString(string $blockPaletteContents) : array{
 		return array_map(
-			fn(TreeRoot $root) => BlockStateData::fromNbt($root->mustGetCompoundTag()),
+			static fn(TreeRoot $root) => BlockStateData::fromNbt($root->mustGetCompoundTag()),
 			(new NetworkNbtSerializer())->readMultiple($blockPaletteContents)
 		);
 	}

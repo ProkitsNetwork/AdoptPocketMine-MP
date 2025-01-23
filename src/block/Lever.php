@@ -65,7 +65,7 @@ class Lever extends Flowable{
 			return false;
 		}
 
-		$selectUpDownPos = function(LeverFacing $x, LeverFacing $z) use ($player) : LeverFacing{
+		$selectUpDownPos = static function(LeverFacing $x, LeverFacing $z) use ($player) : LeverFacing{
 			if($player !== null){
 				return Facing::axis($player->getHorizontalFacing()) === Axis::X ? $x : $z;
 			}

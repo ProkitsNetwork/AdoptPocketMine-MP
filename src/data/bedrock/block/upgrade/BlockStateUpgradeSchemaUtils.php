@@ -170,9 +170,9 @@ final class BlockStateUpgradeSchemaUtils{
 				}
 
 				$result->remappedStates[$oldBlockName][] = new BlockStateUpgradeSchemaBlockRemap(
-					array_map(fn(BlockStateUpgradeSchemaModelTag $tag) => self::jsonModelToTag($tag), $remap->oldState ?? []),
+					array_map(static fn(BlockStateUpgradeSchemaModelTag $tag) => self::jsonModelToTag($tag), $remap->oldState ?? []),
 					$remapName,
-					array_map(fn(BlockStateUpgradeSchemaModelTag $tag) => self::jsonModelToTag($tag), $remap->newState ?? []),
+					array_map(static fn(BlockStateUpgradeSchemaModelTag $tag) => self::jsonModelToTag($tag), $remap->newState ?? []),
 					$remap->copiedState ?? []
 				);
 			}
@@ -336,9 +336,9 @@ final class BlockStateUpgradeSchemaUtils{
 			$keyedRemaps = [];
 			foreach($remaps as $remap){
 				$modelRemap = new BlockStateUpgradeSchemaModelBlockRemap(
-					array_map(fn(Tag $tag) => self::tagToJsonModel($tag), $remap->oldState),
+					array_map(static fn(Tag $tag) => self::tagToJsonModel($tag), $remap->oldState),
 					is_string($remap->newName) ? $remap->newName : self::flattenRuleToJsonModel($remap->newName),
-					array_map(fn(Tag $tag) => self::tagToJsonModel($tag), $remap->newState),
+					array_map(static fn(Tag $tag) => self::tagToJsonModel($tag), $remap->newState),
 					$remap->copiedState
 				);
 				if(count($modelRemap->copiedState) === 0){
@@ -351,7 +351,7 @@ final class BlockStateUpgradeSchemaUtils{
 				}
 				$keyedRemaps[$key] = $modelRemap;
 			}
-			usort($keyedRemaps, function(BlockStateUpgradeSchemaModelBlockRemap $a, BlockStateUpgradeSchemaModelBlockRemap $b) : int{
+			usort($keyedRemaps, static function(BlockStateUpgradeSchemaModelBlockRemap $a, BlockStateUpgradeSchemaModelBlockRemap $b) : int{
 				//remaps with more specific criteria must come first
 				$filterSizeCompare = count($b->oldState ?? []) <=> count($a->oldState ?? []);
 				if($filterSizeCompare !== 0){

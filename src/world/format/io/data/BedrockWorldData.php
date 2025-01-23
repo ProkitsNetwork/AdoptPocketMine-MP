@@ -126,7 +126,7 @@ class BedrockWorldData extends BaseNbtWorldData{
 			->setByte(self::TAG_SPAWN_MOBS, 1)
 			->setByte(self::TAG_TEXTURE_PACKS_REQUIRED, 0) //TODO
 			->setByte(self::TAG_COMMANDS_ENABLED, 1)
-			->setTag(self::TAG_LAST_OPENED_WITH_VERSION, new ListTag(array_map(fn(int $v) => new IntTag($v), self::CURRENT_CLIENT_VERSION_TARGET)))
+			->setTag(self::TAG_LAST_OPENED_WITH_VERSION, new ListTag(array_map(static fn(int $v) => new IntTag($v), self::CURRENT_CLIENT_VERSION_TARGET)))
 
 			//Additional PocketMine-MP fields
 			->setString(self::TAG_GENERATOR_NAME, GeneratorManager::getInstance()->getGeneratorName($options->getGeneratorClass()))
@@ -207,7 +207,7 @@ class BedrockWorldData extends BaseNbtWorldData{
 	public function save() : void{
 		$this->compoundTag->setInt(self::TAG_NETWORK_VERSION, self::CURRENT_STORAGE_NETWORK_VERSION);
 		$this->compoundTag->setInt(self::TAG_STORAGE_VERSION, self::CURRENT_STORAGE_VERSION);
-		$this->compoundTag->setTag(self::TAG_LAST_OPENED_WITH_VERSION, new ListTag(array_map(fn(int $v) => new IntTag($v), self::CURRENT_CLIENT_VERSION_TARGET)));
+		$this->compoundTag->setTag(self::TAG_LAST_OPENED_WITH_VERSION, new ListTag(array_map(static fn(int $v) => new IntTag($v), self::CURRENT_CLIENT_VERSION_TARGET)));
 		$this->compoundTag->setLong(VersionInfo::TAG_WORLD_DATA_VERSION, VersionInfo::WORLD_DATA_VERSION);
 
 		$nbt = new LittleEndianNbtSerializer();

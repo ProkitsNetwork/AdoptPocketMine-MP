@@ -74,7 +74,7 @@ final class DatFilePlayerDataProvider implements PlayerDataProvider{
 			throw new PlayerDataLoadException("Failed to read player data file \"$path\": " . $e->getMessage(), 0, $e);
 		}
 		try{
-			$decompressed = ErrorToExceptionHandler::trapAndRemoveFalse(fn() => zlib_decode($contents));
+			$decompressed = ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => zlib_decode($contents));
 		}catch(\ErrorException $e){
 			$this->handleCorruptedPlayerData($name);
 			throw new PlayerDataLoadException("Failed to decompress raw player data for \"$name\": " . $e->getMessage(), 0, $e);

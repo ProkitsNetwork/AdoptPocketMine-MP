@@ -35,7 +35,7 @@ class CallbackSlotValidator implements SlotValidator{
 	public function __construct(
 		private \Closure $validate
 	){
-		Utils::validateCallableSignature(function(Inventory $inventory, Item $item, int $slot) : ?TransactionValidationException{ return null; }, $validate);
+		Utils::validateCallableSignature(static function(Inventory $inventory, Item $item, int $slot) : ?TransactionValidationException{ return null; }, $validate);
 	}
 
 	public function validate(Inventory $inventory, Item $item, int $slot) : ?TransactionValidationException{

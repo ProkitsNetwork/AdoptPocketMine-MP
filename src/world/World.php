@@ -735,13 +735,13 @@ class World implements ChunkManager{
 
 		if(($blockSound = ($sound instanceof BlockSound)) || $sound instanceof ProtocolSound){
 			if($blockSound){
-				$closure = function(TypeConverter $typeConverter) use ($sound, $pos) : array{
+				$closure = static function(TypeConverter $typeConverter) use ($sound, $pos) : array{
 					$sound->setBlockTranslator($typeConverter->getBlockTranslator());
 					return $sound->encode($pos);
 				};
 			}else{
 				/** @var ProtocolSound $sound */
-				$closure = function(TypeConverter $typeConverter) use ($sound, $pos) : array{
+				$closure = static function(TypeConverter $typeConverter) use ($sound, $pos) : array{
 					$sound->setProtocolId($typeConverter->getProtocolId());
 					return $sound->encode($pos);
 				};
@@ -1133,7 +1133,7 @@ class World implements ChunkManager{
 		foreach($this->packetBuffersByChunkTypeConverter as $index => $entries){
 			World::getXZ($index, $chunkX, $chunkZ);
 			TypeConverter::broadcastByTypeConverter($this->getChunkPlayers($chunkX, $chunkZ), function(TypeConverter $typeConverter) use ($index, $entries) : array{
-				return array_merge($this->packetBuffersByChunk[$index] ?? [], ...array_map(function(\Closure $closure) use ($typeConverter) : array{
+				return array_merge($this->packetBuffersByChunk[$index] ?? [], ...array_map(static function(\Closure $closure) use ($typeConverter) : array{
 					return $closure($typeConverter);
 				}, $entries));
 			});
@@ -1555,8 +1555,8 @@ class World implements ChunkManager{
 				$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
 					$chunk->getSubChunks(),
 					$chunk->isPopulated(),
-					array_map(fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk()))),
-					array_map(fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
+					array_map(static fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($chunkX, $chunkZ), static fn(Entity $e) => $e->canSaveWithChunk()))),
+					array_map(static fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
 				), $chunk->getTerrainDirtyFlags());
 				$chunk->clearTerrainDirtyFlags();
 			}
@@ -2189,12 +2189,12 @@ class World implements ChunkManager{
 
 		$drops = [];
 		if($player === null || $player->hasFiniteResources()){
-			$drops = array_merge(...array_map(fn(Block $block) => $block->getDrops($item), $affectedBlocks));
+			$drops = array_merge(...array_map(static fn(Block $block) => $block->getDrops($item), $affectedBlocks));
 		}
 
 		$xpDrop = 0;
 		if($player !== null && $player->hasFiniteResources()){
-			$xpDrop = array_sum(array_map(fn(Block $block) => $block->getXpDropForTool($item), $affectedBlocks));
+			$xpDrop = array_sum(array_map(static fn(Block $block) => $block->getXpDropForTool($item), $affectedBlocks));
 		}
 
 		if($player !== null){
@@ -3137,8 +3137,8 @@ class World implements ChunkManager{
 					$this->provider->saveChunk($x, $z, new ChunkData(
 						$chunk->getSubChunks(),
 						$chunk->isPopulated(),
-						array_map(fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($x, $z), fn(Entity $e) => $e->canSaveWithChunk()))),
-						array_map(fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
+						array_map(static fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($x, $z), static fn(Entity $e) => $e->canSaveWithChunk()))),
+						array_map(static fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
 					), $chunk->getTerrainDirtyFlags());
 				}finally{
 					$this->timings->syncChunkSave->stopTiming();

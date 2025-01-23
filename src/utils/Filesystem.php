@@ -114,7 +114,7 @@ final class Filesystem{
 				throw new \RuntimeException("The parent directory of $destination does not exist, or is not a directory");
 			}
 			try{
-				ErrorToExceptionHandler::trap(fn() => mkdir($destination));
+				ErrorToExceptionHandler::trap(static fn() => mkdir($destination));
 			}catch(\ErrorException $e){
 				if(!is_dir($destination)){
 					throw new \RuntimeException("Failed to create output directory $destination: " . $e->getMessage());
@@ -150,7 +150,7 @@ final class Filesystem{
 
 	public static function addCleanedPath(string $path, string $replacement) : void{
 		self::$cleanedPaths[$path] = $replacement;
-		uksort(self::$cleanedPaths, function(string $str1, string $str2) : int{
+		uksort(self::$cleanedPaths, static function(string $str1, string $str2) : int{
 			return strlen($str2) <=> strlen($str1); //longest first
 		});
 	}
@@ -185,7 +185,7 @@ final class Filesystem{
 	 */
 	public static function createLockFile(string $lockFilePath) : ?int{
 		try{
-			$resource = ErrorToExceptionHandler::trapAndRemoveFalse(fn() => fopen($lockFilePath, "a+b"));
+			$resource = ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => fopen($lockFilePath, "a+b"));
 		}catch(\ErrorException $e){
 			throw new \InvalidArgumentException("Failed to open lock file: " . $e->getMessage(), 0, $e);
 		}
@@ -267,7 +267,7 @@ final class Filesystem{
 	 */
 	private static function fileGetContentsInner(string $fileName, bool $useIncludePath, $context, int $offset, ?int $length) : string{
 		try{
-			return ErrorToExceptionHandler::trapAndRemoveFalse(fn() => file_get_contents($fileName, $useIncludePath, $context, $offset, $length));
+			return ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => file_get_contents($fileName, $useIncludePath, $context, $offset, $length));
 		}catch(\ErrorException $e){
 			throw new \RuntimeException("Failed to read file $fileName: " . $e->getMessage(), 0, $e);
 		}
@@ -293,7 +293,7 @@ final class Filesystem{
 		}while(is_dir($temporaryFileName));
 
 		try{
-			ErrorToExceptionHandler::trap(fn() => $context !== null ?
+			ErrorToExceptionHandler::trap(static fn() => $context !== null ?
 				file_put_contents($temporaryFileName, $contents, $flags, $context) :
 				file_put_contents($temporaryFileName, $contents, $flags)
 			);
@@ -323,7 +323,7 @@ final class Filesystem{
 			 * }
 			 */
 			try{
-				ErrorToExceptionHandler::trap(fn() => $context !== null ?
+				ErrorToExceptionHandler::trap(static fn() => $context !== null ?
 					copy($temporaryFileName, $fileName, $context) :
 					copy($temporaryFileName, $fileName)
 				);

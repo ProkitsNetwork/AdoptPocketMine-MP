@@ -76,10 +76,10 @@ final class SavedItemStackData{
 			$result->setByte(self::TAG_WAS_PICKED_UP, $this->wasPickedUp ? 1 : 0);
 		}
 		if(count($this->canPlaceOn) !== 0){
-			$result->setTag(self::TAG_CAN_PLACE_ON, new ListTag(array_map(fn(string $s) => new StringTag($s), $this->canPlaceOn)));
+			$result->setTag(self::TAG_CAN_PLACE_ON, new ListTag(array_map(static fn(string $s) => new StringTag($s), $this->canPlaceOn)));
 		}
 		if(count($this->canDestroy) !== 0){
-			$result->setTag(self::TAG_CAN_DESTROY, new ListTag(array_map(fn(string $s) => new StringTag($s), $this->canDestroy)));
+			$result->setTag(self::TAG_CAN_DESTROY, new ListTag(array_map(static fn(string $s) => new StringTag($s), $this->canDestroy)));
 		}
 
 		return $result->merge($this->typeData->toNbt());

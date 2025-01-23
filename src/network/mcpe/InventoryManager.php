@@ -708,7 +708,7 @@ class InventoryManager{
 			$this->enchantingTableOptions[$optionId] = $index;
 
 			$protocolEnchantments = array_map(
-				fn(EnchantmentInstance $e) => new Enchant(EnchantmentIdMap::getInstance()->toId($e->getType()), $e->getLevel()),
+				static fn(EnchantmentInstance $e) => new Enchant(EnchantmentIdMap::getInstance()->toId($e->getType()), $e->getLevel()),
 				$option->getEnchantments()
 			);
 			// We don't pay attention to the $slotFlags, $heldActivatedEnchantments and $selfActivatedEnchantments

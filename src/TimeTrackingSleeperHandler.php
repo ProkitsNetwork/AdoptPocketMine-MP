@@ -53,7 +53,7 @@ final class TimeTrackingSleeperHandler extends SleeperHandler{
 		$name = Utils::getNiceClosureName($handler);
 		$timings = self::$handlerTimings[$name] ??= new TimingsHandler("Snooze Handler: " . $name, $this->timings);
 
-		return parent::addNotifier(function() use ($timings, $handler) : void{
+		return parent::addNotifier(static function() use ($timings, $handler) : void{
 			$timings->startTiming();
 			$handler();
 			$timings->stopTiming();

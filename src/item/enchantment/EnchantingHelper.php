@@ -155,7 +155,7 @@ final class EnchantingHelper{
 				// with previously-chosen enchantments
 				$availableEnchantments = array_filter(
 					$availableEnchantments,
-					function(EnchantmentInstance $e) use ($lastEnchantment){
+					static function(EnchantmentInstance $e) use ($lastEnchantment){
 						return $e->getType() !== $lastEnchantment->getType() &&
 							$e->getType()->isCompatibleWith($lastEnchantment->getType());
 					}

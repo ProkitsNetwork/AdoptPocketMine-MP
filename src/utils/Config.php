@@ -176,14 +176,14 @@ class Config{
 				case Config::YAML:
 					$content = self::fixYAMLIndexes($content);
 					try{
-						$config = ErrorToExceptionHandler::trap(fn() => yaml_parse($content));
+						$config = ErrorToExceptionHandler::trap(static fn() => yaml_parse($content));
 					}catch(\ErrorException $e){
 						throw ConfigLoadException::wrap($this->file, $e);
 					}
 					break;
 				case Config::SERIALIZED:
 					try{
-						$config = ErrorToExceptionHandler::trap(fn() => unserialize($content));
+						$config = ErrorToExceptionHandler::trap(static fn() => unserialize($content));
 					}catch(\ErrorException $e){
 						throw ConfigLoadException::wrap($this->file, $e);
 					}

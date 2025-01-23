@@ -218,7 +218,7 @@ class AnvilTransaction extends InventoryTransaction{
 		$applicableEnchants = [];
 
 		$availableEnchantRegistry = AvailableEnchantmentRegistry::getInstance();
-		$canEnchant = fn(Enchantment $enchantmentType) => (bool) count(
+		$canEnchant = static fn(Enchantment $enchantmentType) => (bool) count(
 			array_intersect($target->getEnchantmentTags(), array_merge(
 				$availableEnchantRegistry->getPrimaryItemTags($enchantmentType),
 				$availableEnchantRegistry->getSecondaryItemTags($enchantmentType)

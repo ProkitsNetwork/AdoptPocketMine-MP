@@ -78,7 +78,7 @@ final class StringToItemParser extends StringToTParser{
 
 	private static function registerDynamicBlocks(self $result) : void{
 		foreach(DyeColor::cases() as $color){
-			$register = fn(string $name, \Closure $callback) => $result->registerBlock(strtolower($color->name) . "_" . $name, $callback);
+			$register = static fn(string $name, \Closure $callback) => $result->registerBlock(strtolower($color->name) . "_" . $name, $callback);
 			//wall and floor banner are the same item
 			$register("banner", fn() => Blocks::BANNER()->setColor($color));
 			$register("bed", fn() => Blocks::BED()->setColor($color));
@@ -97,7 +97,7 @@ final class StringToItemParser extends StringToTParser{
 		}
 
 		foreach(CoralType::cases() as $coralType){
-			$register = fn(string $name, \Closure $callback) => $result->registerBlock(strtolower($coralType->name) . "_" . $name, $callback);
+			$register = static fn(string $name, \Closure $callback) => $result->registerBlock(strtolower($coralType->name) . "_" . $name, $callback);
 			$register("coral", fn() => Blocks::CORAL()->setCoralType($coralType));
 			$register("coral_block", fn() => Blocks::CORAL_BLOCK()->setCoralType($coralType));
 			//wall and floor coral fans are the same item
@@ -113,7 +113,7 @@ final class StringToItemParser extends StringToTParser{
 			$oxPrefix = $oxidation === CopperOxidation::NONE ? "" : strtolower($oxidation->name) . "_";
 
 			foreach(["" => false, "waxed_" => true] as $waxedPrefix => $waxed){
-				$register = fn(string $name, \Closure $callback) => $result->registerBlock($waxedPrefix . $oxPrefix . $name, $callback);
+				$register = static fn(string $name, \Closure $callback) => $result->registerBlock($waxedPrefix . $oxPrefix . $name, $callback);
 				$register("copper_block", fn() => Blocks::COPPER()->setOxidation($oxidation)->setWaxed($waxed));
 				$register("chiseled_copper", fn() => Blocks::CHISELED_COPPER()->setOxidation($oxidation)->setWaxed($waxed));
 				$register("copper_grate", fn() => Blocks::COPPER_GRATE()->setOxidation($oxidation)->setWaxed($waxed));
@@ -1223,25 +1223,25 @@ final class StringToItemParser extends StringToTParser{
 
 	private static function registerDynamicItems(self $result) : void{
 		foreach(DyeColor::cases() as $color){
-			$prefix = fn(string $name) => strtolower($color->name) . "_" . $name;
+			$prefix = static fn(string $name) => strtolower($color->name) . "_" . $name;
 
 			$result->register($prefix("dye"), fn() => Items::DYE()->setColor($color));
 		}
 
 		foreach(GoatHornType::cases() as $goatHornType){
-			$prefix = fn(string $name) => strtolower($goatHornType->name) . "_" . $name;
+			$prefix = static fn(string $name) => strtolower($goatHornType->name) . "_" . $name;
 
 			$result->register($prefix("goat_horn"), fn() => Items::GOAT_HORN()->setHornType($goatHornType));
 		}
 
 		foreach(SuspiciousStewType::cases() as $suspiciousStewType){
-			$prefix = fn(string $name) => strtolower($suspiciousStewType->name) . "_" . $name;
+			$prefix = static fn(string $name) => strtolower($suspiciousStewType->name) . "_" . $name;
 
 			$result->register($prefix("suspicious_stew"), fn() => Items::SUSPICIOUS_STEW()->setType($suspiciousStewType));
 		}
 
 		foreach(PotionType::cases() as $potionType){
-			$prefix = fn(string $name) => strtolower($potionType->name) . "_" . $name;
+			$prefix = static fn(string $name) => strtolower($potionType->name) . "_" . $name;
 
 			$result->register($prefix("potion"), fn() => Items::POTION()->setType($potionType));
 			$result->register($prefix("splash_potion"), fn() => Items::SPLASH_POTION()->setType($potionType));

@@ -46,7 +46,7 @@ final class ClosureCommand extends Command{
 		array $aliases = []
 	){
 		Utils::validateCallableSignature(
-			fn(CommandSender $sender, Command $command, string $commandLabel, array $args) : mixed => 1,
+			static fn(CommandSender $sender, Command $command, string $commandLabel, array $args) : mixed => 1,
 			$execute,
 		);
 		$this->execute = $execute;

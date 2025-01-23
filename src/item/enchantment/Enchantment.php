@@ -57,7 +57,7 @@ class Enchantment{
 		?\Closure $minEnchantingPower = null,
 		private int $enchantingPowerRange = 50
 	){
-		$this->minEnchantingPower = $minEnchantingPower ?? fn(int $level) : int => 1;
+		$this->minEnchantingPower = $minEnchantingPower ?? static fn(int $level) : int => 1;
 
 		Utils::validateCallableSignature(new CallbackType(
 			new ReturnType("int"),

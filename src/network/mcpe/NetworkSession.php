@@ -1180,7 +1180,7 @@ class NetworkSession{
 	public function prepareClientTranslatableMessage(Translatable $message) : array{
 		//we can't send nested translations to the client, so make sure they are always pre-translated by the server
 		$language = $this->player->getLanguage();
-		$parameters = array_map(fn(string|Translatable $p) => $p instanceof Translatable ? $language->translate($p) : $p, $message->getParameters());
+		$parameters = array_map(static fn(string|Translatable $p) => $p instanceof Translatable ? $language->translate($p) : $p, $message->getParameters());
 		return [$language->translateString($message->getText(), $parameters, "pocketmine."), $parameters];
 	}
 

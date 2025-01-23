@@ -59,7 +59,7 @@ class PopulationTask extends AsyncTask{
 		$this->chunk = $chunk !== null ? FastChunkSerializer::serializeTerrain($chunk) : null;
 
 		$this->adjacentChunks = igbinary_serialize(array_map(
-			fn(?Chunk $c) => $c !== null ? FastChunkSerializer::serializeTerrain($c) : null,
+			static fn(?Chunk $c) => $c !== null ? FastChunkSerializer::serializeTerrain($c) : null,
 			$adjacentChunks
 		)) ?? throw new AssumptionFailedError("igbinary_serialize() returned null");
 
@@ -82,7 +82,7 @@ class PopulationTask extends AsyncTask{
 		 */
 		$serialChunks = igbinary_unserialize($this->adjacentChunks);
 		$chunks = array_map(
-			function(?string $serialized) : ?Chunk{
+			static function(?string $serialized) : ?Chunk{
 				if($serialized === null){
 					return null;
 				}

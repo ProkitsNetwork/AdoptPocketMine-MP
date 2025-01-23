@@ -600,14 +600,14 @@ class Server{
 			$playerPromiseResolver->resolve($player);
 		};
 
-		$playerCreationRejected = function (Translatable|string $message) use ($playerPromiseResolver, $session) : void{
+		$playerCreationRejected = static function (Translatable|string $message) use ($playerPromiseResolver, $session) : void{
 			if($session->isConnected()){
 				$session->disconnectWithError($message);
 			}
 			$playerPromiseResolver->reject();
 		};
 
-		$playerCreationSucceeded = function () use ($playerPos, $world, $createPlayer, $playerCreationRejected) : void{
+		$playerCreationSucceeded = static function () use ($playerPos, $world, $createPlayer, $playerCreationRejected) : void{
 			if($playerPos === null){ //new player or no valid position due to world not being loaded
 				$world->requestSafeSpawn()->onCompletion(
 					function(Position $spawn) use ($createPlayer, $world) : void{

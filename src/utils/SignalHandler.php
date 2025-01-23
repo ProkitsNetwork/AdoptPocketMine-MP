@@ -43,7 +43,7 @@ final class SignalHandler{
 	 */
 	public function __construct(\Closure $interruptCallback){
 		if(function_exists('sapi_windows_set_ctrl_handler')){
-			sapi_windows_set_ctrl_handler($this->interruptCallback = function(int $signo) use ($interruptCallback) : void{
+			sapi_windows_set_ctrl_handler($this->interruptCallback = static function(int $signo) use ($interruptCallback) : void{
 				if($signo === PHP_WINDOWS_EVENT_CTRL_C || $signo === PHP_WINDOWS_EVENT_CTRL_BREAK){
 					$interruptCallback();
 				}
@@ -54,7 +54,7 @@ final class SignalHandler{
 				SIGINT,
 				SIGHUP
 			] as $signal){
-				pcntl_signal($signal, $this->interruptCallback = fn(int $signo) => $interruptCallback());
+				pcntl_signal($signal, $this->interruptCallback = static fn(int $signo) => $interruptCallback());
 			}
 			pcntl_async_signals(true);
 		}else{

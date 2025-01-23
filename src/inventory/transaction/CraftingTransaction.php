@@ -146,7 +146,7 @@ class CraftingTransaction extends InventoryTransaction{
 		//Most picky ingredients first - avoid picky ingredient getting their items stolen by wildcard ingredients
 		//TODO: this is still insufficient when multiple wildcard ingredients have overlaps, but we don't (yet) have to
 		//worry about those.
-		uasort($recipeIngredientMatches, fn(array $a, array $b) => count($a) <=> count($b));
+		uasort($recipeIngredientMatches, static fn(array $a, array $b) => count($a) <=> count($b));
 
 		foreach($recipeIngredientMatches as $ingredientIndex => $acceptedItems){
 			$needed = $expectedIterations;

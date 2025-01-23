@@ -714,7 +714,7 @@ class LevelDB extends BaseWorldProvider implements WritableWorldProvider{
 		$entities = [];
 		if(($entityData = $this->db->get($index . ChunkDataKey::ENTITIES)) !== false && $entityData !== ""){
 			try{
-				$entities = array_map(fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($entityData));
+				$entities = array_map(static fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($entityData));
 			}catch(NbtDataException $e){
 				throw new CorruptedChunkException($e->getMessage(), 0, $e);
 			}
@@ -723,7 +723,7 @@ class LevelDB extends BaseWorldProvider implements WritableWorldProvider{
 		$tiles = [];
 		if(($tileData = $this->db->get($index . ChunkDataKey::BLOCK_ENTITIES)) !== false && $tileData !== ""){
 			try{
-				$tiles = array_map(fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($tileData));
+				$tiles = array_map(static fn(TreeRoot $root) => $root->mustGetCompoundTag(), $nbt->readMultiple($tileData));
 			}catch(NbtDataException $e){
 				throw new CorruptedChunkException($e->getMessage(), 0, $e);
 			}
@@ -803,7 +803,7 @@ class LevelDB extends BaseWorldProvider implements WritableWorldProvider{
 	private function writeTags(array $targets, string $index, \LevelDBWriteBatch $write) : void{
 		if(count($targets) > 0){
 			$nbt = new LittleEndianNbtSerializer();
-			$write->put($index, $nbt->writeMultiple(array_map(fn(CompoundTag $tag) => new TreeRoot($tag), $targets)));
+			$write->put($index, $nbt->writeMultiple(array_map(static fn(CompoundTag $tag) => new TreeRoot($tag), $targets)));
 		}else{
 			$write->delete($index);
 		}

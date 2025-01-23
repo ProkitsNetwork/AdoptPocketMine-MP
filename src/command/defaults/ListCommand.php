@@ -45,9 +45,9 @@ class ListCommand extends VanillaCommand{
 	}
 
 	public function execute(CommandSender $sender, string $commandLabel, array $args){
-		$playerNames = array_map(function(Player $player) : string{
+		$playerNames = array_map(static function(Player $player) : string{
 			return $player->getName();
-		}, array_filter($sender->getServer()->getOnlinePlayers(), function(Player $player) use ($sender) : bool{
+		}, array_filter($sender->getServer()->getOnlinePlayers(), static function(Player $player) use ($sender) : bool{
 			return !($sender instanceof Player) || $sender->canSee($player);
 		}));
 		sort($playerNames, SORT_STRING);

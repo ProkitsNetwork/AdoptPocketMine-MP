@@ -63,7 +63,7 @@ class Language{
 			$allFiles = scandir($path, SCANDIR_SORT_NONE);
 
 			if($allFiles !== false){
-				$files = array_filter($allFiles, function(string $filename) : bool{
+				$files = array_filter($allFiles, static function(string $filename) : bool{
 					return str_ends_with($filename, ".ini");
 				});
 

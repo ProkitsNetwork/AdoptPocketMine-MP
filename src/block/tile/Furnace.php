@@ -202,7 +202,7 @@ abstract class Furnace extends Spawnable implements Container, Nameable{
 			$this->remainingFuelTime = $this->cookTime = $this->maxFuelTime = 0;
 		}
 
-		$viewers = array_map(fn(Player $p) => $p->getNetworkSession()->getInvManager(), $this->inventory->getViewers());
+		$viewers = array_map(static fn(Player $p) => $p->getNetworkSession()->getInvManager(), $this->inventory->getViewers());
 		foreach($viewers as $v){
 			if($v === null){
 				continue;

@@ -70,7 +70,7 @@ trait LegacyAnvilChunkTrait{
 			throw new CorruptedChunkException("'Level' key is missing from chunk NBT");
 		}
 
-		$makeBiomeArray = function(string $biomeIds) : PalettedBlockArray{
+		$makeBiomeArray = static function(string $biomeIds) : PalettedBlockArray{
 			if(strlen($biomeIds) !== 256){
 				throw new CorruptedChunkException("Expected biome array to be exactly 256 bytes, got " . strlen($biomeIds));
 			}

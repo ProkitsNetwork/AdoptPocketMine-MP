@@ -61,7 +61,7 @@ class BanListCommand extends VanillaCommand{
 			$args[0] = "players";
 		}
 
-		$list = array_map(function(BanEntry $entry) : string{
+		$list = array_map(static function(BanEntry $entry) : string{
 			return $entry->getName();
 		}, $list->getEntries());
 		sort($list, SORT_STRING);

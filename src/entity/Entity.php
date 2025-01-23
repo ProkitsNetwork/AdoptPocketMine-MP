@@ -1507,7 +1507,7 @@ abstract class Entity{
 			$this->location->yaw,
 			$this->location->yaw, //TODO: head yaw
 			$this->location->yaw, //TODO: body yaw (wtf mojang?)
-			array_map(function(Attribute $attr) : NetworkAttribute{
+			array_map(static function(Attribute $attr) : NetworkAttribute{
 				return new NetworkAttribute($attr->getId(), $attr->getMinValue(), $attr->getMaxValue(), $attr->getValue(), $attr->getDefaultValue(), []);
 			}, $this->attributeMap->getAll()),
 			$this->getAllNetworkData(),
@@ -1709,7 +1709,7 @@ abstract class Entity{
 		$targets = $targets ?? $this->getViewers();
 
 		if($animation instanceof ItemAnimation){
-			TypeConverter::broadcastByTypeConverter($targets, function(TypeConverter $typeConverter) use ($animation) : array{
+			TypeConverter::broadcastByTypeConverter($targets, static function(TypeConverter $typeConverter) use ($animation) : array{
 				$animation->setItemTranslator($typeConverter->getItemTranslator());
 				return $animation->encode();
 			});

@@ -187,7 +187,7 @@ final class Utils{
 	 * @phpstan-return ($array is list<TValue> ? list<TValue> : array<TKey, TValue>)
 	 */
 	public static function cloneObjectArray(array $array) : array{
-		return array_map(fn(object $o) => clone $o, $array);
+		return array_map(static fn(object $o) => clone $o, $array);
 	}
 
 	/**

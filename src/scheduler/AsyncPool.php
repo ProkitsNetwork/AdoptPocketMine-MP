@@ -297,7 +297,7 @@ class AsyncPool{
 	 * @phpstan-return array<int, int>
 	 */
 	public function getTaskQueueSizes() : array{
-		return array_map(function(AsyncPoolWorkerEntry $entry) : int{ return $entry->tasks->count(); }, $this->workers);
+		return array_map(static function(AsyncPoolWorkerEntry $entry) : int{ return $entry->tasks->count(); }, $this->workers);
 	}
 
 	public function shutdownUnusedWorkers() : int{

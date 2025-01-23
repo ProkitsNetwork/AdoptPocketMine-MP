@@ -56,7 +56,7 @@ final class RuntimeEnumMetadata{
 	public function __construct(
 		array $members
 	){
-		usort($members, fn(\UnitEnum $a, \UnitEnum $b) => $a->name <=> $b->name); //sort by name to ensure consistent ordering (and thus consistent bit assignments)
+		usort($members, static fn(\UnitEnum $a, \UnitEnum $b) => $a->name <=> $b->name); //sort by name to ensure consistent ordering (and thus consistent bit assignments)
 
 		$this->bits = (int) ceil(log(count($members), 2));
 		$this->intToEnum = $members; //usort strips keys so this is already a list

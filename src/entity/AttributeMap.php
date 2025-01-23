@@ -48,7 +48,7 @@ class AttributeMap{
 	 * @return Attribute[]
 	 */
 	public function needSend() : array{
-		return array_filter($this->attributes, function(Attribute $attribute) : bool{
+		return array_filter($this->attributes, static function(Attribute $attribute) : bool{
 			return $attribute->isSyncable() && $attribute->isDesynchronized();
 		});
 	}

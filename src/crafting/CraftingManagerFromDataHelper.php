@@ -114,7 +114,7 @@ final class CraftingManagerFromDataHelper{
 			$blockStatesTag = $blockStatesRaw === null ?
 				[] :
 				(new LittleEndianNbtSerializer())
-					->read(ErrorToExceptionHandler::trapAndRemoveFalse(fn() => base64_decode($blockStatesRaw, true)))
+					->read(ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => base64_decode($blockStatesRaw, true)))
 					->mustGetCompoundTag()
 					->getValue();
 			$blockStateData = BlockStateData::current($blockName, $blockStatesTag);
@@ -123,7 +123,7 @@ final class CraftingManagerFromDataHelper{
 		}
 
 		$nbt = $nbtRaw === null ? null : (new LittleEndianNbtSerializer())
-			->read(ErrorToExceptionHandler::trapAndRemoveFalse(fn() => base64_decode($nbtRaw, true)))
+			->read(ErrorToExceptionHandler::trapAndRemoveFalse(static fn() => base64_decode($nbtRaw, true)))
 			->mustGetCompoundTag();
 
 		$itemStackData = new SavedItemStackData(

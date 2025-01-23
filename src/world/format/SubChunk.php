@@ -153,7 +153,7 @@ class SubChunk{
 	}
 
 	public function __clone(){
-		$this->blockLayers = array_map(function(PalettedBlockArray $array) : PalettedBlockArray{
+		$this->blockLayers = array_map(static function(PalettedBlockArray $array) : PalettedBlockArray{
 			return clone $array;
 		}, $this->blockLayers);
 		$this->biomes = clone $this->biomes;
