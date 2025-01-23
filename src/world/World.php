@@ -114,6 +114,7 @@ use pocketmine\world\particle\Particle;
 use pocketmine\world\particle\ProtocolParticle;
 use pocketmine\world\sound\BlockPlaceSound;
 use pocketmine\world\sound\BlockSound;
+use pocketmine\world\sound\ProtocolSound;
 use pocketmine\world\sound\Sound;
 use pocketmine\world\utils\SubChunkExplorer;
 use pocketmine\YmlServerProperties;
@@ -124,6 +125,7 @@ use function array_keys;
 use function array_map;
 use function array_merge;
 use function array_sum;
+use function array_values;
 use function assert;
 use function cos;
 use function count;
@@ -179,6 +181,9 @@ class World implements ChunkManager{
 
 	public const DEFAULT_TICKED_BLOCKS_PER_SUBCHUNK_PER_TICK = 3;
 
+	//TODO: this could probably do with being a lot bigger
+	private const BLOCK_CACHE_SIZE_CAP = 2048;
+
 	/**
 	 * @var Player[] entity runtime ID => Player
 	 * @phpstan-var array<int, Player>
@@ -214,6 +219,7 @@ class World implements ChunkManager{
 	 * @phpstan-var array<ChunkPosHash, array<ChunkBlockPosHash, Block>>
 	 */
 	private array $blockCache = [];
+	private int $blockCacheSize = 0;
 	/**
 	 * @var AxisAlignedBB[][][] chunkHash => [relativeBlockHash => AxisAlignedBB[]]
 	 * @phpstan-var array<ChunkPosHash, array<ChunkBlockPosHash, list<AxisAlignedBB>>>
@@ -373,7 +379,7 @@ class World implements ChunkManager{
 
 	private bool $doingTick = false;
 
-	/** @phpstan-var class-string<\pocketmine\world\generator\Generator> */
+	/** @phpstan-var class-string<generator\Generator> */
 	private string $generator;
 
 	private bool $unloaded = false;
@@ -673,6 +679,7 @@ class World implements ChunkManager{
 
 		$this->provider->close();
 		$this->blockCache = [];
+		$this->blockCacheSize = 0;
 		$this->blockCollisionBoxCache = [];
 
 		$this->unloaded = true;
@@ -693,7 +700,6 @@ class World implements ChunkManager{
 	 * Used for broadcasting sounds and particles with specific targets.
 	 *
 	 * @param Player[] $allowed
-	 * @phpstan-param list<Player> $allowed
 	 *
 	 * @return array<int, Player>
 	 */
@@ -727,11 +733,19 @@ class World implements ChunkManager{
 			$players = $ev->getRecipients();
 		}
 
-		if($sound instanceof BlockSound){
-			$closure = function(TypeConverter $typeConverter) use ($sound, $pos) : array{
-				$sound->setBlockTranslator($typeConverter->getBlockTranslator());
-				return $sound->encode($pos);
-			};
+		if(($blockSound = ($sound instanceof BlockSound)) || $sound instanceof ProtocolSound){
+			if($blockSound){
+				$closure = function(TypeConverter $typeConverter) use ($sound, $pos) : array{
+					$sound->setBlockTranslator($typeConverter->getBlockTranslator());
+					return $sound->encode($pos);
+				};
+			}else{
+				/** @var ProtocolSound $sound */
+				$closure = function(TypeConverter $typeConverter) use ($sound, $pos) : array{
+					$sound->setProtocolId($typeConverter->getProtocolId());
+					return $sound->encode($pos);
+				};
+			}
 
 			if($players === $this->getViewersForPosition($pos)){
 				$this->broadcastPacketToViewersByTypeConverter($pos, $closure);
@@ -1171,7 +1185,6 @@ class World implements ChunkManager{
 
 	/**
 	 * @param Vector3[] $blocks
-	 * @phpstan-param list<Vector3> $blocks
 	 *
 	 * @return ClientboundPacket[]
 	 * @phpstan-return list<ClientboundPacket>
@@ -1225,13 +1238,16 @@ class World implements ChunkManager{
 	public function clearCache(bool $force = false) : void{
 		if($force){
 			$this->blockCache = [];
+			$this->blockCacheSize = 0;
 			$this->blockCollisionBoxCache = [];
 		}else{
-			$count = 0;
+			//Recalculate this when we're asked - blockCacheSize may be higher than the real size
+			$this->blockCacheSize = 0;
 			foreach($this->blockCache as $list){
-				$count += count($list);
-				if($count > 2048){
+				$this->blockCacheSize += count($list);
+				if($this->blockCacheSize > self::BLOCK_CACHE_SIZE_CAP){
 					$this->blockCache = [];
+					$this->blockCacheSize = 0;
 					break;
 				}
 			}
@@ -1239,11 +1255,24 @@ class World implements ChunkManager{
 			$count = 0;
 			foreach($this->blockCollisionBoxCache as $list){
 				$count += count($list);
-				if($count > 2048){
+				if($count > self::BLOCK_CACHE_SIZE_CAP){
 					//TODO: Is this really the best logic?
 					$this->blockCollisionBoxCache = [];
 					break;
 				}
+			}
+		}
+	}
+
+	private function trimBlockCache() : void{
+		$before = $this->blockCacheSize;
+		//Since PHP maintains key order, earliest in foreach should be the oldest entries
+		//Older entries are less likely to be hot, so destroying these should usually have the lowest impact on performance
+		foreach($this->blockCache as $chunkHash => $blocks){
+			unset($this->blockCache[$chunkHash]);
+			$this->blockCacheSize -= count($blocks);
+			if($this->blockCacheSize < self::BLOCK_CACHE_SIZE_CAP){
+				break;
 			}
 		}
 	}
@@ -1430,7 +1459,7 @@ class World implements ChunkManager{
 					 * TODO: phpstan can't infer these types yet :(
 					 * @phpstan-var array<int, LightArray> $blockLight
 					 * @phpstan-var array<int, LightArray> $skyLight
-					 * @phpstan-var array<int, int>        $heightMap
+					 * @phpstan-var non-empty-list<int>    $heightMap
 					 */
 					if($this->unloaded || ($chunk = $this->getChunk($chunkX, $chunkZ)) === null || $chunk->isLightPopulated() === true){
 						return;
@@ -1526,8 +1555,8 @@ class World implements ChunkManager{
 				$this->provider->saveChunk($chunkX, $chunkZ, new ChunkData(
 					$chunk->getSubChunks(),
 					$chunk->isPopulated(),
-					array_map(fn(Entity $e) => $e->saveNBT(), array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk())),
-					array_map(fn(Tile $t) => $t->saveNBT(), $chunk->getTiles()),
+					array_map(fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($chunkX, $chunkZ), fn(Entity $e) => $e->canSaveWithChunk()))),
+					array_map(fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
 				), $chunk->getTerrainDirtyFlags());
 				$chunk->clearTerrainDirtyFlags();
 			}
@@ -1632,6 +1661,7 @@ class World implements ChunkManager{
 	 * Larger AABBs (>= 2 blocks on any axis) are not accounted for.
 	 *
 	 * @return AxisAlignedBB[]
+	 * @phpstan-return list<AxisAlignedBB>
 	 */
 	private function getBlockCollisionBoxesForCell(int $x, int $y, int $z) : array{
 		$block = $this->getBlockAt($x, $y, $z);
@@ -2012,6 +2042,10 @@ class World implements ChunkManager{
 
 		if($addToCache && $relativeBlockHash !== null){
 			$this->blockCache[$chunkHash][$relativeBlockHash] = $block;
+
+			if(++$this->blockCacheSize >= self::BLOCK_CACHE_SIZE_CAP){
+				$this->trimBlockCache();
+			}
 		}
 
 		return $block;
@@ -2058,6 +2092,7 @@ class World implements ChunkManager{
 		$relativeBlockHash = World::chunkBlockHash($x, $y, $z);
 
 		unset($this->blockCache[$chunkHash][$relativeBlockHash]);
+		$this->blockCacheSize--;
 		unset($this->blockCollisionBoxCache[$chunkHash][$relativeBlockHash]);
 		//blocks like fences have collision boxes that reach into neighbouring blocks, so we need to invalidate the
 		//caches for those blocks as well
@@ -2114,7 +2149,6 @@ class World implements ChunkManager{
 	 * @phpstan-return list<ExperienceOrb>
 	 */
 	public function dropExperience(Vector3 $pos, int $amount) : array{
-		/** @var ExperienceOrb[] $orbs */
 		$orbs = [];
 
 		foreach(ExperienceOrb::splitIntoOrbSizes($amount) as $split){
@@ -2670,6 +2704,7 @@ class World implements ChunkManager{
 
 		$this->chunks[$chunkHash] = $chunk;
 
+		$this->blockCacheSize -= count($this->blockCache[$chunkHash] ?? []);
 		unset($this->blockCache[$chunkHash]);
 		unset($this->blockCollisionBoxCache[$chunkHash]);
 		unset($this->changedBlocks[$chunkHash]);
@@ -2964,6 +2999,8 @@ class World implements ChunkManager{
 			$this->logger->debug("Chunk $x $z has been upgraded, will be saved at the next autosave opportunity");
 		}
 		$this->chunks[$chunkHash] = $chunk;
+
+		$this->blockCacheSize -= count($this->blockCache[$chunkHash] ?? []);
 		unset($this->blockCache[$chunkHash]);
 		unset($this->blockCollisionBoxCache[$chunkHash]);
 
@@ -3100,8 +3137,8 @@ class World implements ChunkManager{
 					$this->provider->saveChunk($x, $z, new ChunkData(
 						$chunk->getSubChunks(),
 						$chunk->isPopulated(),
-						array_map(fn(Entity $e) => $e->saveNBT(), array_filter($this->getChunkEntities($x, $z), fn(Entity $e) => $e->canSaveWithChunk())),
-						array_map(fn(Tile $t) => $t->saveNBT(), $chunk->getTiles()),
+						array_map(fn(Entity $e) => $e->saveNBT(), array_values(array_filter($this->getChunkEntities($x, $z), fn(Entity $e) => $e->canSaveWithChunk()))),
+						array_map(fn(Tile $t) => $t->saveNBT(), array_values($chunk->getTiles())),
 					), $chunk->getTerrainDirtyFlags());
 				}finally{
 					$this->timings->syncChunkSave->stopTiming();
@@ -3123,6 +3160,7 @@ class World implements ChunkManager{
 		}
 
 		unset($this->chunks[$chunkHash]);
+		$this->blockCacheSize -= count($this->blockCache[$chunkHash] ?? []);
 		unset($this->blockCache[$chunkHash]);
 		unset($this->blockCollisionBoxCache[$chunkHash]);
 		unset($this->changedBlocks[$chunkHash]);
@@ -3163,6 +3201,7 @@ class World implements ChunkManager{
 	 * @phpstan-return Promise<Position>
 	 */
 	public function requestSafeSpawn(?Vector3 $spawn = null) : Promise{
+		/** @phpstan-var PromiseResolver<Position> $resolver */
 		$resolver = new PromiseResolver();
 		$spawn ??= $this->getSpawnLocation();
 		/*
@@ -3341,6 +3380,7 @@ class World implements ChunkManager{
 	private function enqueuePopulationRequest(int $chunkX, int $chunkZ, ?ChunkLoader $associatedChunkLoader) : Promise{
 		$chunkHash = World::chunkHash($chunkX, $chunkZ);
 		$this->addChunkHashToPopulationRequestQueue($chunkHash);
+		/** @phpstan-var PromiseResolver<Chunk> $resolver */
 		$resolver = $this->chunkPopulationRequestMap[$chunkHash] = new PromiseResolver();
 		if($associatedChunkLoader === null){
 			$temporaryLoader = new class implements ChunkLoader{};

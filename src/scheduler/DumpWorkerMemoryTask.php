@@ -24,9 +24,8 @@ declare(strict_types=1);
 namespace pocketmine\scheduler;
 
 use GlobalLogger;
-use pmmp\thread\Runnable;
 use pmmp\thread\Thread as NativeThread;
-use pocketmine\MemoryManager;
+use pocketmine\MemoryDump;
 use pocketmine\utils\Utils;
 use PrefixedLogger;
 use ReflectionClass;
@@ -35,7 +34,7 @@ use Symfony\Component\Filesystem\Path;
 /**
  * Task used to dump memory from AsyncWorkers
  */
-class DumpWorkerMemoryRunnable extends Runnable{
+class DumpWorkerMemoryTask extends AsyncTask{
 	public function __construct(
 		private int $id,
 		private string $outputFolder,
@@ -43,7 +42,7 @@ class DumpWorkerMemoryRunnable extends Runnable{
 		private int $maxStringSize
 	){}
 
-	public function run() : void{
+	public function onRun() : void{
 		$worker = NativeThread::getCurrentThread();
 		Utils::assumeNotFalse($worker !== null);
 		if($worker instanceof AsyncWorker){
@@ -57,7 +56,7 @@ class DumpWorkerMemoryRunnable extends Runnable{
 				$logger = new PrefixedLogger($logger, $idName);
 			}
 		}
-		MemoryManager::dumpMemory(
+		MemoryDump::dumpMemory(
 			$worker,
 			$path,
 			$this->maxNesting,
