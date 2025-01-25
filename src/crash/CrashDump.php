@@ -245,7 +245,7 @@ class CrashDump{
 			}
 		}
 
-		$this->data->trace = array_map(array: $error["trace"], callback: static fn(ThreadCrashInfoFrame $frame) => $frame->getPrintableFrame());
+		$this->data->trace = array_map(array: $error["trace"], callback: static fn($frame) => $frame instanceof ThreadCrashInfoFrame ? $frame->getPrintableFrame() : (string) $frame);
 		$this->data->thread = $error["thread"];
 	}
 
