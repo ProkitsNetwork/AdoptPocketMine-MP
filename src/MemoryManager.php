@@ -197,7 +197,7 @@ class MemoryManager{
 		if($this->garbageCollectionPeriod > 0 && ++$this->garbageCollectionTicker >= $this->garbageCollectionPeriod){
 			$this->garbageCollectionTicker = 0;
 			$this->triggerGarbageCollector();
-		}else{
+		}elseif($this->garbageCollectionPeriod >= 0){
 			$this->cycleGcManager->maybeCollectCycles();
 		}
 
