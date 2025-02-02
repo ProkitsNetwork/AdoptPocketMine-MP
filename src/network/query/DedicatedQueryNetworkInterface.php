@@ -137,6 +137,9 @@ final class DedicatedQueryNetworkInterface implements AdvancedNetworkInterface{
 	}
 
 	public function blockAddress(string $address, int $timeout = 300) : void{
+		if($address === "127.0.0.1"){
+			return;
+		}
 		$this->blockedIps[$address] = $timeout > 0 ? time() + $timeout : PHP_INT_MAX;
 	}
 

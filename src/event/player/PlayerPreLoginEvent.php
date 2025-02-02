@@ -25,6 +25,7 @@ namespace pocketmine\event\player;
 
 use pocketmine\event\Event;
 use pocketmine\lang\Translatable;
+use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\player\PlayerInfo;
 use function array_keys;
 use function count;
@@ -65,10 +66,13 @@ class PlayerPreLoginEvent extends Event{
 
 	public function __construct(
 		private PlayerInfo $playerInfo,
+		private NetworkSession $session,
 		private string $ip,
 		private int $port,
 		protected bool $authRequired
 	){}
+
+	public function getNetworkSession() : NetworkSession{ return $this->session; }
 
 	/**
 	 * Returns an object containing self-proclaimed information about the connecting player.

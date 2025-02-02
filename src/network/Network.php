@@ -159,6 +159,9 @@ class Network{
 	 * Blocks an IP address from the main interface. Setting timeout to -1 will block it forever
 	 */
 	public function blockAddress(string $address, int $timeout = 300) : void{
+		if($address === "127.0.0.1"){
+			return;
+		}
 		$this->bannedIps[$address] = $timeout > 0 ? time() + $timeout : PHP_INT_MAX;
 		foreach($this->advancedInterfaces as $interface){
 			$interface->blockAddress($address, $timeout);

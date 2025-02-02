@@ -313,6 +313,9 @@ class NetworkSession{
 		return $this->connected && !$this->disconnectGuard;
 	}
 
+	/** @internal */
+	public function setIp(string $ip) : void{ $this->ip = $ip; }
+
 	public function getIp() : string{
 		return $this->ip;
 	}

@@ -74,7 +74,7 @@ class LoginPacketHandler extends PacketHandler{
 			throw new PacketHandlingException("Invalid login UUID");
 		}
 
-		$clientData = $this->parseClientData($packet->clientDataJwt);
+		[$xuid, $clientData] = $this->parseClientData($packet->clientDataJwt);
 		try{
 			$skinData = ClientDataToSkinDataHelper::fromClientData($clientData);
 		}catch(\InvalidArgumentException $e){
@@ -82,7 +82,7 @@ class LoginPacketHandler extends PacketHandler{
 		}
 		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
 			$skinData,
-			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
+			function(?Skin $skin, ?string $error) use ($xuid, $packet, $clientData, $extraData){
 				if(!$this->session->isConnected()){
 					return;
 				}
@@ -96,20 +96,20 @@ class LoginPacketHandler extends PacketHandler{
 				if($skin === null){
 					throw new AssumptionFailedError("This should never happen...");
 				}
-				$this->onSkinDataProcessed($extraData, $clientData, $skin, $packet);
+				$this->onSkinDataProcessed($extraData, $clientData, $skin, $packet, $xuid);
 			},
 		));
 		return true;
 	}
 
-	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
+	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet, ?string $xuid) : void{
 		$uuid = Uuid::fromString($extraData->identity);
 		$arrClientData = (array) $clientData;
 		$arrClientData["TitleID"] = $extraData->titleId;
 
-		if($extraData->XUID !== ""){
+		if($xuid !== null || $extraData->XUID !== ""){
 			$playerInfo = new XboxLivePlayerInfo(
-				$extraData->XUID,
+				$xuid ?? $extraData->XUID,
 				$extraData->displayName,
 				$uuid,
 				$skin,
@@ -129,9 +129,10 @@ class LoginPacketHandler extends PacketHandler{
 
 		$ev = new PlayerPreLoginEvent(
 			$playerInfo,
+			$this->session,
 			$this->session->getIp(),
 			$this->session->getPort(),
-			$this->server->requiresAuthentication()
+			(!$playerInfo instanceof XboxLivePlayerInfo) && $this->server->requiresAuthentication()
 		);
 		if($this->server->getNetwork()->getValidConnectionCount() > $this->server->getMaxPlayers()){
 			$ev->setKickFlag(PlayerPreLoginEvent::KICK_FLAG_SERVER_FULL, KnownTranslationFactory::disconnectionScreen_serverFull());
@@ -203,8 +204,9 @@ class LoginPacketHandler extends PacketHandler{
 
 	/**
 	 * @throws PacketHandlingException
+	 * @return list{string|null,ClientData}
 	 */
-	protected function parseClientData(string $clientDataJwt) : ClientData{
+	protected function parseClientData(string $clientDataJwt) : array{
 		try{
 			[, $clientDataClaims, ] = JwtUtils::parse($clientDataJwt);
 		}catch(JwtException $e){
@@ -216,12 +218,22 @@ class LoginPacketHandler extends PacketHandler{
 		$mapper->bExceptionOnMissingData = true;
 		$mapper->bExceptionOnUndefinedProperty = true;
 		$mapper->bStrictObjectTypeChecking = true;
+		$xuid = null;
+		if(
+			isset($clientDataClaims["OuranosXUID"], $clientDataClaims["OuranosIP"]) && is_string($clientDataClaims["OuranosXUID"]) && is_string($clientDataClaims["OuranosIP"])
+		){
+			$xuid = $clientDataClaims["OuranosXUID"];
+			$ip = $clientDataClaims["OuranosIP"];
+			$this->session->setIp($ip);
+			$xuid = is_numeric(trim($xuid)) ? trim($xuid) : null;
+			unset($clientDataClaims["OuranosXUID"], $clientDataClaims["OuranosIP"]);
+		}
 		try{
 			$clientData = $mapper->map($clientDataClaims, new ClientData());
 		}catch(\JsonMapper_Exception $e){
 			throw PacketHandlingException::wrap($e);
 		}
-		return $clientData;
+		return [$xuid, $clientData];
 	}
 
 	/**
