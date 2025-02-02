@@ -1,0 +1,55 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to method ReflectionClass\<object\>\:\:isSubclassOf\(\) with ''pocketmine\\\\event\\\\Event'' will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: ../../../src/plugin/PluginManager.php
+
+		-
+			message: '#^PHPDoc tag @var with type ReflectionClass\<pocketmine\\event\\Event\> is not subtype of native type \*NEVER\*\.$#'
+			identifier: varTag.nativeType
+			count: 1
+			path: ../../../src/plugin/PluginManager.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, ReflectionClass\<pocketmine\\event\\Event\>\|null\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteEvent\>, null\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, ReflectionClass\<pocketmine\\event\\Event\>\|null\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteExtendsAbstractEvent\>, null\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, ReflectionClass\<pocketmine\\event\\Event\>\|null\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteExtendsAllowHandleEvent\>, ReflectionClass\<pocketmine\\event\\fixtures\\TestAbstractAllowHandleEvent\>\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, ReflectionClass\<pocketmine\\event\\Event\>\|null\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteExtendsConcreteEvent\>, ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteEvent\>\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, bool, string\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestAbstractAllowHandleEvent\>, true, ''abstract event…''\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, bool, string\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestAbstractEvent\>, false, ''abstract event…''\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
+
+		-
+			message: '#^Generator expects value type array\{ReflectionClass\<pocketmine\\event\\Event\>, bool, string\}, array\{ReflectionClass\<pocketmine\\event\\fixtures\\TestConcreteEvent\>, true, ''''\} given\.$#'
+			identifier: generator.valueType
+			count: 1
+			path: ../../../tests/phpunit/event/HandlerListManagerTest.php
