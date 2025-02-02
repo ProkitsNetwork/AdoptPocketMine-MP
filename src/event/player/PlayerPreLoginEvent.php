@@ -72,7 +72,7 @@ class PlayerPreLoginEvent extends Event{
 		protected bool $authRequired
 	){}
 
-	public function getNetworkSession() : NetworkSession{ return $this->session; }
+	public function getSession() : NetworkSession{ return $this->session; }
 
 	/**
 	 * Returns an object containing self-proclaimed information about the connecting player.

@@ -340,7 +340,6 @@ final class ItemTypeIds{
 
 	public const FIRST_UNUSED_ITEM_ID = 20300;
 
-
 	private static int $nextDynamicId = self::FIRST_UNUSED_ITEM_ID;
 
 	/**
