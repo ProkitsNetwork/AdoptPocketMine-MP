@@ -45,6 +45,9 @@ use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
 use function is_array;
+use function is_numeric;
+use function is_string;
+use function trim;
 
 /**
  * Handles the initial login phase of the session. This handler is used as the initial state.
