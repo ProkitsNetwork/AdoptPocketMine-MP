@@ -73,8 +73,10 @@ class ProcessLoginTask extends AsyncTask{
 		array $chainJwts,
 		private string $clientDataJwt,
 		private bool $authRequired,
-		\Closure $onCompletion
+		\Closure $onCompletion,
+		bool $preAuthenticated = false
 	){
+		$this->authenticated = $preAuthenticated;
 		$this->storeLocal(self::TLS_KEY_ON_COMPLETION, $onCompletion);
 		$this->chain = igbinary_serialize($chainJwts);
 	}

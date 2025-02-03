@@ -162,7 +162,7 @@ class LoginPacketHandler extends PacketHandler{
 			return;
 		}
 
-		$this->processLogin($packet, $ev->isAuthRequired());
+		$this->processLogin($packet, $ev->isAuthRequired(),$playerInfo instanceof XboxLivePlayerInfo);
 	}
 
 	/**
@@ -245,8 +245,8 @@ class LoginPacketHandler extends PacketHandler{
 	 *
 	 * @throws \InvalidArgumentException
 	 */
-	protected function processLogin(LoginPacket $packet, bool $authRequired) : void{
-		$this->server->getAsyncPool()->submitTask(new ProcessLoginTask($packet->chainDataJwt->chain, $packet->clientDataJwt, $authRequired, $this->authCallback));
+	protected function processLogin(LoginPacket $packet, bool $authRequired, bool $previousAuthenticated) : void{
+		$this->server->getAsyncPool()->submitTask(new ProcessLoginTask($packet->chainDataJwt->chain, $packet->clientDataJwt, $authRequired, $this->authCallback, $previousAuthenticated));
 		$this->session->setHandler(null); //drop packets received during login verification
 	}
 }
