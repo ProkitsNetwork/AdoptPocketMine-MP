@@ -28,6 +28,9 @@ use pocketmine\entity\Location;
 use pocketmine\entity\projectile\FishingHook;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
+use function cos;
+use function sin;
+use const M_PI;
 
 class FishingRod extends Durable{
 
@@ -38,7 +41,6 @@ class FishingRod extends Durable{
 	public function getMaxDurability() : int{
 		return 384;
 	}
-
 
 	public function getThrowForce() : float{
 		return 0.4;
@@ -67,6 +69,6 @@ class FishingRod extends Durable{
 			$this->applyDamage(1);
 		}
 		$player->broadcastAnimation(new ArmSwingAnimation($player));
-		return ItemUseResult::SUCCESS();
+		return ItemUseResult::SUCCESS;
 	}
 }

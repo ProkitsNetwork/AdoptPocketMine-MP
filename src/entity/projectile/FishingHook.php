@@ -1,5 +1,26 @@
 <?php
 
+/*
+ *
+ *  ____            _        _   __  __ _                  __  __ ____
+ * |  _ \ ___   ___| | _____| |_|  \/  (_)_ __   ___      |  \/  |  _ \
+ * | |_) / _ \ / __| |/ / _ \ __| |\/| | | '_ \ / _ \_____| |\/| | |_) |
+ * |  __/ (_) | (__|   <  __/ |_| |  | | | | | |  __/_____| |  | |  __/
+ * |_|   \___/ \___|_|\_\___|\__|_|  |_|_|_| |_|\___|     |_|  |_|_|
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * @author PocketMine Team
+ * @link http://www.pocketmine.net/
+ *
+ *
+ */
+
+declare(strict_types=1);
+
 namespace pocketmine\entity\projectile;
 
 use pocketmine\block\VanillaBlocks;
@@ -14,6 +35,9 @@ use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\network\mcpe\protocol\types\entity\EntityIds;
 use pocketmine\player\Player;
+use pocketmine\utils\Random;
+use function abs;
+use function sqrt;
 
 class FishingHook extends Projectile{
 
@@ -39,9 +63,10 @@ class FishingHook extends Projectile{
 		$x /= $f;
 		$y /= $f;
 		$z /= $f;
-		$x = $x + $this->random->nextSignedFloat() * 0.007499999832361937 * $ff2;
-		$y = $y + $this->random->nextSignedFloat() * 0.007499999832361937 * $ff2;
-		$z = $z + $this->random->nextSignedFloat() * 0.007499999832361937 * $ff2;
+		$random = new Random();
+		$x = $x + $random->nextSignedFloat() * 0.007499999832361937 * $ff2;
+		$y = $y + $random->nextSignedFloat() * 0.007499999832361937 * $ff2;
+		$z = $z + $random->nextSignedFloat() * 0.007499999832361937 * $ff2;
 		$x *= $ff1;
 		$y *= $ff1;
 		$z *= $ff1;
@@ -89,7 +114,7 @@ class FishingHook extends Projectile{
 			}
 
 			$motion->x *= 0.9;
-			$motion->y -= $d * $this->random->nextFloat() * 0.2;
+			$motion->y -= $d * (new Random())->nextFloat() * 0.2;
 			$motion->z *= 0.9;
 			$this->setMotion($motion->multiply(0.92));
 			$handled = true;
@@ -144,7 +169,7 @@ class FishingHook extends Projectile{
 
 	public function retrieve() : void{
 		$owner = $this->getOwningEntity();
-		if($owner instanceof Player && $this->isValid()){
+		if($owner instanceof Player && $this->isAlive()){
 			$target = $this->getTargetEntity();
 			if($target !== null){
 				$owner = $owner->getPosition();
