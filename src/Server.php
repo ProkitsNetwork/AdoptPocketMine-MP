@@ -463,6 +463,10 @@ class Server{
 		return $this->asyncPool;
 	}
 
+	public function getCompressorAsyncPool() : AsyncPool {
+		return $this->compressorAsyncPool;
+	}
+
 	public function getTick() : int{
 		return $this->tickCounter;
 	}

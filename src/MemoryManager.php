@@ -215,6 +215,14 @@ class MemoryManager{
 			$pool->submitTaskToWorker(new GarbageCollectionTask(), $i);
 		}
 
+		$compressorPool = $this->server->getCompressorAsyncPool();
+		if(($w = $compressorPool->shutdownUnusedWorkers()) > 0){
+			$this->logger->debug("Shut down $w idle async pool compression workers");
+		}
+		foreach($compressorPool->getRunningWorkers() as $i){
+			$compressorPool->submitTaskToWorker(new GarbageCollectionTask(), $i);
+		}
+
 		$cycles = gc_collect_cycles();
 		gc_mem_caches();
 
