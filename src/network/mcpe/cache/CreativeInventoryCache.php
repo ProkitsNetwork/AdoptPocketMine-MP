@@ -30,7 +30,9 @@ use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CreativeContentPacket;
 use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
-use pocketmine\network\mcpe\protocol\types\inventory\CreativeContentEntry;
+use pocketmine\network\mcpe\protocol\types\inventory\CreativeGroupEntry;
+use pocketmine\network\mcpe\protocol\types\inventory\CreativeItemEntry;
+use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use pocketmine\timings\Timings;
 use pocketmine\utils\ProtocolSingletonTrait;
 use function is_string;
@@ -77,14 +79,21 @@ final class CreativeInventoryCache{
 	private function buildCreativeInventoryCache(CreativeInventory $inventory) : string{
 		Timings::$creativeContentCacheRebuild->startTiming();
 		Timings::$creativeContentCacheShade->startTiming();
-		$entries = [];
+		/** @var CreativeGroupEntry[] $groups */
+		$groups = [];
+		/** @var CreativeItemEntry[] $items */
+		$items = [];
+
 		$typeConverter = TypeConverter::getInstance($this->protocolId);
-		//creative inventory may have holes if items were unregistered - ensure network IDs used are always consistent
-		foreach($inventory->getAll() as $k => $item){
-			$entries[] = new CreativeContentEntry($k, $typeConverter->coreItemStackToNet($item));
+		foreach($inventory->getGroups() as $group){
+			$groups[] = new CreativeGroupEntry($group->categoryId, $group->categoryName, $group->icon === null ? ItemStack::null() : $typeConverter->coreItemStackToNet($group->icon));
 		}
 
-		$packet = CreativeContentPacket::create($entries);
+		//creative inventory may have holes if items were unregistered - ensure network IDs used are always consistent
+		foreach($inventory->getGroupedItems() as $k => $item){
+			$items[] = new CreativeItemEntry($k, $typeConverter->coreItemStackToNet($item->item), $item->groupId);
+		}
+		$packet = CreativeContentPacket::create($groups, $items);
 		$out = PacketSerializer::encoder($this->protocolId);
 		Timings::$creativeContentCacheShade->stopTiming();
 		NetworkSession::encodePacketTimed($out, $packet);
