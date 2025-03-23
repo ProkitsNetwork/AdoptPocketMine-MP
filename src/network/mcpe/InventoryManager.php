@@ -693,7 +693,7 @@ class InventoryManager{
 	}
 
 	public function syncCreative() : void{
-		$this->session->addToSendBuffer(CreativeInventoryCache::getInstance($this->session->getProtocolId())->getCache($this->player->getCreativeInventory()));
+		$this->session->sendDataPacket(CreativeInventoryCache::getInstance($this->session->getProtocolId())->buildPacket($this->player->getCreativeInventory(), $this->session));
 	}
 
 	/**

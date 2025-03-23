@@ -23,32 +23,30 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\cache;
 
-use pocketmine\data\FilesystemCache;
-use pocketmine\data\FilesystemCacheKey;
+use pocketmine\inventory\CreativeCategory;
 use pocketmine\inventory\CreativeInventory;
+use pocketmine\lang\Translatable;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CreativeContentPacket;
-use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\inventory\CreativeGroupEntry;
 use pocketmine\network\mcpe\protocol\types\inventory\CreativeItemEntry;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
-use pocketmine\timings\Timings;
 use pocketmine\utils\ProtocolSingletonTrait;
 use function is_string;
 use function spl_object_id;
+use const PHP_INT_MIN;
 
 final class CreativeInventoryCache{
 	use ProtocolSingletonTrait;
 
 	/**
-	 * @var string[]
-	 * @phpstan-var array<int, string>
+	 * @var CreativeInventoryCacheEntry[]
+	 * @phpstan-var array<int, CreativeInventoryCacheEntry>
 	 */
 	private array $caches = [];
 
-	public function getCache(CreativeInventory $inventory) : string{
-		$isDefault = $inventory === CreativeInventory::getInstance();
+	private function getCacheEntry(CreativeInventory $inventory) : CreativeInventoryCacheEntry{
 		$id = spl_object_id($inventory);
 		if(!isset($this->caches[$id])){
 			$inventory->getDestructorCallbacks()->add(function() use ($id) : void{
@@ -57,47 +55,99 @@ final class CreativeInventoryCache{
 			$inventory->getContentChangedCallbacks()->add(function() use ($id) : void{
 				unset($this->caches[$id]);
 			});
-			$this->caches[$id] = $this->getCraftingDataPayload($inventory,$isDefault);
+			$this->caches[$id] = $this->buildCacheEntry($inventory);
 		}
 		return $this->caches[$id];
-	}
-
-	private function getCraftingDataPayload(CreativeInventory $inventory, bool $isDefault) : string{
-		if(!$isDefault){
-			return $this->buildCreativeInventoryCache($inventory);
-		}
-		return FilesystemCache::getInstance()->getOrDefault(
-			FilesystemCacheKey::getCreativeInventory($this->protocolId),
-			fn() => $this->buildCreativeInventoryCache($inventory),
-			static fn($val) => is_string($val)
-		);
 	}
 
 	/**
 	 * Rebuild the cache for the given inventory.
 	 */
-	private function buildCreativeInventoryCache(CreativeInventory $inventory) : string{
-		Timings::$creativeContentCacheRebuild->startTiming();
-		Timings::$creativeContentCacheShade->startTiming();
-		/** @var CreativeGroupEntry[] $groups */
+	private function buildCacheEntry(CreativeInventory $inventory) : CreativeInventoryCacheEntry{
+		$categories = [];
 		$groups = [];
-		/** @var CreativeItemEntry[] $items */
-		$items = [];
 
-		$typeConverter = TypeConverter::getInstance($this->protocolId);
-		foreach($inventory->getGroups() as $group){
-			$groups[] = new CreativeGroupEntry($group->categoryId, $group->categoryName, $group->icon === null ? ItemStack::null() : $typeConverter->coreItemStackToNet($group->icon));
+		$typeConverter = TypeConverter::getInstance($this->getProtocolId());
+
+		$nextIndex = 0;
+		$groupIndexes = [];
+		$itemGroupIndexes = [];
+
+		foreach($inventory->getAllEntries() as $k => $entry){
+			$group = $entry->getGroup();
+			$category = $entry->getCategory();
+			if($group === null){
+				$groupId = PHP_INT_MIN;
+			}else{
+				$groupId = spl_object_id($group);
+				unset($groupIndexes[$category->name][PHP_INT_MIN]); //start a new anonymous group for this category
+			}
+
+			//group object may be reused by multiple categories
+			if(!isset($groupIndexes[$category->name][$groupId])){
+				$groupIndexes[$category->name][$groupId] = $nextIndex++;
+				$categories[] = $category;
+				$groups[] = $group;
+			}
+			$itemGroupIndexes[$k] = $groupIndexes[$category->name][$groupId];
 		}
 
 		//creative inventory may have holes if items were unregistered - ensure network IDs used are always consistent
-		foreach($inventory->getGroupedItems() as $k => $item){
-			$items[] = new CreativeItemEntry($k, $typeConverter->coreItemStackToNet($item->item), $item->groupId);
+		$items = [];
+		foreach($inventory->getAllEntries() as $k => $entry){
+			$items[] = new CreativeItemEntry(
+				$k,
+				$typeConverter->coreItemStackToNet($entry->getItem()),
+				$itemGroupIndexes[$k]
+			);
 		}
-		$packet = CreativeContentPacket::create($groups, $items);
-		$out = PacketSerializer::encoder($this->protocolId);
-		Timings::$creativeContentCacheShade->stopTiming();
-		NetworkSession::encodePacketTimed($out, $packet);
-		Timings::$creativeContentCacheRebuild->stopTiming();
-		return $out->getBuffer();
+
+		return new CreativeInventoryCacheEntry($categories, $groups, $items);
+	}
+
+	public function buildPacket(CreativeInventory $inventory, NetworkSession $session) : CreativeContentPacket{
+		$player = $session->getPlayer() ?? throw new \LogicException("Cannot prepare creative data for a session without a player");
+		$language = $player->getLanguage();
+		$forceLanguage = $player->getServer()->isLanguageForced();
+		$typeConverter = $session->getTypeConverter();
+		$cachedEntry = $this->getCacheEntry($inventory);
+		$translate = function(Translatable|string $translatable) use ($session, $language, $forceLanguage) : string{
+			if(is_string($translatable)){
+				$message = $translatable;
+			}elseif(!$forceLanguage){
+				[$message,] = $session->prepareClientTranslatableMessage($translatable);
+			}else{
+				$message = $language->translate($translatable);
+			}
+			return $message;
+		};
+
+		$groupEntries = [];
+		foreach($cachedEntry->categories as $index => $category){
+			$group = $cachedEntry->groups[$index];
+			$categoryId = match ($category) {
+				CreativeCategory::CONSTRUCTION => CreativeContentPacket::CATEGORY_CONSTRUCTION,
+				CreativeCategory::NATURE => CreativeContentPacket::CATEGORY_NATURE,
+				CreativeCategory::EQUIPMENT => CreativeContentPacket::CATEGORY_EQUIPMENT,
+				CreativeCategory::ITEMS => CreativeContentPacket::CATEGORY_ITEMS
+			};
+			if($group === null){
+				$groupEntries[] = new CreativeGroupEntry($categoryId, "", ItemStack::null());
+			}else{
+				$groupIcon = $group->getIcon();
+				//TODO: HACK! In 1.21.60, Workaround glitchy behaviour when an item is used as an icon for a group it
+				//doesn't belong to. Without this hack, both instances of the item will show a +, but neither of them
+				//will actually expand the group work correctly.
+				$groupIcon->getNamedTag()->setInt("___GroupBugWorkaround___", $index);
+				$groupName = $group->getName();
+				$groupEntries[] = new CreativeGroupEntry(
+					$categoryId,
+					$translate($groupName),
+					$typeConverter->coreItemStackToNet($groupIcon)
+				);
+			}
+		}
+
+		return CreativeContentPacket::create($groupEntries, $cachedEntry->items);
 	}
 }
