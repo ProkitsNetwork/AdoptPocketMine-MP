@@ -31,8 +31,8 @@ use function str_repeat;
 use function time;
 
 final class VersionInfo{
-	public const NAME = "NG-PocketMine-MP";
-	public const BASE_VERSION = "5.27.2";
+	public const NAME = "AdoptPocketMine-MP";
+	public const BASE_VERSION = "5.28.1";
 	public const IS_DEVELOPMENT_BUILD = true;
 	public const BUILD_CHANNEL = "stable";
 
