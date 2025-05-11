@@ -568,7 +568,7 @@ class NetworkSession{
 				$this->addToSendBuffer(self::encodePacketTimed(PacketSerializer::encoder($this->getProtocolId()), $evPacket));
 			}
 			if($immediate || !$this->bufferEnabled){
-				$this->flushSendBuffer(true);
+				$this->flushGamePacketQueue();
 			}
 
 			return true;

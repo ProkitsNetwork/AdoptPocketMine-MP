@@ -26,6 +26,7 @@ namespace pocketmine\network\mcpe\cache;
 use pocketmine\data\bedrock\BedrockDataFiles;
 use pocketmine\network\mcpe\protocol\AvailableActorIdentifiersPacket;
 use pocketmine\network\mcpe\protocol\BiomeDefinitionListPacket;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\NetworkNbtSerializer;
 use pocketmine\network\mcpe\protocol\types\CacheableNbt;
 use pocketmine\utils\Filesystem;
@@ -43,18 +44,23 @@ class StaticPacketCache{
 
 	private static function make() : self{
 		return new self(
+			BiomeDefinitionListPacket::createLegacy(self::loadCompoundFromFile(BedrockDataFiles::BIOME_DEFINITIONS_NBT)),
 			BiomeDefinitionListPacket::create(self::loadCompoundFromFile(BedrockDataFiles::BIOME_DEFINITIONS_NBT)),
 			AvailableActorIdentifiersPacket::create(self::loadCompoundFromFile(BedrockDataFiles::ENTITY_IDENTIFIERS_NBT))
 		);
 	}
 
 	public function __construct(
+		private BiomeDefinitionListPacket $legacyBiomeDefs,
 		private BiomeDefinitionListPacket $biomeDefs,
 		private AvailableActorIdentifiersPacket $availableActorIdentifiers
 	){}
 
-	public function getBiomeDefs() : BiomeDefinitionListPacket{
-		return $this->biomeDefs;
+	public function getBiomeDefs(int $protocolId) : BiomeDefinitionListPacket{
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_20_80){
+			return $this->biomeDefs;
+		}
+		return $this->legacyBiomeDefs;
 	}
 
 	public function getAvailableActorIdentifiers() : AvailableActorIdentifiersPacket{
