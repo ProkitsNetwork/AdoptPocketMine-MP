@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\handler;
 
+use pocketmine\entity\InvalidSkinException;
 use pocketmine\entity\Skin;
 use pocketmine\event\player\PlayerPreLoginEvent;
 use pocketmine\lang\KnownTranslationFactory;
@@ -35,6 +36,8 @@ use pocketmine\network\mcpe\ProcessSkinTask;
 use pocketmine\network\mcpe\protocol\LoginPacket;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\types\login\AuthenticationData;
+use pocketmine\network\mcpe\protocol\types\login\AuthenticationInfo;
+use pocketmine\network\mcpe\protocol\types\login\AuthenticationType;
 use pocketmine\network\mcpe\protocol\types\login\ClientData;
 use pocketmine\network\mcpe\protocol\types\login\ClientDataToSkinDataHelper;
 use pocketmine\network\mcpe\protocol\types\login\JwtChain;
@@ -45,8 +48,12 @@ use pocketmine\player\XboxLivePlayerInfo;
 use pocketmine\Server;
 use pocketmine\utils\AssumptionFailedError;
 use Ramsey\Uuid\Uuid;
+use function gettype;
 use function in_array;
 use function is_array;
+use function is_object;
+use function json_decode;
+use const JSON_THROW_ON_ERROR;
 
 /**
  * Handles the initial login phase of the session. This handler is used as the initial state.
@@ -72,7 +79,15 @@ class LoginPacketHandler extends PacketHandler{
 		}
 		$this->session->setProtocolId($protocolVersion);
 
-		$extraData = $this->fetchAuthData($packet->chainDataJwt);
+		if($protocolVersion >= ProtocolInfo::PROTOCOL_1_21_90){
+			$authInfo = $this->parseAuthInfo($packet->authInfoJson);
+			$jwtChain = $this->parseJwtChain($authInfo->Certificate);
+		}else{
+			$authInfo = null;
+			$jwtChain = $this->parseJwtChain($packet->authInfoJson);
+		}
+
+		$extraData = $this->fetchAuthData($jwtChain);
 
 		if(!Player::isValidUserName($extraData->displayName)){
 			$this->session->disconnectWithError(KnownTranslationFactory::disconnectionScreen_invalidName());
@@ -87,13 +102,13 @@ class LoginPacketHandler extends PacketHandler{
 		$clientData = $this->parseClientData($packet->clientDataJwt);
 		try{
 			$skinData = ClientDataToSkinDataHelper::fromClientData($clientData);
-		}catch(\InvalidArgumentException $e){
+		}catch(\InvalidArgumentException|InvalidSkinException $e){
 			throw PacketHandlingException::wrap($e);
 		}
 		$this->server->getAsyncPool()->submitTask(new ProcessSkinTask(
 			$packet->protocol,
 			$skinData,
-			function(?Skin $skin, ?string $error) use ($packet, $clientData, $extraData){
+			function(?Skin $skin, ?string $error) use ($jwtChain, $authInfo, $packet, $clientData, $extraData){
 				if(!$this->session->isConnected()){
 					return;
 				}
@@ -107,13 +122,13 @@ class LoginPacketHandler extends PacketHandler{
 				if($skin === null){
 					throw new AssumptionFailedError("This should never happen...");
 				}
-				$this->onSkinDataProcessed($extraData, $clientData, $skin, $packet);
+				$this->onSkinDataProcessed($extraData, $clientData, $skin, $authInfo, $jwtChain, $packet);
 			},
 		));
 		return true;
 	}
 
-	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, Skin $skin, LoginPacket $packet) : void{
+	protected function onSkinDataProcessed(AuthenticationData $extraData, ClientData $clientData, $skin, ?AuthenticationInfo $authInfo, JwtChain $jwtChain, LoginPacket $packet) : bool{
 		$uuid = Uuid::fromString($extraData->identity);
 		$arrClientData = (array) $clientData;
 		$arrClientData["TitleID"] = $extraData->titleId;
@@ -165,10 +180,66 @@ class LoginPacketHandler extends PacketHandler{
 		$ev->call();
 		if(!$ev->isAllowed()){
 			$this->session->disconnect($ev->getFinalDisconnectReason(), $ev->getFinalDisconnectScreenMessage());
-			return;
+			return true;
 		}
 
-		$this->processLogin($packet, $ev->isAuthRequired());
+		if($authInfo !== null){
+			$this->processLogin($authInfo->Token, AuthenticationType::from($authInfo->AuthenticationType), $jwtChain->chain, $packet->clientDataJwt, $ev->isAuthRequired());
+		}else{
+			$this->processLogin(null, null, $jwtChain->chain, $packet->clientDataJwt, $ev->isAuthRequired());
+		}
+
+		return true;
+	}
+
+	/**
+	 * @throws PacketHandlingException
+	 */
+	protected function parseAuthInfo(string $authInfo) : AuthenticationInfo{
+		try{
+			$authInfoJson = json_decode($authInfo, associative: false, depth: 2, flags: JSON_THROW_ON_ERROR);
+		}catch(\JsonException $e){
+			throw PacketHandlingException::wrap($e);
+		}
+		if(!is_object($authInfoJson)){
+			throw new \RuntimeException("Unexpected type for auth info data: " . gettype($authInfoJson) . ", expected object");
+		}
+
+		$mapper = new \JsonMapper();
+		$mapper->bExceptionOnMissingData = true;
+		$mapper->bExceptionOnUndefinedProperty = true;
+		$mapper->bStrictObjectTypeChecking = true;
+		try{
+			$clientData = $mapper->map($authInfoJson, new AuthenticationInfo());
+		}catch(\JsonMapper_Exception $e){
+			throw PacketHandlingException::wrap($e);
+		}
+		return $clientData;
+	}
+
+	/**
+	 * @throws PacketHandlingException
+	 */
+	protected function parseJwtChain(string $chainDataJwt) : JwtChain{
+		try{
+			$jwtChainJson = json_decode($chainDataJwt, associative: false, depth: 3, flags: JSON_THROW_ON_ERROR);
+		}catch(\JsonException $e){
+			throw PacketHandlingException::wrap($e);
+		}
+		if(!is_object($jwtChainJson)){
+			throw new \RuntimeException("Unexpected type for JWT chain data: " . gettype($jwtChainJson) . ", expected object");
+		}
+
+		$mapper = new \JsonMapper();
+		$mapper->bExceptionOnMissingData = true;
+		$mapper->bExceptionOnUndefinedProperty = true;
+		$mapper->bStrictObjectTypeChecking = true;
+		try{
+			$clientData = $mapper->map($jwtChainJson, new JwtChain());
+		}catch(\JsonMapper_Exception $e){
+			throw PacketHandlingException::wrap($e);
+		}
+		return $clientData;
 	}
 
 	/**
@@ -238,10 +309,15 @@ class LoginPacketHandler extends PacketHandler{
 	 * TODO: This is separated for the purposes of allowing plugins (like Specter) to hack it and bypass authentication.
 	 * In the future this won't be necessary.
 	 *
+	 * @param null|string[] $legacyCertificate
+	 *
 	 * @throws \InvalidArgumentException
 	 */
-	protected function processLogin(LoginPacket $packet, bool $authRequired) : void{
-		$this->server->getAsyncPool()->submitTask(new ProcessLoginTask($packet->chainDataJwt->chain, $packet->clientDataJwt, $authRequired, $this->authCallback));
+	protected function processLogin(?string $token, ?AuthenticationType $authType, ?array $legacyCertificate, string $clientData, bool $authRequired) : void{
+		if($legacyCertificate === null){
+			throw new PacketHandlingException("Legacy certificate cannot be null");
+		}
+		$this->server->getAsyncPool()->submitTask(new ProcessLoginTask($legacyCertificate, $clientData, $authRequired, $this->authCallback));
 		$this->session->setHandler(null); //drop packets received during login verification
 	}
 

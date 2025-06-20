@@ -47,7 +47,7 @@ class StaticPacketCache{
 	/**
 	 * @phpstan-return CacheableNbt<\pocketmine\nbt\tag\CompoundTag>
 	 */
-	private static function loadCompoundFromFile(string $filePath) : CacheableNbt{
+	protected static function loadCompoundFromFile(string $filePath) : CacheableNbt{
 		return new CacheableNbt((new NetworkNbtSerializer())->read(Filesystem::fileGetContents($filePath))->mustGetCompoundTag());
 	}
 
@@ -105,23 +105,20 @@ class StaticPacketCache{
 
 	private static function make() : self{
 		return new self(
+			BiomeDefinitionListPacket::fromDefinitions(self::loadBiomeDefinitionModel(BedrockDataFiles::BIOME_DEFINITIONS_JSON)),
 			BiomeDefinitionListPacket::createLegacy(self::loadCompoundFromFile(BedrockDataFiles::BIOME_DEFINITIONS_NBT)),
-			BiomeDefinitionListPacket::create(self::loadBiomeDefinitionModel(BedrockDataFiles::BIOME_DEFINITIONS_JSON)),
 			AvailableActorIdentifiersPacket::create(self::loadCompoundFromFile(BedrockDataFiles::ENTITY_IDENTIFIERS_NBT))
 		);
 	}
 
 	public function __construct(
-		private BiomeDefinitionListPacket $legacyBiomeDefs,
 		private BiomeDefinitionListPacket $biomeDefs,
+		private BiomeDefinitionListPacket $legacyBiomeDefs,
 		private AvailableActorIdentifiersPacket $availableActorIdentifiers
 	){}
 
 	public function getBiomeDefs(int $protocolId) : BiomeDefinitionListPacket{
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_21_80){
-			return $this->biomeDefs;
-		}
-		return $this->legacyBiomeDefs;
+		return $protocolId >= ProtocolInfo::PROTOCOL_1_21_80 ? $this->biomeDefs : $this->legacyBiomeDefs;
 	}
 
 	public function getAvailableActorIdentifiers() : AvailableActorIdentifiersPacket{

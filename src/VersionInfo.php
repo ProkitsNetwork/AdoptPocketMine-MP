@@ -32,7 +32,7 @@ use function time;
 
 final class VersionInfo{
 	public const NAME = "AdoptPocketMine-MP";
-	public const BASE_VERSION = "5.28.1";
+	public const BASE_VERSION = "5.29.1";
 	public const IS_DEVELOPMENT_BUILD = true;
 	public const BUILD_CHANNEL = "stable";
 
