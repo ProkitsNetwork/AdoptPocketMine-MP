@@ -115,6 +115,7 @@ class PreSpawnPacketHandler extends PacketHandler{
 				Uuid::fromString(Uuid::NIL),
 				false,
 				false,
+				false,
 				new NetworkPermissions(disableClientSounds: false),
 				[],
 				0,
