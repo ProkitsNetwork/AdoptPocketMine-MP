@@ -47,6 +47,7 @@ use function strtolower;
  * @generate-registry-docblock
  *
  * @method static Boat ACACIA_BOAT()
+ * @method static HangingSign ACACIA_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor ACACIA_SIGN()
  * @method static ItemBlock AIR()
  * @method static Item AMETHYST_SHARD()
@@ -59,6 +60,7 @@ use function strtolower;
  * @method static BeetrootSeeds BEETROOT_SEEDS()
  * @method static BeetrootSoup BEETROOT_SOUP()
  * @method static Boat BIRCH_BOAT()
+ * @method static HangingSign BIRCH_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor BIRCH_SIGN()
  * @method static Item BLAZE_POWDER()
  * @method static BlazeRod BLAZE_ROD()
@@ -115,6 +117,7 @@ use function strtolower;
  * @method static Item CHEMICAL_SULPHATE()
  * @method static Item CHEMICAL_TUNGSTEN_CHLORIDE()
  * @method static Item CHEMICAL_WATER()
+ * @method static HangingSign CHERRY_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor CHERRY_SIGN()
  * @method static ChorusFruit CHORUS_FRUIT()
  * @method static Item CLAY()
@@ -133,8 +136,10 @@ use function strtolower;
  * @method static Cookie COOKIE()
  * @method static Item COPPER_INGOT()
  * @method static CoralFan CORAL_FAN()
+ * @method static HangingSign CRIMSON_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor CRIMSON_SIGN()
  * @method static Boat DARK_OAK_BOAT()
+ * @method static HangingSign DARK_OAK_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor DARK_OAK_SIGN()
  * @method static Item DIAMOND()
  * @method static Axe DIAMOND_AXE()
@@ -207,6 +212,7 @@ use function strtolower;
  * @method static Shovel IRON_SHOVEL()
  * @method static Sword IRON_SWORD()
  * @method static Boat JUNGLE_BOAT()
+ * @method static HangingSign JUNGLE_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor JUNGLE_SIGN()
  * @method static Item LAPIS_LAZULI()
  * @method static LiquidBucket LAVA_BUCKET()
@@ -217,6 +223,7 @@ use function strtolower;
  * @method static Armor LEATHER_TUNIC()
  * @method static Item MAGMA_CREAM()
  * @method static Boat MANGROVE_BOAT()
+ * @method static HangingSign MANGROVE_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor MANGROVE_SIGN()
  * @method static Medicine MEDICINE()
  * @method static Melon MELON()
@@ -242,8 +249,11 @@ use function strtolower;
  * @method static Item NETHER_QUARTZ()
  * @method static Item NETHER_STAR()
  * @method static Boat OAK_BOAT()
+ * @method static HangingSign OAK_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor OAK_SIGN()
+ * @method static ItemBlockWallOrFloor OMINOUS_BANNER()
  * @method static PaintingItem PAINTING()
+ * @method static HangingSign PALE_OAK_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor PALE_OAK_SIGN()
  * @method static Item PAPER()
  * @method static Item PHANTOM_MEMBRANE()
@@ -308,6 +318,7 @@ use function strtolower;
  * @method static Item SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE()
  * @method static SplashPotion SPLASH_POTION()
  * @method static Boat SPRUCE_BOAT()
+ * @method static HangingSign SPRUCE_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor SPRUCE_SIGN()
  * @method static Spyglass SPYGLASS()
  * @method static SpawnEgg SQUID_SPAWN_EGG()
@@ -325,10 +336,12 @@ use function strtolower;
  * @method static Item TIDE_ARMOR_TRIM_SMITHING_TEMPLATE()
  * @method static TorchflowerSeeds TORCHFLOWER_SEEDS()
  * @method static Totem TOTEM()
+ * @method static Trident TRIDENT()
  * @method static TurtleHelmet TURTLE_HELMET()
  * @method static Item VEX_ARMOR_TRIM_SMITHING_TEMPLATE()
  * @method static SpawnEgg VILLAGER_SPAWN_EGG()
  * @method static Item WARD_ARMOR_TRIM_SMITHING_TEMPLATE()
+ * @method static HangingSign WARPED_HANGING_SIGN()
  * @method static ItemBlockWallOrFloor WARPED_SIGN()
  * @method static LiquidBucket WATER_BUCKET()
  * @method static Item WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE()
@@ -398,6 +411,7 @@ final class VanillaItems{
 		self::_registryRegister("air", Blocks::AIR()->asItem()->setCount(0));
 
 		self::register("acacia_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::ACACIA_SIGN(), Blocks::ACACIA_WALL_SIGN()));
+		self::register("acacia_hanging_sign", static fn(int $id) => new HangingSign($id, "Acacia Hanging Sign", Blocks::ACACIA_CEILING_CENTER_HANGING_SIGN(), Blocks::ACACIA_CEILING_EDGES_HANGING_SIGN(), Blocks::ACACIA_WALL_HANGING_SIGN()));
 		self::register("amethyst_shard", static fn(int $id) => new Item($id, "Amethyst Shard"));
 		self::register("apple", static fn(int $id) => new Apple($id, "Apple"));
 		self::register("arrow", static fn(int $id) => new Arrow($id, "Arrow"));
@@ -408,6 +422,7 @@ final class VanillaItems{
 		self::register("beetroot_seeds", static fn(int $id) => new BeetrootSeeds($id, "Beetroot Seeds"));
 		self::register("beetroot_soup", static fn(int $id) => new BeetrootSoup($id, "Beetroot Soup"));
 		self::register("birch_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::BIRCH_SIGN(), Blocks::BIRCH_WALL_SIGN()));
+		self::register("birch_hanging_sign", static fn(int $id) => new HangingSign($id, "Birch Hanging Sign", Blocks::BIRCH_CEILING_CENTER_HANGING_SIGN(), Blocks::BIRCH_CEILING_EDGES_HANGING_SIGN(), Blocks::BIRCH_WALL_HANGING_SIGN()));
 		self::register("blaze_powder", static fn(int $id) => new Item($id, "Blaze Powder"));
 		self::register("blaze_rod", static fn(int $id) => new BlazeRod($id, "Blaze Rod"));
 		self::register("bleach", static fn(int $id) => new Item($id, "Bleach"));
@@ -422,6 +437,7 @@ final class VanillaItems{
 		self::register("carrot", static fn(int $id) => new Carrot($id, "Carrot"));
 		self::register("charcoal", static fn(int $id) => new Coal($id, "Charcoal"));
 		self::register("cherry_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::CHERRY_SIGN(), Blocks::CHERRY_WALL_SIGN()));
+		self::register("cherry_hanging_sign", static fn(int $id) => new HangingSign($id, "Cherry Hanging Sign", Blocks::CHERRY_CEILING_CENTER_HANGING_SIGN(), Blocks::CHERRY_CEILING_EDGES_HANGING_SIGN(), Blocks::CHERRY_WALL_HANGING_SIGN()));
 		self::register("chemical_aluminium_oxide", static fn(int $id) => new Item($id, "Aluminium Oxide"));
 		self::register("chemical_ammonia", static fn(int $id) => new Item($id, "Ammonia"));
 		self::register("chemical_barium_sulphate", static fn(int $id) => new Item($id, "Barium Sulphate"));
@@ -477,7 +493,9 @@ final class VanillaItems{
 		self::register("copper_ingot", static fn(int $id) => new Item($id, "Copper Ingot"));
 		self::register("coral_fan", static fn(int $id) => new CoralFan($id));
 		self::register("crimson_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::CRIMSON_SIGN(), Blocks::CRIMSON_WALL_SIGN()));
+		self::register("crimson_hanging_sign", static fn(int $id) => new HangingSign($id, "Crimson Hanging Sign", Blocks::CRIMSON_CEILING_CENTER_HANGING_SIGN(), Blocks::CRIMSON_CEILING_EDGES_HANGING_SIGN(), Blocks::CRIMSON_WALL_HANGING_SIGN()));
 		self::register("dark_oak_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::DARK_OAK_SIGN(), Blocks::DARK_OAK_WALL_SIGN()));
+		self::register("dark_oak_hanging_sign", static fn(int $id) => new HangingSign($id, "Dark Oak Hanging Sign", Blocks::DARK_OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::DARK_OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::DARK_OAK_WALL_HANGING_SIGN()));
 		self::register("diamond", static fn(int $id) => new Item($id, "Diamond"));
 		self::register("disc_fragment_5", static fn(int $id) => new Item($id, "Disc Fragment (5)"));
 		self::register("dragon_breath", static fn(int $id) => new Item($id, "Dragon's Breath"));
@@ -520,11 +538,13 @@ final class VanillaItems{
 		self::register("iron_ingot", static fn(int $id) => new Item($id, "Iron Ingot"));
 		self::register("iron_nugget", static fn(int $id) => new Item($id, "Iron Nugget"));
 		self::register("jungle_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::JUNGLE_SIGN(), Blocks::JUNGLE_WALL_SIGN()));
+		self::register("jungle_hanging_sign", static fn(int $id) => new HangingSign($id, "Jungle Hanging Sign", Blocks::JUNGLE_CEILING_CENTER_HANGING_SIGN(), Blocks::JUNGLE_CEILING_EDGES_HANGING_SIGN(), Blocks::JUNGLE_WALL_HANGING_SIGN()));
 		self::register("lapis_lazuli", static fn(int $id) => new Item($id, "Lapis Lazuli"));
 		self::register("lava_bucket", static fn(int $id) => new LiquidBucket($id, "Lava Bucket", Blocks::LAVA()));
 		self::register("leather", static fn(int $id) => new Item($id, "Leather"));
 		self::register("magma_cream", static fn(int $id) => new Item($id, "Magma Cream"));
 		self::register("mangrove_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::MANGROVE_SIGN(), Blocks::MANGROVE_WALL_SIGN()));
+		self::register("mangrove_hanging_sign", static fn(int $id) => new HangingSign($id, "Mangrove Hanging Sign", Blocks::MANGROVE_CEILING_CENTER_HANGING_SIGN(), Blocks::MANGROVE_CEILING_EDGES_HANGING_SIGN(), Blocks::MANGROVE_WALL_HANGING_SIGN()));
 		self::register("medicine", static fn(int $id) => new Medicine($id, "Medicine"));
 		self::register("melon", static fn(int $id) => new Melon($id, "Melon"));
 		self::register("melon_seeds", static fn(int $id) => new MelonSeeds($id, "Melon Seeds"));
@@ -537,14 +557,18 @@ final class VanillaItems{
 		self::register("nether_quartz", static fn(int $id) => new Item($id, "Nether Quartz"));
 		self::register("nether_star", static fn(int $id) => new Item($id, "Nether Star"));
 		self::register("netherite_ingot", static fn(int $id) => new class($id, "Netherite Ingot") extends Item{
+
 			public function isFireProof() : bool{ return true; }
 		});
 		self::register("netherite_scrap", static fn(int $id) => new class($id, "Netherite Scrap") extends Item{
 			public function isFireProof() : bool{ return true; }
 		});
 		self::register("oak_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::OAK_SIGN(), Blocks::OAK_WALL_SIGN()));
+		self::register("oak_hanging_sign", static fn(int $id) => new HangingSign($id, "Oak Hanging Sign", Blocks::OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::OAK_WALL_HANGING_SIGN()));
+		self::register("ominous_banner", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::OMINOUS_BANNER(), Blocks::OMINOUS_WALL_BANNER()));
 		self::register("painting", static fn(int $id) => new PaintingItem($id, "Painting"));
 		self::register("pale_oak_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::PALE_OAK_SIGN(), Blocks::PALE_OAK_WALL_SIGN()));
+		self::register("pale_oak_hanging_sign", static fn(int $id) => new HangingSign($id, "Pale Oak Hanging Sign", Blocks::PALE_OAK_CEILING_CENTER_HANGING_SIGN(), Blocks::PALE_OAK_CEILING_EDGES_HANGING_SIGN(), Blocks::PALE_OAK_WALL_HANGING_SIGN()));
 		self::register("paper", static fn(int $id) => new Item($id, "Paper"));
 		self::register("phantom_membrane", static fn(int $id) => new Item($id, "Phantom Membrane"));
 		self::register("pitcher_pod", static fn(int $id) => new PitcherPod($id, "Pitcher Pod"));
@@ -601,6 +625,7 @@ final class VanillaItems{
 		self::register("spider_eye", static fn(int $id) => new SpiderEye($id, "Spider Eye"));
 		self::register("splash_potion", static fn(int $id) => new SplashPotion($id, "Splash Potion"));
 		self::register("spruce_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::SPRUCE_SIGN(), Blocks::SPRUCE_WALL_SIGN()));
+		self::register("spruce_hanging_sign", static fn(int $id) => new HangingSign($id, "Spruce Hanging Sign", Blocks::SPRUCE_CEILING_CENTER_HANGING_SIGN(), Blocks::SPRUCE_CEILING_EDGES_HANGING_SIGN(), Blocks::SPRUCE_WALL_HANGING_SIGN()));
 		self::register("spyglass", static fn(int $id) => new Spyglass($id, "Spyglass"));
 		self::register("steak", static fn(int $id) => new Steak($id, "Steak"));
 		self::register("stick", static fn(int $id) => new Stick($id, "Stick"));
@@ -610,7 +635,9 @@ final class VanillaItems{
 		self::register("sweet_berries", static fn(int $id) => new SweetBerries($id, "Sweet Berries"));
 		self::register("torchflower_seeds", static fn(int $id) => new TorchflowerSeeds($id, "Torchflower Seeds"));
 		self::register("totem", static fn(int $id) => new Totem($id, "Totem of Undying"));
+		self::register("trident", static fn(int $id) => new Trident($id, "Trident"));
 		self::register("warped_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::WARPED_SIGN(), Blocks::WARPED_WALL_SIGN()));
+		self::register("warped_hanging_sign", static fn(int $id) => new HangingSign($id, "Warped Hanging Sign", Blocks::WARPED_CEILING_CENTER_HANGING_SIGN(), Blocks::WARPED_CEILING_EDGES_HANGING_SIGN(), Blocks::WARPED_WALL_HANGING_SIGN()));
 		self::register("water_bucket", static fn(int $id) => new LiquidBucket($id, "Water Bucket", Blocks::WATER()));
 		self::register("wheat", static fn(int $id) => new Item($id, "Wheat"));
 		self::register("wheat_seeds", static fn(int $id) => new WheatSeeds($id, "Wheat Seeds"));

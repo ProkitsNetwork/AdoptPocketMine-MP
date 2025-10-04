@@ -47,7 +47,9 @@ use pocketmine\network\mcpe\protocol\types\SpawnSettings;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\timings\Timings;
+use pocketmine\VersionInfo;
 use Ramsey\Uuid\Uuid;
+use function sprintf;
 
 /**
  * Handler used for the pre-spawn phase of the session.
@@ -111,7 +113,7 @@ class PreSpawnPacketHandler extends PacketHandler{
 				0,
 				"",
 				true,
-				"ProkitsNetwork/AdoptPocketMine-MP v5.0",
+				sprintf("%s %s", VersionInfo::NAME, VersionInfo::VERSION()->getFullVersion(true)),
 				Uuid::fromString(Uuid::NIL),
 				false,
 				false,

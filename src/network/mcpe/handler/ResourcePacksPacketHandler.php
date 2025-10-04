@@ -63,6 +63,13 @@ class ResourcePacksPacketHandler extends PacketHandler{
 	private const MAX_CONCURRENT_CHUNK_REQUESTS = 1;
 
 	/**
+	 * All data/resource_packs/chemistry* packs need to be listed here to get chemistry blocks to render
+	 * correctly, unfortunately there doesn't seem to be a better way to do this
+	 */
+	private const CHEMISTRY_RESOURCE_PACKS = [
+	];
+
+	/**
 	 * @var ResourcePack[]
 	 * @phpstan-var array<string, ResourcePack>
 	 */
@@ -203,8 +210,10 @@ class ResourcePacksPacketHandler extends PacketHandler{
 					return new ResourcePackStackEntry($pack->getPackId(), $pack->getPackVersion(), ""); //TODO: subpacks
 				}, $this->resourcePackStack);
 
-				//we support chemistry blocks by default, the client should already have this installed
-				$stack[] = new ResourcePackStackEntry("0fba4063-dba1-4281-9b89-ff9390653530", "1.0.0", "");
+				//we support chemistry blocks by default, the client should already have these installed
+				foreach(self::CHEMISTRY_RESOURCE_PACKS as [$uuid, $version]){
+					$stack[] = new ResourcePackStackEntry($uuid, $version, "");
+				}
 
 				//we don't force here, because it doesn't have user-facing effects
 				//but it does have an annoying side-effect when true: it makes

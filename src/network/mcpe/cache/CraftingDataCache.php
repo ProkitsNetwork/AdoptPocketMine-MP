@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\cache;
 
+use pmmp\encoding\BE;
+use pmmp\encoding\ByteBufferWriter;
 use pocketmine\crafting\CraftingManager;
 use pocketmine\crafting\FurnaceType;
 use pocketmine\crafting\ShapedRecipe;
@@ -35,7 +37,6 @@ use pocketmine\data\FilesystemCacheKey;
 use pocketmine\network\mcpe\convert\TypeConverter;
 use pocketmine\network\mcpe\NetworkSession;
 use pocketmine\network\mcpe\protocol\CraftingDataPacket;
-use pocketmine\network\mcpe\protocol\serializer\PacketSerializer;
 use pocketmine\network\mcpe\protocol\types\recipe\CraftingRecipeBlockName;
 use pocketmine\network\mcpe\protocol\types\recipe\FurnaceRecipe as ProtocolFurnaceRecipe;
 use pocketmine\network\mcpe\protocol\types\recipe\FurnaceRecipeBlockName;
@@ -48,8 +49,8 @@ use pocketmine\network\mcpe\protocol\types\recipe\ShapelessRecipe as ProtocolSha
 use pocketmine\Server;
 use pocketmine\timings\Timings;
 use pocketmine\utils\AssumptionFailedError;
-use pocketmine\utils\Binary;
 use pocketmine\utils\ProtocolSingletonTrait;
+use raklib\protocol\PacketSerializer;
 use Ramsey\Uuid\Uuid;
 use function array_map;
 use function is_string;
@@ -123,7 +124,7 @@ final class CraftingDataCache{
 					try{
 						$recipesWithTypeIds[] = new ProtocolShapelessRecipe(
 							CraftingDataPacket::ENTRY_SHAPELESS,
-							Binary::writeInt($recipeNetId),
+							BE::packUnsignedInt($recipeNetId), //TODO: this should probably be changed to something human-readable
 							array_map($converter->coreRecipeIngredientToNet(...), $r->getIngredientList()),
 							array_map($converter->coreItemStackToNet(...), $r->getResults()),
 							$nullUUID,
@@ -147,7 +148,7 @@ final class CraftingDataCache{
 						}
 						$recipesWithTypeIds[] = new ProtocolShapedRecipe(
 							CraftingDataPacket::ENTRY_SHAPED,
-							Binary::writeInt($recipeNetId),
+							BE::packUnsignedInt($recipeNetId), //TODO: this should probably be changed to something human-readable
 							$inputs,
 							array_map($converter->coreItemStackToNet(...), $r->getResults()),
 							$nullUUID,
@@ -155,7 +156,7 @@ final class CraftingDataCache{
 							50,
 							true,
 							$noUnlockingRequirement,
-							$recipeNetId
+							$recipeNetId,
 						);
 					}catch(\InvalidArgumentException|ItemTypeSerializeException){
 						continue;
@@ -236,10 +237,10 @@ final class CraftingDataCache{
 		}
 
 		$packet = CraftingDataPacket::create($recipesWithTypeIds, $potionTypeRecipes, $potionContainerChangeRecipes, [], true);
-		$out = PacketSerializer::encoder($this->protocolId);
+		$out = new ByteBufferWriter();
 		Timings::$craftingDataCacheShade->stopTiming();
-		NetworkSession::encodePacketTimed($out, $packet);
+		NetworkSession::encodePacketTimed($out, $this->protocolId, $packet);
 		Timings::$craftingDataCacheRebuild->stopTiming();
-		return $out->getBuffer();
+		return $out->getData();
 	}
 }
