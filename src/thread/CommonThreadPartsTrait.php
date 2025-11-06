@@ -119,7 +119,7 @@ trait CommonThreadPartsTrait{
 	}
 
 	final public function run() : void{
-		error_reporting(-1);
+		error_reporting(E_ALL ^ E_DEPRECATED);
 		$this->registerClassLoaders();
 		//set this after the autoloader is registered
 		ErrorToExceptionHandler::set();

@@ -258,7 +258,7 @@ JIT_WARNING
 		}
 		unset($messages);
 
-		error_reporting(-1);
+		error_reporting(E_ALL ^ E_DEPRECATED);
 		set_ini_entries();
 
 		$bootstrap = dirname(__FILE__, 2) . '/vendor/autoload.php';
@@ -332,13 +332,8 @@ JIT_WARNING
 		Timezone::init();
 
 		$opts = getopt("", [BootstrapOptions::NO_WIZARD, BootstrapOptions::ENABLE_ANSI, BootstrapOptions::DISABLE_ANSI, BootstrapOptions::NO_LOG_FILE]);
-		if(isset($opts[BootstrapOptions::ENABLE_ANSI])){
 			Terminal::init(true);
-		}elseif(isset($opts[BootstrapOptions::DISABLE_ANSI])){
-			Terminal::init(false);
-		}else{
-			Terminal::init();
-		}
+
 		$logFile = isset($opts[BootstrapOptions::NO_LOG_FILE]) ? null : Path::join($dataPath, "server.log");
 
 		$logger = new MainLogger($logFile, Terminal::hasFormattingCodes(), "Server", new \DateTimeZone(Timezone::get()), false, Path::join($dataPath, "log_archive"));
