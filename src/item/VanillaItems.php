@@ -221,6 +221,7 @@ use function strtolower;
  * @method static Armor LEATHER_CAP()
  * @method static Armor LEATHER_PANTS()
  * @method static Armor LEATHER_TUNIC()
+ * @method static SplashPotion LINGERING_POTION()
  * @method static Item MAGMA_CREAM()
  * @method static Boat MANGROVE_BOAT()
  * @method static HangingSign MANGROVE_HANGING_SIGN()
@@ -542,6 +543,7 @@ final class VanillaItems{
 		self::register("lapis_lazuli", static fn(int $id) => new Item($id, "Lapis Lazuli"));
 		self::register("lava_bucket", static fn(int $id) => new LiquidBucket($id, "Lava Bucket", Blocks::LAVA()));
 		self::register("leather", static fn(int $id) => new Item($id, "Leather"));
+		self::register("lingering_potion", static fn(int $id) => new SplashPotion($id, "Lingering Potion", linger: true));
 		self::register("magma_cream", static fn(int $id) => new Item($id, "Magma Cream"));
 		self::register("mangrove_sign", static fn(int $id) => new ItemBlockWallOrFloor($id, Blocks::MANGROVE_SIGN(), Blocks::MANGROVE_WALL_SIGN()));
 		self::register("mangrove_hanging_sign", static fn(int $id) => new HangingSign($id, "Mangrove Hanging Sign", Blocks::MANGROVE_CEILING_CENTER_HANGING_SIGN(), Blocks::MANGROVE_CEILING_EDGES_HANGING_SIGN(), Blocks::MANGROVE_WALL_HANGING_SIGN()));
@@ -557,7 +559,6 @@ final class VanillaItems{
 		self::register("nether_quartz", static fn(int $id) => new Item($id, "Nether Quartz"));
 		self::register("nether_star", static fn(int $id) => new Item($id, "Nether Star"));
 		self::register("netherite_ingot", static fn(int $id) => new class($id, "Netherite Ingot") extends Item{
-
 			public function isFireProof() : bool{ return true; }
 		});
 		self::register("netherite_scrap", static fn(int $id) => new class($id, "Netherite Scrap") extends Item{
@@ -749,7 +750,7 @@ final class VanillaItems{
 		self::register("vex_armor_trim_smithing_template", static fn(int $id) => new Item($id, "Vex Armor Trim Smithing Template"));
 		self::register("ward_armor_trim_smithing_template", static fn(int $id) => new Item($id, "Ward Armor Trim Smithing Template"));
 		self::register("wayfinder_armor_trim_smithing_template", static fn(int $id) => new Item($id, "Wayfinder Armor Trim Smithing Template"));
-		self::register("wild_armor_trim_smithing_template",  fn(int $id) => new Item($id, "Wild Armor Trim Smithing Template"));
+		self::register("wild_armor_trim_smithing_template", static fn(int $id) => new Item($id, "Wild Armor Trim Smithing Template"));
 	}
 
 }
