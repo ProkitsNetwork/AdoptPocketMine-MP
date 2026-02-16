@@ -32,7 +32,7 @@ use function time;
 
 final class VersionInfo{
 	public const NAME = "AdoptPocketMine-MP";
-	public const BASE_VERSION = "5.39.2";
+	public const BASE_VERSION = "5.39.3";
 	public const IS_DEVELOPMENT_BUILD = true;
 	public const BUILD_CHANNEL = "stabÅle";
 	public const GITHUB_URL = "https://github.com/pmmp/PocketMine-MP";
